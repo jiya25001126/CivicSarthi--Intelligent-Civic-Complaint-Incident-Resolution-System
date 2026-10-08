@@ -1,0 +1,53 @@
+{
+  "metadata": {
+    "synthetic": true,
+    "version": "1.0.0",
+    "description": "Synthetic multi-department subtasks for JanSahay incident coordination"
+  },
+  "subtasks": [
+    {
+      "id": "SUB-2026-001",
+      "incidentId": "INC-2026-FL001",
+      "complaintId": "CPG-2026-00122",
+      "title": "Isolate submerged feeder lines & restore transformer safety",
+      "department": "DEPT_POWER",
+      "officerId": "OFF_004",
+      "status": "IN_PROGRESS",
+      "dueDate": "2026-10-08T18:00:00.000Z",
+      "synthetic": true
+    },
+    {
+      "id": "SUB-2026-002",
+      "incidentId": "INC-2026-FL001",
+      "complaintId": "CPG-2026-00122",
+      "title": "Deploy mobile drinking water tankers to relief shelters",
+      "department": "DEPT_WATER",
+      "officerId": "OFF_005",
+      "status": "PENDING",
+      "dueDate": "2026-10-08T12:00:00.000Z",
+      "synthetic": true
+    },
+    {
+      "id": "SUB-2026-003",
+      "incidentId": "INC-2026-FL001",
+      "complaintId": "CPG-2026-00123",
+      "title": "Clear river debris & restore access across East Crossing bridge",
+      "department": "DEPT_ROADS",
+      "officerId": "OFF_003",
+      "status": "IN_PROGRESS",
+      "dueDate": "2026-10-09T10:00:00.000Z",
+      "synthetic": true
+    },
+    {
+      "id": "SUB-2026-004",
+      "incidentId": "INC-2026-FL001",
+      "complaintId": "CPG-2026-00123",
+      "title": "Emergency medical team & ORS/essential medicines dispatch",
+      "department": "DEPT_HEALTH",
+      "officerId": "OFF_007",
+      "status": "COMPLETED",
+      "dueDate": "2026-10-06T20:00:00.000Z",
+      "synthetic": true
+    }
+  ]
+}

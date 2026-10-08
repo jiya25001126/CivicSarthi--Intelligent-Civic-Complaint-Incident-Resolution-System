@@ -1,0 +1,65 @@
+{
+  "metadata": {
+    "synthetic": true,
+    "version": "1.0.0",
+    "description": "Synthetic timeline and status history audit trail for complaints"
+  },
+  "history": [
+    {
+      "id": "HIST-001",
+      "complaintId": "CPG-2026-00101",
+      "timestamp": "2026-01-15T09:30:00.000Z",
+      "officialStatus": "RECEIVED",
+      "remarks": "Grievance registered in portal."
+    },
+    {
+      "id": "HIST-002",
+      "complaintId": "CPG-2026-00101",
+      "timestamp": "2026-01-18T11:00:00.000Z",
+      "officialStatus": "UNDER_PROCESS",
+      "remarks": "Assigned to Accounts Officer Desk 1."
+    },
+    {
+      "id": "HIST-003",
+      "complaintId": "CPG-2026-00101",
+      "timestamp": "2026-01-25T14:30:00.000Z",
+      "officialStatus": "TRANSFERRED",
+      "remarks": "Transferred to Zonal Pension Directorate."
+    },
+    {
+      "id": "HIST-004",
+      "complaintId": "CPG-2026-00101",
+      "timestamp": "2026-02-01T14:20:00.000Z",
+      "officialStatus": "FORWARDED_TO_SUBORDINATE_OFFICE",
+      "remarks": "Forwarded to District Treasury for verification."
+    },
+    {
+      "id": "HIST-005",
+      "complaintId": "CPG-2026-00104",
+      "timestamp": "2026-03-10T12:00:00.000Z",
+      "officialStatus": "RECEIVED",
+      "remarks": "DBT scholarship grievance logged."
+    },
+    {
+      "id": "HIST-006",
+      "complaintId": "CPG-2026-00104",
+      "timestamp": "2026-03-20T10:15:00.000Z",
+      "officialStatus": "TRANSFERRED",
+      "remarks": "Reassigned between higher education cell and state nodal desk."
+    },
+    {
+      "id": "HIST-007",
+      "complaintId": "CPG-2026-00107",
+      "timestamp": "2026-02-18T07:45:00.000Z",
+      "officialStatus": "RECEIVED",
+      "remarks": "Urgent road hazard registered."
+    },
+    {
+      "id": "HIST-008",
+      "complaintId": "CPG-2026-00107",
+      "timestamp": "2026-03-05T17:30:00.000Z",
+      "officialStatus": "INTERIM_REPLY",
+      "remarks": "Matter referred to maintenance division. Tender under process."
+    }
+  ]
+}

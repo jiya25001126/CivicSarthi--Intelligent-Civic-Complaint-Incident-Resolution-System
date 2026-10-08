@@ -1,0 +1,33 @@
+{
+  "metadata": {
+    "synthetic": true,
+    "version": "1.0.0",
+    "description": "Synthetic multi-issue / clustered incidents for JanSahay"
+  },
+  "incidents": [
+    {
+      "id": "INC-2026-FL001",
+      "title": "Severe Flash Flood & Inundation Crisis - East/North Sector Cluster",
+      "description": "Composite civic disaster incident covering flooding, snapped power distribution, water contamination, and road blockages across flood-affected wards.",
+      "category": "flood relief",
+      "priority": "CRITICAL",
+      "status": "ACTIVE",
+      "leadDepartment": "DEPT_DISASTER",
+      "participatingDepartments": [
+        "DEPT_DISASTER",
+        "DEPT_POWER",
+        "DEPT_WATER",
+        "DEPT_ROADS",
+        "DEPT_HEALTH"
+      ],
+      "linkedComplaints": [
+        "CPG-2026-00122",
+        "CPG-2026-00123",
+        "CPG-2026-00124"
+      ],
+      "createdAt": "2026-10-05T05:00:00.000Z",
+      "updatedAt": "2026-10-07T12:00:00.000Z",
+      "synthetic": true
+    }
+  ]
+}

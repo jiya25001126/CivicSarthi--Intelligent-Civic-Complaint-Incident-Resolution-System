@@ -1,0 +1,23 @@
+{
+  "name": "jansahay-backend",
+  "version": "1.0.0",
+  "description": "Backend API layer for JanSahay - AI-assisted grievance resolution layer for CPGRAMS",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test tests/**/*.test.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "supertest": "^7.0.0"
+  }
+}

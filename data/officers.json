@@ -1,0 +1,73 @@
+{
+  "metadata": {
+    "synthetic": true,
+    "version": "1.0.0",
+    "description": "Synthetic nodal officer directory for JanSahay"
+  },
+  "officers": [
+    {
+      "id": "OFF_001",
+      "name": "Officer A. Sharma",
+      "departmentId": "DEPT_PENSION",
+      "role": "Grievance Redressal Officer",
+      "email": "officer.sharma@synthetic-gov.internal",
+      "activeCases": 12
+    },
+    {
+      "id": "OFF_002",
+      "name": "Officer R. Verma",
+      "departmentId": "DEPT_SCHOLARSHIP",
+      "role": "Nodal Officer (Scholarships)",
+      "email": "officer.verma@synthetic-gov.internal",
+      "activeCases": 8
+    },
+    {
+      "id": "OFF_003",
+      "name": "Executive Engineer K. Patel",
+      "departmentId": "DEPT_ROADS",
+      "role": "Sub-Divisional Officer",
+      "email": "officer.patel@synthetic-gov.internal",
+      "activeCases": 19
+    },
+    {
+      "id": "OFF_004",
+      "name": "Superintending Engineer S. Rao",
+      "departmentId": "DEPT_POWER",
+      "role": "Assistant Engineer (Operations)",
+      "email": "officer.rao@synthetic-gov.internal",
+      "activeCases": 14
+    },
+    {
+      "id": "OFF_005",
+      "name": "Officer M. Khan",
+      "departmentId": "DEPT_WATER",
+      "role": "Zonal Water Works Officer",
+      "email": "officer.khan@synthetic-gov.internal",
+      "activeCases": 11
+    },
+    {
+      "id": "OFF_006",
+      "name": "Inspector N. Joshi",
+      "departmentId": "DEPT_RATION",
+      "role": "Civil Supplies Inspector",
+      "email": "officer.joshi@synthetic-gov.internal",
+      "activeCases": 6
+    },
+    {
+      "id": "OFF_007",
+      "name": "Dr. V. Nair",
+      "departmentId": "DEPT_HEALTH",
+      "role": "Chief Medical Officer Liaison",
+      "email": "dr.nair@synthetic-gov.internal",
+      "activeCases": 9
+    },
+    {
+      "id": "OFF_008",
+      "name": "Officer P. Mukherjee",
+      "departmentId": "DEPT_DISASTER",
+      "role": "Emergency Response Coordinator",
+      "email": "officer.mukherjee@synthetic-gov.internal",
+      "activeCases": 22
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "metadata": {
+    "synthetic": true,
+    "version": "1.0.0",
+    "description": "Synthetic department directory for JanSahay grievance simulation"
+  },
+  "departments": [
+    {
+      "id": "DEPT_PENSION",
+      "code": "DOPPW",
+      "name": "Department of Pension and Pensioners' Welfare",
+      "category": "pension",
+      "contactEmail": "nodal.pension@synthetic-gov.internal",
+      "slaDays": 30
+    },
+    {
+      "id": "DEPT_SCHOLARSHIP",
+      "code": "DHE",
+      "name": "Department of Higher Education - Scholarship Division",
+      "category": "scholarship",
+      "contactEmail": "nodal.scholarship@synthetic-gov.internal",
+      "slaDays": 21
+    },
+    {
+      "id": "DEPT_ROADS",
+      "code": "PWD_MORTH",
+      "name": "Public Works Department - Roads & Infrastructure",
+      "category": "roads",
+      "contactEmail": "nodal.roads@synthetic-gov.internal",
+      "slaDays": 30
+    },
+    {
+      "id": "DEPT_POWER",
+      "code": "DISCOM",
+      "name": "State Electricity Distribution Corporation",
+      "category": "electricity",
+      "contactEmail": "nodal.power@synthetic-gov.internal",
+      "slaDays": 15
+    },
+    {
+      "id": "DEPT_WATER",
+      "code": "JAL_BOARD",
+      "name": "Department of Water Supply & Municipal Drainage",
+      "category": "water",
+      "contactEmail": "nodal.water@synthetic-gov.internal",
+      "slaDays": 15
+    },
+    {
+      "id": "DEPT_RATION",
+      "code": "DFPD",
+      "name": "Department of Food, Civil Supplies & Consumer Affairs",
+      "category": "ration",
+      "contactEmail": "nodal.ration@synthetic-gov.internal",
+      "slaDays": 20
+    },
+    {
+      "id": "DEPT_HEALTH",
+      "code": "MOHFW",
+      "name": "Directorate of Health Services & Community Clinics",
+      "category": "healthcare",
+      "contactEmail": "nodal.health@synthetic-gov.internal",
+      "slaDays": 15
+    },
+    {
+      "id": "DEPT_DISASTER",
+      "code": "DDMA",
+      "name": "District Disaster Management & Relief Authority",
+      "category": "flood relief",
+      "contactEmail": "nodal.disaster@synthetic-gov.internal",
+      "slaDays": 7
+    }
+  ]
+}
