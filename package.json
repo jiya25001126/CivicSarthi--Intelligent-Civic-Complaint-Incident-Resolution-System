@@ -1,6 +1,6 @@
 {
   "name": "jansahay",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "JanSahay: AI-assisted grievance resolution layer for CPGRAMS",
   "private": true,
   "workspaces": [
@@ -15,6 +15,7 @@
     "dev:frontend": "npm --prefix frontend dev",
     "build": "npm --prefix frontend build",
     "test": "npm --prefix backend test",
+    "seed": "npm --prefix backend run seed",
     "install:all": "npm install --prefix mock-cpgrams && npm install --prefix backend && npm install --prefix frontend"
   },
   "keywords": [

@@ -20,9 +20,17 @@ class DepartmentRepository {
   }
 
   async findById(id) {
+    if (!id) return null;
     const data = await this._readFile();
-    const dept = (data.departments || []).find(d => d.id === id || d.code === id);
+    const dept = (data.departments || []).find(
+      d => d.id === id || d.code === id || d.id?.toLowerCase() === id?.toLowerCase()
+    );
     return dept || null;
+  }
+
+  async exists(id) {
+    const dept = await this.findById(id);
+    return Boolean(dept);
   }
 }
 

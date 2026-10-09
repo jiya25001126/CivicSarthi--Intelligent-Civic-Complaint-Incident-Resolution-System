@@ -6,11 +6,20 @@ import { mockCpgramsRouter } from '../../../mock-cpgrams/index.js';
 
 const apiRouter = express.Router();
 
+// Version 1 Router (/api/v1/...)
+const v1Router = express.Router();
+v1Router.use('/health', healthRoutes);
+v1Router.use('/complaints', complaintRoutes);
+v1Router.use('/departments', departmentRoutes);
+v1Router.use('/mock-cpgrams', mockCpgramsRouter);
+
+// Mount /api/v1
+apiRouter.use('/v1', v1Router);
+
+// Backward Compatibility Aliases (/api/...)
 apiRouter.use('/health', healthRoutes);
 apiRouter.use('/complaints', complaintRoutes);
 apiRouter.use('/departments', departmentRoutes);
-
-// Isolated mock CPGRAMS router mounted for sandbox simulation
 apiRouter.use('/mock-cpgrams', mockCpgramsRouter);
 
 export default apiRouter;

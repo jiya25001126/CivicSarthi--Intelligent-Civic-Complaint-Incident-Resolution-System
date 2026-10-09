@@ -1,0 +1,778 @@
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const DATA_DIR = path.resolve(__dirname, '../../../data');
+
+export const SEED_DEPARTMENTS = [
+  {
+    id: "DEPT_ROADS",
+    code: "PWD",
+    name: "Public Works Department (Roads & Infrastructure)",
+    description: "Responsible for state highways, major district roads, bridges, and public infrastructure maintenance.",
+    category: "roads",
+    contactEmail: "nodal.pwd@synthetic-gov.internal",
+    isActive: true,
+    slaDays: 30
+  },
+  {
+    id: "DEPT_POWER",
+    code: "DISCOM",
+    name: "Electricity Department (State Power Distribution)",
+    description: "Handles high and low-tension grid distribution, transformers, residential meters, and outage restoration.",
+    category: "electricity",
+    contactEmail: "nodal.power@synthetic-gov.internal",
+    isActive: true,
+    slaDays: 15
+  },
+  {
+    id: "DEPT_WATER",
+    code: "JAL_BOARD",
+    name: "Water Supply Department (Municipal Jal Board)",
+    description: "Manages potable drinking water pipeline distribution, water treatment plants, and sewer networks.",
+    category: "water",
+    contactEmail: "nodal.water@synthetic-gov.internal",
+    isActive: true,
+    slaDays: 15
+  },
+  {
+    id: "DEPT_HEALTH",
+    code: "MOHFW",
+    name: "Health Department (Directorate of Health Services)",
+    description: "Supervises government civil hospitals, primary health centres, drug availability, and public health schemes.",
+    category: "healthcare",
+    contactEmail: "nodal.health@synthetic-gov.internal",
+    isActive: true,
+    slaDays: 15
+  },
+  {
+    id: "DEPT_SCHOLARSHIP",
+    code: "DHE",
+    name: "Education Department (Higher Education & Scholarships)",
+    description: "Administers student welfare stipends, DBT scholarship disbursement, and government educational institutes.",
+    category: "scholarship",
+    contactEmail: "nodal.education@synthetic-gov.internal",
+    isActive: true,
+    slaDays: 21
+  },
+  {
+    id: "DEPT_REVENUE",
+    code: "REV",
+    name: "Revenue Department (Land & District Administration)",
+    description: "Handles land records, demarcation, certificates, revenue disputes, and district ex-gratia relief.",
+    category: "revenue",
+    contactEmail: "nodal.revenue@synthetic-gov.internal",
+    isActive: true,
+    slaDays: 30
+  },
+  {
+    id: "DEPT_MUNICIPAL",
+    code: "MC",
+    name: "Municipal Corporation (Urban Local Body)",
+    description: "Oversees municipal sanitation, solid waste collection, street lighting, drainage cleaning, and parks.",
+    category: "municipal",
+    contactEmail: "nodal.municipal@synthetic-gov.internal",
+    isActive: true,
+    slaDays: 10
+  },
+  {
+    id: "DEPT_PENSION",
+    code: "DOPPW",
+    name: "Social Welfare & Pension Department",
+    description: "Coordinates senior citizen pensions, disability pensions, widow benefits, and pensioner grievance resolution.",
+    category: "pension",
+    contactEmail: "nodal.pension@synthetic-gov.internal",
+    isActive: true,
+    slaDays: 30
+  },
+  {
+    id: "DEPT_POLICE",
+    code: "POLICE",
+    name: "Police Department (Civic Liaison & Traffic)",
+    description: "Manages civic grievance verification, traffic bottleneck enforcement, and public safety coordination.",
+    category: "police",
+    contactEmail: "nodal.police@synthetic-gov.internal",
+    isActive: true,
+    slaDays: 7
+  },
+  {
+    id: "DEPT_RATION",
+    code: "DFPD",
+    name: "Department of Food & Public Distribution (PDS)",
+    description: "Regulates Fair Price Shops (FPS), e-PoS ration distribution, and NFSA consumer food grain allocation.",
+    category: "ration",
+    contactEmail: "nodal.ration@synthetic-gov.internal",
+    isActive: true,
+    slaDays: 20
+  },
+  {
+    id: "DEPT_DISASTER",
+    code: "DDMA",
+    name: "Disaster Management Authority",
+    description: "Coordinates emergency crisis response, monsoon flood rescue, ex-gratia distribution, and relief shelters.",
+    category: "flood relief",
+    contactEmail: "nodal.disaster@synthetic-gov.internal",
+    isActive: true,
+    slaDays: 7
+  }
+];
+
+export const SEED_COMPLAINTS = [
+  {
+    id: "CPG-2026-00101",
+    referenceNumber: "JAN-2026-0001",
+    title: "Family Pension Disbursement Delay Post-Superannuation",
+    description: "Family pension has not been credited for the past four months after spouse retired from central civil services. PPO generation is delayed at the zonal accounts office.",
+    text: "Family pension has not been credited for the past four months after spouse retired from central civil services. PPO generation is delayed at the zonal accounts office.",
+    category: "pension",
+    state: "Maharashtra",
+    district: "Pune",
+    locality: "Kothrud Colony, Sector 4",
+    preferredLanguage: "en",
+    language: "en",
+    departmentId: "DEPT_PENSION",
+    department: "DEPT_PENSION",
+    priority: "HIGH",
+    status: "UNDER_REVIEW",
+    officialStatus: "FORWARDED_TO_SUBORDINATE_OFFICE",
+    createdAt: "2026-01-15T09:30:00.000Z",
+    updatedAt: "2026-02-01T14:20:00.000Z",
+    lastUpdated: "2026-02-01T14:20:00.000Z",
+    reassignments: 3,
+    citizenReminders: 4,
+    evidence: ["pension_sanction_order_ref_synth.pdf"],
+    synthetic: true,
+    statusHistory: [
+      { timestamp: "2026-01-15T09:30:00.000Z", status: "SUBMITTED", actorType: "CITIZEN", remarks: "Grievance submitted by citizen" },
+      { timestamp: "2026-01-18T11:00:00.000Z", status: "ASSIGNED", actorType: "OFFICER", remarks: "Assigned to Zonal Pension Redressal Officer" },
+      { timestamp: "2026-02-01T14:20:00.000Z", status: "UNDER_REVIEW", actorType: "OFFICER", remarks: "Cross-verifying PPO sanction status with Treasury" }
+    ],
+    officerNotes: [
+      { timestamp: "2026-02-01T14:25:00.000Z", note: "Treasury reconciliation letter issued on 29 Jan. Awaiting clearance.", officerId: "OFF_001" }
+    ]
+  },
+  {
+    id: "CPG-2026-00102",
+    referenceNumber: "JAN-2026-0002",
+    title: "Discrepancy in Revised Dearness Relief Calculation",
+    description: "Dearness relief arrears calculation incorrect in revised pension payment order. Seeking revision of revised basic entitlement according to 7th CPC matrix.",
+    text: "Dearness relief arrears calculation incorrect in revised pension payment order. Seeking revision of revised basic entitlement according to 7th CPC matrix.",
+    category: "pension",
+    state: "Uttar Pradesh",
+    district: "Lucknow",
+    locality: "Aliganj, Block B",
+    preferredLanguage: "en",
+    language: "en",
+    departmentId: "DEPT_PENSION",
+    department: "DEPT_PENSION",
+    priority: "MEDIUM",
+    status: "IN_PROGRESS",
+    officialStatus: "UNDER_PROCESS",
+    createdAt: "2026-08-20T10:15:00.000Z",
+    updatedAt: "2026-09-15T11:00:00.000Z",
+    lastUpdated: "2026-09-15T11:00:00.000Z",
+    reassignments: 1,
+    citizenReminders: 1,
+    evidence: ["bank_passbook_entry_synth.pdf"],
+    synthetic: true,
+    statusHistory: [
+      { timestamp: "2026-08-20T10:15:00.000Z", status: "SUBMITTED", actorType: "CITIZEN", remarks: "Initial submission by pensioner" },
+      { timestamp: "2026-08-22T09:00:00.000Z", status: "ASSIGNED", actorType: "OFFICER", remarks: "Assigned to Accounts Calculation Desk" },
+      { timestamp: "2026-09-15T11:00:00.000Z", status: "IN_PROGRESS", actorType: "OFFICER", remarks: "Audit verification in progress" }
+    ],
+    officerNotes: [
+      { timestamp: "2026-09-15T11:05:00.000Z", note: "Re-computing entitlement sheet using updated formula table.", officerId: "OFF_001" }
+    ]
+  },
+  {
+    id: "CPG-2026-00103",
+    referenceNumber: "JAN-2026-0003",
+    title: "Jeevan Pramaan Digital Life Certificate Not Mapped at Branch",
+    description: "Life certificate submitted via Jeevan Pramaan biometric portal last month but bank branch still marked status as non-compliant and stopped monthly disbursement.",
+    text: "Life certificate submitted via Jeevan Pramaan biometric portal last month but bank branch still marked status as non-compliant and stopped monthly disbursement.",
+    category: "pension",
+    state: "Karnataka",
+    district: "Bengaluru Urban",
+    locality: "Jayanagar 4th Block",
+    preferredLanguage: "en",
+    language: "en",
+    departmentId: "DEPT_PENSION",
+    department: "DEPT_PENSION",
+    priority: "CRITICAL",
+    status: "SUBMITTED",
+    officialStatus: "RECEIVED",
+    createdAt: "2026-09-28T08:00:00.000Z",
+    updatedAt: "2026-09-28T08:00:00.000Z",
+    lastUpdated: "2026-09-28T08:00:00.000Z",
+    reassignments: 0,
+    citizenReminders: 2,
+    evidence: ["jeevan_pramaan_ack_synth.png"],
+    synthetic: true,
+    statusHistory: [
+      { timestamp: "2026-09-28T08:00:00.000Z", status: "SUBMITTED", actorType: "CITIZEN", remarks: "Grievance submitted by senior citizen" }
+    ],
+    officerNotes: []
+  },
+  {
+    id: "CPG-2026-00104",
+    referenceNumber: "JAN-2026-0004",
+    title: "Post-Matric Scholarship DBT Pending Verification",
+    description: "Post-matric scholarship DBT disbursement pending for academic year 2025-26 despite biometric institute verification completed in portal 5 months ago.",
+    text: "Post-matric scholarship DBT disbursement pending for academic year 2025-26 despite biometric institute verification completed in portal 5 months ago.",
+    category: "scholarship",
+    state: "Bihar",
+    district: "Patna",
+    locality: "Rajendra Nagar, Lane 3",
+    preferredLanguage: "en",
+    language: "en",
+    departmentId: "DEPT_SCHOLARSHIP",
+    department: "DEPT_SCHOLARSHIP",
+    priority: "HIGH",
+    status: "ASSIGNED",
+    officialStatus: "TRANSFERRED",
+    createdAt: "2026-03-10T12:00:00.000Z",
+    updatedAt: "2026-04-12T16:45:00.000Z",
+    lastUpdated: "2026-04-12T16:45:00.000Z",
+    reassignments: 4,
+    citizenReminders: 5,
+    evidence: ["institute_bonafide_synth.pdf"],
+    synthetic: true,
+    statusHistory: [
+      { timestamp: "2026-03-10T12:00:00.000Z", status: "SUBMITTED", actorType: "CITIZEN", remarks: "Student grievance registered" },
+      { timestamp: "2026-03-25T14:00:00.000Z", status: "UNDER_REVIEW", actorType: "OFFICER", remarks: "Under review at district scholarship cell" },
+      { timestamp: "2026-04-12T16:45:00.000Z", status: "ASSIGNED", actorType: "OFFICER", remarks: "Forwarded to State DBT Disbursement Cell" }
+    ],
+    officerNotes: [
+      { timestamp: "2026-04-12T16:50:00.000Z", note: "PFMS batch integration pending portal sync.", officerId: "OFF_002" }
+    ]
+  },
+  {
+    id: "CPG-2026-00105",
+    referenceNumber: "JAN-2026-0005",
+    title: "Duplicate Application Error Code on Higher Ed Portal",
+    description: "Merit-cum-means scholarship status displaying duplicate application error code ERR_409 even though only one valid registration ID was filed.",
+    text: "Merit-cum-means scholarship status displaying duplicate application error code ERR_409 even though only one valid registration ID was filed.",
+    category: "scholarship",
+    state: "Delhi",
+    district: "Central Delhi",
+    locality: "Karol Bagh",
+    preferredLanguage: "en",
+    language: "en",
+    departmentId: "DEPT_SCHOLARSHIP",
+    department: "DEPT_SCHOLARSHIP",
+    priority: "MEDIUM",
+    status: "AWAITING_INFORMATION",
+    officialStatus: "PENDING_CLARIFICATION",
+    createdAt: "2026-09-02T11:30:00.000Z",
+    updatedAt: "2026-09-18T10:15:00.000Z",
+    lastUpdated: "2026-09-18T10:15:00.000Z",
+    reassignments: 1,
+    citizenReminders: 1,
+    evidence: ["portal_screensnip_synth.png"],
+    synthetic: true,
+    statusHistory: [
+      { timestamp: "2026-09-02T11:30:00.000Z", status: "SUBMITTED", actorType: "CITIZEN", remarks: "Grievance submitted" },
+      { timestamp: "2026-09-05T10:00:00.000Z", status: "UNDER_REVIEW", actorType: "OFFICER", remarks: "Technical validation initiated" },
+      { timestamp: "2026-09-18T10:15:00.000Z", status: "AWAITING_INFORMATION", actorType: "OFFICER", remarks: "Requested copy of previous year roll number from student" }
+    ],
+    officerNotes: [
+      { timestamp: "2026-09-18T10:20:00.000Z", note: "Citizen notified via SMS to provide previous roll number.", officerId: "OFF_002" }
+    ]
+  },
+  {
+    id: "CPG-2026-00106",
+    referenceNumber: "JAN-2026-0006",
+    title: "Hazardous Potholes and Crater Cluster on Arterial Bypass",
+    description: "Heavy crater pothole cluster on Sector-12 ring arterial road causing multiple two-wheeler accidents during evening commute. Immediate road resurfacing needed.",
+    text: "Heavy crater pothole cluster on Sector-12 ring arterial road causing multiple two-wheeler accidents during evening commute. Immediate road resurfacing needed.",
+    category: "roads",
+    state: "Madhya Pradesh",
+    district: "Indore",
+    locality: "Ring Road Sector 12",
+    preferredLanguage: "en",
+    language: "en",
+    departmentId: "DEPT_ROADS",
+    department: "DEPT_ROADS",
+    priority: "CRITICAL",
+    status: "IN_PROGRESS",
+    officialStatus: "INTERIM_REPLY",
+    createdAt: "2026-02-18T07:45:00.000Z",
+    updatedAt: "2026-03-05T17:30:00.000Z",
+    lastUpdated: "2026-03-05T17:30:00.000Z",
+    reassignments: 3,
+    citizenReminders: 6,
+    evidence: ["road_pothole_photo_synth.jpg"],
+    synthetic: true,
+    statusHistory: [
+      { timestamp: "2026-02-18T07:45:00.000Z", status: "SUBMITTED", actorType: "CITIZEN", remarks: "Citizen emergency road hazard report" },
+      { timestamp: "2026-02-19T10:00:00.000Z", status: "ASSIGNED", actorType: "OFFICER", remarks: "Assigned to Sub-Divisional Engineer" },
+      { timestamp: "2026-03-05T17:30:00.000Z", status: "IN_PROGRESS", actorType: "OFFICER", remarks: "Cold-mix patch repair work issued under tender" }
+    ],
+    officerNotes: [
+      { timestamp: "2026-03-05T17:35:00.000Z", note: "Emergency gravel filling completed. Bituminous macadam scheduled.", officerId: "OFF_003" }
+    ]
+  },
+  {
+    id: "CPG-2026-00107",
+    referenceNumber: "JAN-2026-0007",
+    title: "Unbarricaded Open Storm Water Trench Along Service Lane",
+    description: "Unfinished drainage excavation along Main Bypass service lane left without warning barricades or reflector signage for 3 weeks.",
+    text: "Unfinished drainage excavation along Main Bypass service lane left without warning barricades or reflector signage for 3 weeks.",
+    category: "roads",
+    state: "Haryana",
+    district: "Gurugram",
+    locality: "Sohna Road Junction",
+    preferredLanguage: "en",
+    language: "en",
+    departmentId: "DEPT_ROADS",
+    department: "DEPT_ROADS",
+    priority: "HIGH",
+    status: "UNDER_REVIEW",
+    officialStatus: "FORWARDED_TO_SUBORDINATE_OFFICE",
+    createdAt: "2026-09-10T15:20:00.000Z",
+    updatedAt: "2026-09-29T11:10:00.000Z",
+    lastUpdated: "2026-09-29T11:10:00.000Z",
+    reassignments: 2,
+    citizenReminders: 2,
+    evidence: ["drainage_trench_synth.jpg"],
+    synthetic: true,
+    statusHistory: [
+      { timestamp: "2026-09-10T15:20:00.000Z", status: "SUBMITTED", actorType: "CITIZEN", remarks: "Complaint submitted" },
+      { timestamp: "2026-09-29T11:10:00.000Z", status: "UNDER_REVIEW", actorType: "OFFICER", remarks: "Contractor safety inspection ordered" }
+    ],
+    officerNotes: [
+      { timestamp: "2026-09-29T11:15:00.000Z", note: "Show cause notice sent to contractor for lack of safety barricades.", officerId: "OFF_003" }
+    ]
+  },
+  {
+    id: "CPG-2026-00108",
+    referenceNumber: "JAN-2026-0008",
+    title: "Rectification of Non-Standard IRC Speed Breaker",
+    description: "Faulty speed breaker installation constructed without standard IRC height specifications causing undercarriage damage to light vehicles.",
+    text: "Faulty speed breaker installation constructed without standard IRC height specifications causing undercarriage damage to light vehicles.",
+    category: "roads",
+    state: "Tamil Nadu",
+    district: "Chennai",
+    locality: "Anna Nagar West",
+    preferredLanguage: "en",
+    language: "en",
+    departmentId: "DEPT_ROADS",
+    department: "DEPT_ROADS",
+    priority: "LOW",
+    status: "RESOLVED",
+    officialStatus: "RESOLVED",
+    createdAt: "2026-08-01T09:00:00.000Z",
+    updatedAt: "2026-08-25T16:00:00.000Z",
+    lastUpdated: "2026-08-25T16:00:00.000Z",
+    reassignments: 0,
+    citizenReminders: 0,
+    evidence: ["resident_association_letter_synth.pdf"],
+    synthetic: true,
+    statusHistory: [
+      { timestamp: "2026-08-01T09:00:00.000Z", status: "SUBMITTED", actorType: "CITIZEN", remarks: "Grievance submitted" },
+      { timestamp: "2026-08-05T10:00:00.000Z", status: "IN_PROGRESS", actorType: "OFFICER", remarks: "Inspected by road maintenance squad" },
+      { timestamp: "2026-08-25T16:00:00.000Z", status: "RESOLVED", actorType: "OFFICER", remarks: "Speed breaker remodeled according to IRC standards and painted with thermoplastic reflective strips." }
+    ],
+    officerNotes: [
+      { timestamp: "2026-08-25T16:05:00.000Z", note: "Physical completion report signed by Assistant Engineer.", officerId: "OFF_003" }
+    ]
+  },
+  {
+    id: "CPG-2026-00109",
+    referenceNumber: "JAN-2026-0009",
+    title: "Distribution Transformer Burnout and Low-Tension Blackout",
+    description: "Distribution transformer explosion in Ward 9 causing 48 hours continuous blackout and surging voltage damaging household electronic appliances.",
+    text: "Distribution transformer explosion in Ward 9 causing 48 hours continuous blackout and surging voltage damaging household electronic appliances.",
+    category: "electricity",
+    state: "Rajasthan",
+    district: "Jaipur",
+    locality: "Ward 9, Malviya Nagar",
+    preferredLanguage: "en",
+    language: "en",
+    departmentId: "DEPT_POWER",
+    department: "DEPT_POWER",
+    priority: "CRITICAL",
+    status: "IN_PROGRESS",
+    officialStatus: "UNDER_PROCESS",
+    createdAt: "2026-10-06T18:00:00.000Z",
+    updatedAt: "2026-10-07T12:00:00.000Z",
+    lastUpdated: "2026-10-07T12:00:00.000Z",
+    reassignments: 1,
+    citizenReminders: 3,
+    evidence: ["transformer_burnt_ref_synth.jpg"],
+    synthetic: true,
+    statusHistory: [
+      { timestamp: "2026-10-06T18:00:00.000Z", status: "SUBMITTED", actorType: "CITIZEN", remarks: "Blackout reported" },
+      { timestamp: "2026-10-07T08:00:00.000Z", status: "ASSIGNED", actorType: "OFFICER", remarks: "Assigned to Sub-Station Maintenance Team" },
+      { timestamp: "2026-10-07T12:00:00.000Z", status: "IN_PROGRESS", actorType: "OFFICER", remarks: "Mobile transformer replacement unit dispatched" }
+    ],
+    officerNotes: [
+      { timestamp: "2026-10-07T12:10:00.000Z", note: "250 kVA replacement transformer loaded onto crane truck.", officerId: "OFF_004" }
+    ]
+  },
+  {
+    id: "CPG-2026-00110",
+    referenceNumber: "JAN-2026-0010",
+    title: "Erroneous High Consumption on Locked Premises Smart Meter",
+    description: "Faulty smart meter billing showing 1200 units consumption for a locked residential unit for two consecutive billing cycles.",
+    text: "Faulty smart meter billing showing 1200 units consumption for a locked residential unit for two consecutive billing cycles.",
+    category: "electricity",
+    state: "Gujarat",
+    district: "Ahmedabad",
+    locality: "Navrangpura, Flat 302",
+    preferredLanguage: "en",
+    language: "en",
+    departmentId: "DEPT_POWER",
+    department: "DEPT_POWER",
+    priority: "MEDIUM",
+    status: "UNDER_REVIEW",
+    officialStatus: "TRANSFERRED",
+    createdAt: "2026-04-14T11:20:00.000Z",
+    updatedAt: "2026-05-02T13:40:00.000Z",
+    lastUpdated: "2026-05-02T13:40:00.000Z",
+    reassignments: 3,
+    citizenReminders: 3,
+    evidence: ["discom_bill_statement_synth.pdf"],
+    synthetic: true,
+    statusHistory: [
+      { timestamp: "2026-04-14T11:20:00.000Z", status: "SUBMITTED", actorType: "CITIZEN", remarks: "Billing complaint lodged" },
+      { timestamp: "2026-05-02T13:40:00.000Z", status: "UNDER_REVIEW", actorType: "OFFICER", remarks: "Smart meter telemetry logs requested from IT vendor" }
+    ],
+    officerNotes: [
+      { timestamp: "2026-05-02T13:45:00.000Z", note: "Suspected optical pulse sensor glitch.", officerId: "OFF_004" }
+    ]
+  },
+  {
+    id: "CPG-2026-00111",
+    referenceNumber: "JAN-2026-0011",
+    title: "Severe Sewage Odor and Contamination in Potable Water Supply",
+    description: "Contaminated yellowish tap water with strong sewage odor supplied to residential colony blocks C and D for past five days.",
+    text: "Contaminated yellowish tap water with strong sewage odor supplied to residential colony blocks C and D for past five days.",
+    category: "water",
+    state: "Telangana",
+    district: "Hyderabad",
+    locality: "Amberpet, Blocks C & D",
+    preferredLanguage: "en",
+    language: "en",
+    departmentId: "DEPT_WATER",
+    department: "DEPT_WATER",
+    priority: "CRITICAL",
+    status: "IN_PROGRESS",
+    officialStatus: "UNDER_PROCESS",
+    createdAt: "2026-10-04T08:30:00.000Z",
+    updatedAt: "2026-10-06T10:15:00.000Z",
+    lastUpdated: "2026-10-06T10:15:00.000Z",
+    reassignments: 1,
+    citizenReminders: 2,
+    evidence: ["water_turbidity_sample_synth.jpg"],
+    synthetic: true,
+    statusHistory: [
+      { timestamp: "2026-10-04T08:30:00.000Z", status: "SUBMITTED", actorType: "CITIZEN", remarks: "Contamination hazard reported" },
+      { timestamp: "2026-10-05T09:00:00.000Z", status: "ASSIGNED", actorType: "OFFICER", remarks: "Assigned to Zonal Water Quality Testing Lab" },
+      { timestamp: "2026-10-06T10:15:00.000Z", status: "IN_PROGRESS", actorType: "OFFICER", remarks: "Pipeline breach detected near sewage crossing. Repair crew on site." }
+    ],
+    officerNotes: [
+      { timestamp: "2026-10-06T10:20:00.000Z", note: "Water samples sent for biological testing. Temporary tanker supply organized.", officerId: "OFF_005" }
+    ]
+  },
+  {
+    id: "CPG-2026-00112",
+    referenceNumber: "JAN-2026-0012",
+    title: "Non-Delivery of Scheduled Emergency Municipal Water Tanker",
+    description: "Water tanker emergency booking token generated 48 hours ago but no tanker dispatched to Sector-5 community housing.",
+    text: "Water tanker emergency booking token generated 48 hours ago but no tanker dispatched to Sector-5 community housing.",
+    category: "water",
+    state: "Maharashtra",
+    district: "Thane",
+    locality: "Ghodbunder Road, Sector 5",
+    preferredLanguage: "en",
+    language: "en",
+    departmentId: "DEPT_WATER",
+    department: "DEPT_WATER",
+    priority: "MEDIUM",
+    status: "RESOLVED",
+    officialStatus: "CLOSED",
+    createdAt: "2026-07-10T10:00:00.000Z",
+    updatedAt: "2026-07-15T18:00:00.000Z",
+    lastUpdated: "2026-07-15T18:00:00.000Z",
+    reassignments: 0,
+    citizenReminders: 0,
+    evidence: ["tanker_slip_token_synth.pdf"],
+    synthetic: true,
+    statusHistory: [
+      { timestamp: "2026-07-10T10:00:00.000Z", status: "SUBMITTED", actorType: "CITIZEN", remarks: "Complaint submitted" },
+      { timestamp: "2026-07-12T14:00:00.000Z", status: "IN_PROGRESS", actorType: "OFFICER", remarks: "Tanker route scheduled" },
+      { timestamp: "2026-07-15T18:00:00.000Z", status: "RESOLVED", actorType: "OFFICER", remarks: "10,000L tanker delivery completed. Signature obtained from resident representative." }
+    ],
+    officerNotes: []
+  },
+  {
+    id: "CPG-2026-00113",
+    referenceNumber: "JAN-2026-0013",
+    title: "e-PoS Connectivity Failure and Grain Denial at Fair Price Shop",
+    description: "Fair Price Shop dealer refusing subsidized wheat and rice allocation citing electronic e-PoS biometric server disconnection.",
+    text: "Fair Price Shop dealer refusing subsidized wheat and rice allocation citing electronic e-PoS biometric server disconnection.",
+    category: "ration",
+    state: "Uttar Pradesh",
+    district: "Varanasi",
+    locality: "Shivpur Ward, Shop 88",
+    preferredLanguage: "en",
+    language: "en",
+    departmentId: "DEPT_RATION",
+    department: "DEPT_RATION",
+    priority: "HIGH",
+    status: "UNDER_REVIEW",
+    officialStatus: "PENDING_CLARIFICATION",
+    createdAt: "2026-09-15T13:00:00.000Z",
+    updatedAt: "2026-09-28T16:30:00.000Z",
+    lastUpdated: "2026-09-28T16:30:00.000Z",
+    reassignments: 1,
+    citizenReminders: 2,
+    evidence: ["ration_card_copy_synth.pdf"],
+    synthetic: true,
+    statusHistory: [
+      { timestamp: "2026-09-15T13:00:00.000Z", status: "SUBMITTED", actorType: "CITIZEN", remarks: "NFSA beneficiary filed grievance" },
+      { timestamp: "2026-09-28T16:30:00.000Z", status: "UNDER_REVIEW", actorType: "OFFICER", remarks: "Area food inspector assigned to audit FPS e-PoS machine" }
+    ],
+    officerNotes: [
+      { timestamp: "2026-09-28T16:35:00.000Z", note: "Dealer instructed to use offline OTP fallback mode.", officerId: "OFF_006" }
+    ]
+  },
+  {
+    id: "CPG-2026-00114",
+    referenceNumber: "JAN-2026-0014",
+    title: "Stock Depletion of Essential Chronic Disease Medications at PHC",
+    description: "Primary Health Centre lacks essential insulin and hypertension medications for senior citizens for over three weeks.",
+    text: "Primary Health Centre lacks essential insulin and hypertension medications for senior citizens for over three weeks.",
+    category: "healthcare",
+    state: "Kerala",
+    district: "Thiruvananthapuram",
+    locality: "Vattiyoorkavu PHC",
+    preferredLanguage: "en",
+    language: "en",
+    departmentId: "DEPT_HEALTH",
+    department: "DEPT_HEALTH",
+    priority: "HIGH",
+    status: "IN_PROGRESS",
+    officialStatus: "UNDER_PROCESS",
+    createdAt: "2026-09-20T10:00:00.000Z",
+    updatedAt: "2026-10-02T12:00:00.000Z",
+    lastUpdated: "2026-10-02T12:00:00.000Z",
+    reassignments: 2,
+    citizenReminders: 1,
+    evidence: ["doctor_prescription_synth.pdf"],
+    synthetic: true,
+    statusHistory: [
+      { timestamp: "2026-09-20T10:00:00.000Z", status: "SUBMITTED", actorType: "CITIZEN", remarks: "Medical supplies shortage reported" },
+      { timestamp: "2026-10-02T12:00:00.000Z", status: "IN_PROGRESS", actorType: "OFFICER", remarks: "Emergency indents placed with Central Medical Services Society" }
+    ],
+    officerNotes: [
+      { timestamp: "2026-10-02T12:05:00.000Z", note: "Stock shipment dispatched from central depot on Oct 1.", officerId: "OFF_007" }
+    ]
+  },
+  {
+    id: "CPG-2026-00115",
+    referenceNumber: "JAN-2026-0015",
+    title: "Denial of Cashless Admission Under PM-JAY Ayushman Bharat",
+    description: "Denial of cashless admission under Ayushman Bharat scheme at empanelled hospital for urgent cardiac stent surgery.",
+    text: "Denial of cashless admission under Ayushman Bharat scheme at empanelled hospital for urgent cardiac stent surgery.",
+    category: "healthcare",
+    state: "Bihar",
+    district: "Gaya",
+    locality: "City Medical Hospital, Ward 15",
+    preferredLanguage: "en",
+    language: "en",
+    departmentId: "DEPT_HEALTH",
+    department: "DEPT_HEALTH",
+    priority: "CRITICAL",
+    status: "UNDER_REVIEW",
+    officialStatus: "INTERIM_REPLY",
+    createdAt: "2026-02-10T16:00:00.000Z",
+    updatedAt: "2026-02-28T09:30:00.000Z",
+    lastUpdated: "2026-02-28T09:30:00.000Z",
+    reassignments: 4,
+    citizenReminders: 7,
+    evidence: ["pmjay_gold_card_synth.pdf", "admission_refusal_slip_synth.jpg"],
+    synthetic: true,
+    statusHistory: [
+      { timestamp: "2026-02-10T16:00:00.000Z", status: "SUBMITTED", actorType: "CITIZEN", remarks: "Critical hospital admission refusal lodged" },
+      { timestamp: "2026-02-28T09:30:00.000Z", status: "UNDER_REVIEW", actorType: "OFFICER", remarks: "State Health Agency issuing inquiry to empanelled hospital" }
+    ],
+    officerNotes: [
+      { timestamp: "2026-02-28T09:35:00.000Z", note: "Hospital administration summoned for explanation of guideline violation.", officerId: "OFF_007" }
+    ]
+  },
+  {
+    id: "CPG-2026-00116",
+    referenceNumber: "JAN-2026-0016",
+    title: "Flash Flood Submersion and Power Line Disconnection",
+    description: "Flash flood inundation in North Ward: Flood water submerged residential ground floors; power transformers shut down leaving 400 families in dark; clean drinking water pipeline snapped.",
+    text: "Flash flood inundation in North Ward: Flood water submerged residential ground floors; power transformers shut down leaving 400 families in dark; clean drinking water pipeline snapped.",
+    category: "flood relief",
+    state: "Assam",
+    district: "Kamrup Metropolitan",
+    locality: "North Guwahati, Ward 4",
+    preferredLanguage: "en",
+    language: "en",
+    departmentId: "DEPT_DISASTER",
+    department: "DEPT_DISASTER",
+    priority: "CRITICAL",
+    status: "IN_PROGRESS",
+    officialStatus: "UNDER_PROCESS",
+    createdAt: "2026-10-05T04:30:00.000Z",
+    updatedAt: "2026-10-07T11:00:00.000Z",
+    lastUpdated: "2026-10-07T11:00:00.000Z",
+    reassignments: 1,
+    citizenReminders: 5,
+    evidence: ["north_ward_flood_photo1_synth.jpg", "inundation_survey_synth.pdf"],
+    synthetic: true,
+    statusHistory: [
+      { timestamp: "2026-10-05T04:30:00.000Z", status: "SUBMITTED", actorType: "CITIZEN", remarks: "Disaster emergency alert filed" },
+      { timestamp: "2026-10-05T06:00:00.000Z", status: "ASSIGNED", actorType: "OFFICER", remarks: "Assigned to District Disaster Relief Cell" },
+      { timestamp: "2026-10-07T11:00:00.000Z", status: "IN_PROGRESS", actorType: "OFFICER", remarks: "Relief boats and portable de-watering pumps deployed" }
+    ],
+    officerNotes: [
+      { timestamp: "2026-10-07T11:05:00.000Z", note: "Submersible pump installed. Water receded by 1.5 feet.", officerId: "OFF_008" }
+    ]
+  },
+  {
+    id: "CPG-2026-00117",
+    referenceNumber: "JAN-2026-0017",
+    title: "Debris Clearance and Emergency Rations for Displaced Families",
+    description: "Flood water breached river embankment near East Crossing: Major road bridge blocked by debris; emergency food rations not reaching relief camp; displaced senior citizens lack medical care.",
+    text: "Flood water breached river embankment near East Crossing: Major road bridge blocked by debris; emergency food rations not reaching relief camp; displaced senior citizens lack medical care.",
+    category: "flood relief",
+    state: "Assam",
+    district: "Kamrup Metropolitan",
+    locality: "East Crossing Relief Shelter",
+    preferredLanguage: "en",
+    language: "en",
+    departmentId: "DEPT_DISASTER",
+    department: "DEPT_DISASTER",
+    priority: "CRITICAL",
+    status: "UNDER_REVIEW",
+    officialStatus: "FORWARDED_TO_SUBORDINATE_OFFICE",
+    createdAt: "2026-10-05T06:15:00.000Z",
+    updatedAt: "2026-10-07T09:30:00.000Z",
+    lastUpdated: "2026-10-07T09:30:00.000Z",
+    reassignments: 2,
+    citizenReminders: 4,
+    evidence: ["river_breach_photo_synth.jpg"],
+    synthetic: true,
+    statusHistory: [
+      { timestamp: "2026-10-05T06:15:00.000Z", status: "SUBMITTED", actorType: "CITIZEN", remarks: "River breach crisis reported" },
+      { timestamp: "2026-10-07T09:30:00.000Z", status: "UNDER_REVIEW", actorType: "OFFICER", remarks: "Multi-agency coordination initiated with PWD & Health" }
+    ],
+    officerNotes: [
+      { timestamp: "2026-10-07T09:35:00.000Z", note: "Medical officers team dispatched to camp.", officerId: "OFF_008" }
+    ]
+  },
+  {
+    id: "CPG-2026-00118",
+    referenceNumber: "JAN-2026-0018",
+    title: "Illegal Waste Dumping and Overflowing Community Dumpster",
+    description: "Commercial establishments dumping construction debris and commercial refuse into residential municipal bins, obstructing pedestrian walkway and creating pest infestation.",
+    text: "Commercial establishments dumping construction debris and commercial refuse into residential municipal bins, obstructing pedestrian walkway and creating pest infestation.",
+    category: "municipal",
+    state: "Delhi",
+    district: "South Delhi",
+    locality: "Lajpat Nagar IV",
+    preferredLanguage: "en",
+    language: "en",
+    departmentId: "DEPT_MUNICIPAL",
+    department: "DEPT_MUNICIPAL",
+    priority: "MEDIUM",
+    status: "ASSIGNED",
+    officialStatus: "RECEIVED",
+    createdAt: "2026-10-07T11:00:00.000Z",
+    updatedAt: "2026-10-08T09:00:00.000Z",
+    lastUpdated: "2026-10-08T09:00:00.000Z",
+    reassignments: 0,
+    citizenReminders: 0,
+    evidence: ["garbage_dump_photo_synth.jpg"],
+    synthetic: true,
+    statusHistory: [
+      { timestamp: "2026-10-07T11:00:00.000Z", status: "SUBMITTED", actorType: "CITIZEN", remarks: "Sanitation grievance registered" },
+      { timestamp: "2026-10-08T09:00:00.000Z", status: "ASSIGNED", actorType: "OFFICER", remarks: "Assigned to Ward Sanitation Superintendent" }
+    ],
+    officerNotes: []
+  }
+];
+
+export async function runSeed() {
+  console.log('[JanSahay Seed] Seeding synthetic demonstration data...');
+
+  // Ensure data dir exists
+  await fs.mkdir(DATA_DIR, { recursive: true });
+
+  // 1. Write Departments
+  const deptFile = path.join(DATA_DIR, 'departments.json');
+  const deptData = {
+    metadata: {
+      synthetic: true,
+      version: "1.1.0",
+      description: "Synthetic demonstration department directory for JanSahay platform"
+    },
+    departments: SEED_DEPARTMENTS
+  };
+  await fs.writeFile(deptFile, JSON.stringify(deptData, null, 2), 'utf-8');
+  console.log(`[JanSahay Seed] Wrote ${SEED_DEPARTMENTS.length} departments to ${deptFile}`);
+
+  // 2. Write Complaints
+  const compFile = path.join(DATA_DIR, 'complaints.json');
+  const compData = {
+    metadata: {
+      synthetic: true,
+      total: SEED_COMPLAINTS.length,
+      version: "1.1.0",
+      description: "Synthetic citizen complaints for JanSahay decision support demonstration"
+    },
+    complaints: SEED_COMPLAINTS
+  };
+  await fs.writeFile(compFile, JSON.stringify(compData, null, 2), 'utf-8');
+  console.log(`[JanSahay Seed] Wrote ${SEED_COMPLAINTS.length} complaints to ${compFile}`);
+
+  // 3. Write Status History
+  const historyRecords = [];
+  let histId = 1;
+  for (const c of SEED_COMPLAINTS) {
+    if (Array.isArray(c.statusHistory)) {
+      for (const h of c.statusHistory) {
+        historyRecords.push({
+          id: `HIST-${String(histId++).padStart(3, '0')}`,
+          complaintId: c.id,
+          referenceNumber: c.referenceNumber,
+          timestamp: h.timestamp,
+          status: h.status,
+          actorType: h.actorType,
+          remarks: h.remarks
+        });
+      }
+    }
+  }
+
+  const histFile = path.join(DATA_DIR, 'status_history.json');
+  const histData = {
+    metadata: {
+      synthetic: true,
+      version: "1.1.0",
+      description: "Synthetic timeline and status history audit trail for complaints"
+    },
+    history: historyRecords
+  };
+  await fs.writeFile(histFile, JSON.stringify(histData, null, 2), 'utf-8');
+  console.log(`[JanSahay Seed] Wrote ${historyRecords.length} history records to ${histFile}`);
+
+  console.log('[JanSahay Seed] Successfully completed seeding synthetic demo data.');
+}
+
+// Execute if run directly
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  runSeed().catch(err => {
+    console.error('[JanSahay Seed Error]', err);
+    process.exit(1);
+  });
+}

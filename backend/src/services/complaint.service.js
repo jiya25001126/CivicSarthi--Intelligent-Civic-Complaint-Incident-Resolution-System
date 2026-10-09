@@ -3,12 +3,13 @@ import config from '../config/app.config.js';
 
 export class ComplaintService {
   /**
-   * Calculate SLA health metrics using configurable SLA settings.
+   * Calculate dynamic SLA health metrics using configurable SLA settings.
    */
   enrichWithSlaMetrics(complaint) {
+    if (!complaint) return null;
     const now = new Date();
     const createdDate = new Date(complaint.createdAt);
-    const lastUpdatedDate = new Date(complaint.lastUpdated);
+    const lastUpdatedDate = new Date(complaint.updatedAt || complaint.lastUpdated || complaint.createdAt);
 
     const ageDays = Math.max(0, Math.floor((now - createdDate) / (1000 * 60 * 60 * 24)));
     const daysSinceUpdate = Math.max(0, Math.floor((now - lastUpdatedDate) / (1000 * 60 * 60 * 24)));
@@ -31,12 +32,24 @@ export class ComplaintService {
   }
 
   async getAllComplaints(filters = {}) {
-    const list = await complaintRepository.findAll(filters);
-    return list.map(c => this.enrichWithSlaMetrics(c));
+    const result = await complaintRepository.findAll(filters);
+
+    if (result && Array.isArray(result.items)) {
+      return {
+        items: result.items.map(c => this.enrichWithSlaMetrics(c)),
+        pagination: result.pagination
+      };
+    }
+
+    if (Array.isArray(result)) {
+      return result.map(c => this.enrichWithSlaMetrics(c));
+    }
+
+    return [];
   }
 
-  async getComplaintById(id) {
-    const complaint = await complaintRepository.findById(id);
+  async getComplaintById(idOrRef) {
+    const complaint = await complaintRepository.findById(idOrRef);
     if (!complaint) return null;
     return this.enrichWithSlaMetrics(complaint);
   }
@@ -46,10 +59,63 @@ export class ComplaintService {
     return this.enrichWithSlaMetrics(created);
   }
 
-  async updateComplaint(id, data) {
-    const updated = await complaintRepository.update(id, data);
+  async updateComplaintStatus(idOrRef, { status, remarks, actorType }) {
+    const updated = await complaintRepository.updateStatus(idOrRef, { status, remarks, actorType });
     if (!updated) return null;
     return this.enrichWithSlaMetrics(updated);
+  }
+
+  async updateComplaintDepartment(idOrRef, { departmentId, remarks, actorType }) {
+    const updated = await complaintRepository.updateDepartment(idOrRef, { departmentId, remarks, actorType });
+    if (!updated) return null;
+    return this.enrichWithSlaMetrics(updated);
+  }
+
+  async addOfficerNote(idOrRef, { note, officerId }) {
+    const updated = await complaintRepository.addOfficerNote(idOrRef, { note, officerId });
+    if (!updated) return null;
+    return this.enrichWithSlaMetrics(updated);
+  }
+
+  async getStatusHistory(idOrRef) {
+    return complaintRepository.getStatusHistory(idOrRef);
+  }
+
+  /**
+   * Computed summary metrics from live data
+   */
+  async getSummaryStats() {
+    const all = await complaintRepository.findAll();
+    const list = Array.isArray(all) ? all : (all.items || []);
+
+    const total = list.length;
+    const submitted = list.filter(c => c.status === 'SUBMITTED').length;
+    const underReview = list.filter(c => c.status === 'UNDER_REVIEW').length;
+    const inProgress = list.filter(c => c.status === 'IN_PROGRESS' || c.status === 'ASSIGNED').length;
+    const awaitingInfo = list.filter(c => c.status === 'AWAITING_INFORMATION').length;
+    const resolved = list.filter(c => c.status === 'RESOLVED' || c.status === 'CLOSED').length;
+    const critical = list.filter(c => c.priority === 'CRITICAL').length;
+
+    const reassignmentLoops = list.filter(c => (c.reassignments || 0) >= config.sla.reassignmentLoopThreshold).length;
+
+    const now = new Date();
+    const staleCases = list.filter(c => {
+      const last = new Date(c.updatedAt || c.lastUpdated || c.createdAt);
+      const days = Math.floor((now - last) / (1000 * 60 * 60 * 24));
+      return days > config.sla.staleUpdateDays;
+    }).length;
+
+    return {
+      total,
+      submitted,
+      underReview,
+      inProgress,
+      awaitingInfo,
+      resolved,
+      critical,
+      reassignmentLoops,
+      staleCases
+    };
   }
 }
 

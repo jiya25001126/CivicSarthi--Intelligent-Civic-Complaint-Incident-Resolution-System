@@ -1,72 +1,118 @@
 {
   "metadata": {
     "synthetic": true,
-    "version": "1.0.0",
-    "description": "Synthetic department directory for JanSahay grievance simulation"
+    "version": "1.1.0",
+    "description": "Synthetic demonstration department directory for JanSahay platform"
   },
   "departments": [
     {
-      "id": "DEPT_PENSION",
-      "code": "DOPPW",
-      "name": "Department of Pension and Pensioners' Welfare",
-      "category": "pension",
-      "contactEmail": "nodal.pension@synthetic-gov.internal",
-      "slaDays": 30
-    },
-    {
-      "id": "DEPT_SCHOLARSHIP",
-      "code": "DHE",
-      "name": "Department of Higher Education - Scholarship Division",
-      "category": "scholarship",
-      "contactEmail": "nodal.scholarship@synthetic-gov.internal",
-      "slaDays": 21
-    },
-    {
       "id": "DEPT_ROADS",
-      "code": "PWD_MORTH",
-      "name": "Public Works Department - Roads & Infrastructure",
+      "code": "PWD",
+      "name": "Public Works Department (Roads & Infrastructure)",
+      "description": "Responsible for state highways, major district roads, bridges, and public infrastructure maintenance.",
       "category": "roads",
-      "contactEmail": "nodal.roads@synthetic-gov.internal",
+      "contactEmail": "nodal.pwd@synthetic-gov.internal",
+      "isActive": true,
       "slaDays": 30
     },
     {
       "id": "DEPT_POWER",
       "code": "DISCOM",
-      "name": "State Electricity Distribution Corporation",
+      "name": "Electricity Department (State Power Distribution)",
+      "description": "Handles high and low-tension grid distribution, transformers, residential meters, and outage restoration.",
       "category": "electricity",
       "contactEmail": "nodal.power@synthetic-gov.internal",
+      "isActive": true,
       "slaDays": 15
     },
     {
       "id": "DEPT_WATER",
       "code": "JAL_BOARD",
-      "name": "Department of Water Supply & Municipal Drainage",
+      "name": "Water Supply Department (Municipal Jal Board)",
+      "description": "Manages potable drinking water pipeline distribution, water treatment plants, and sewer networks.",
       "category": "water",
       "contactEmail": "nodal.water@synthetic-gov.internal",
+      "isActive": true,
       "slaDays": 15
-    },
-    {
-      "id": "DEPT_RATION",
-      "code": "DFPD",
-      "name": "Department of Food, Civil Supplies & Consumer Affairs",
-      "category": "ration",
-      "contactEmail": "nodal.ration@synthetic-gov.internal",
-      "slaDays": 20
     },
     {
       "id": "DEPT_HEALTH",
       "code": "MOHFW",
-      "name": "Directorate of Health Services & Community Clinics",
+      "name": "Health Department (Directorate of Health Services)",
+      "description": "Supervises government civil hospitals, primary health centres, drug availability, and public health schemes.",
       "category": "healthcare",
       "contactEmail": "nodal.health@synthetic-gov.internal",
+      "isActive": true,
       "slaDays": 15
+    },
+    {
+      "id": "DEPT_SCHOLARSHIP",
+      "code": "DHE",
+      "name": "Education Department (Higher Education & Scholarships)",
+      "description": "Administers student welfare stipends, DBT scholarship disbursement, and government educational institutes.",
+      "category": "scholarship",
+      "contactEmail": "nodal.education@synthetic-gov.internal",
+      "isActive": true,
+      "slaDays": 21
+    },
+    {
+      "id": "DEPT_REVENUE",
+      "code": "REV",
+      "name": "Revenue Department (Land & District Administration)",
+      "description": "Handles land records, demarcation, certificates, revenue disputes, and district ex-gratia relief.",
+      "category": "revenue",
+      "contactEmail": "nodal.revenue@synthetic-gov.internal",
+      "isActive": true,
+      "slaDays": 30
+    },
+    {
+      "id": "DEPT_MUNICIPAL",
+      "code": "MC",
+      "name": "Municipal Corporation (Urban Local Body)",
+      "description": "Oversees municipal sanitation, solid waste collection, street lighting, drainage cleaning, and parks.",
+      "category": "municipal",
+      "contactEmail": "nodal.municipal@synthetic-gov.internal",
+      "isActive": true,
+      "slaDays": 10
+    },
+    {
+      "id": "DEPT_PENSION",
+      "code": "DOPPW",
+      "name": "Social Welfare & Pension Department",
+      "description": "Coordinates senior citizen pensions, disability pensions, widow benefits, and pensioner grievance resolution.",
+      "category": "pension",
+      "contactEmail": "nodal.pension@synthetic-gov.internal",
+      "isActive": true,
+      "slaDays": 30
+    },
+    {
+      "id": "DEPT_POLICE",
+      "code": "POLICE",
+      "name": "Police Department (Civic Liaison & Traffic)",
+      "description": "Manages civic grievance verification, traffic bottleneck enforcement, and public safety coordination.",
+      "category": "police",
+      "contactEmail": "nodal.police@synthetic-gov.internal",
+      "isActive": true,
+      "slaDays": 7
+    },
+    {
+      "id": "DEPT_RATION",
+      "code": "DFPD",
+      "name": "Department of Food & Public Distribution (PDS)",
+      "description": "Regulates Fair Price Shops (FPS), e-PoS ration distribution, and NFSA consumer food grain allocation.",
+      "category": "ration",
+      "contactEmail": "nodal.ration@synthetic-gov.internal",
+      "isActive": true,
+      "slaDays": 20
     },
     {
       "id": "DEPT_DISASTER",
       "code": "DDMA",
-      "name": "District Disaster Management & Relief Authority",
+      "name": "Disaster Management Authority",
+      "description": "Coordinates emergency crisis response, monsoon flood rescue, ex-gratia distribution, and relief shelters.",
       "category": "flood relief",
       "contactEmail": "nodal.disaster@synthetic-gov.internal",
+      "isActive": true,
       "slaDays": 7
     }
   ]
