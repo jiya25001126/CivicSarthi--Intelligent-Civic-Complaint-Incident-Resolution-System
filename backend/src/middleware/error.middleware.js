@@ -2,20 +2,41 @@
  * Central Error-Handling Middleware for CivicSarthi Backend
  */
 export const errorHandler = (err, req, res, next) => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const statusCode = err.status || err.statusCode || 500;
+
+  // Internal server error log
   // eslint-disable-next-line no-console
   console.error('[CivicSarthi Error]', {
     message: err.message,
-    stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
+    status: statusCode,
+    stack: isProduction ? undefined : err.stack,
     url: req.originalUrl,
     method: req.method
   });
 
-  const statusCode = err.status || err.statusCode || 500;
-  res.status(statusCode).json({
+  // Security: In production, 500+ errors must not reveal file paths, credentials, or internal stacks
+  let clientMessage = err.message || 'Internal Server Error';
+  if (isProduction && statusCode >= 500) {
+    clientMessage = 'Internal Server Error';
+  }
+
+  const responseBody = {
     success: false,
-    error: err.message || 'Internal Server Error',
-    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
-  });
+    error: clientMessage
+  };
+
+  if (!isProduction && err.stack) {
+    responseBody.stack = err.stack;
+  }
+  if (err.allowed) {
+    responseBody.allowed = err.allowed;
+  }
+  if (err.details) {
+    responseBody.details = err.details;
+  }
+
+  res.status(statusCode).json(responseBody);
 };
 
 /**

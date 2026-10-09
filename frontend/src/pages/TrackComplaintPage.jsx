@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { fetchComplaintById, fetchComplaintHistory } from '../api/client';
+import { fetchComplaintTracking, fetchComplaintHistory } from '../api/client';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
 import {
   Search,
@@ -32,7 +32,7 @@ export default function TrackComplaintPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetchComplaintById(searchId.trim());
+      const res = await fetchComplaintTracking(searchId.trim());
       setComplaint(res.data);
 
       // Also load history if available

@@ -31,31 +31,75 @@ export class ComplaintService {
     };
   }
 
-  async getAllComplaints(filters = {}) {
+  /**
+   * Sanitize complaint for citizen view:
+   * Strips confidential internal officer review notes.
+   */
+  sanitizeForCitizen(complaint) {
+    if (!complaint) return null;
+    const copy = { ...complaint };
+    delete copy.officerNotes;
+    return copy;
+  }
+
+  /**
+   * Sanitize complaint for public tracking:
+   * Strips confidential officer notes AND private citizen contact details.
+   */
+  sanitizeForTracking(complaint) {
+    if (!complaint) return null;
+    const copy = { ...complaint };
+    delete copy.officerNotes;
+    delete copy.citizenName;
+    delete copy.citizenEmail;
+    delete copy.citizenPhone;
+    delete copy.citizenAddress;
+    delete copy.email;
+    delete copy.phone;
+    delete copy.contact;
+    return copy;
+  }
+
+  async getAllComplaints(filters = {}, isOfficer = false) {
     const result = await complaintRepository.findAll(filters);
 
     if (result && Array.isArray(result.items)) {
+      const items = result.items.map(c => {
+        const enriched = this.enrichWithSlaMetrics(c);
+        return isOfficer ? enriched : this.sanitizeForCitizen(enriched);
+      });
       return {
-        items: result.items.map(c => this.enrichWithSlaMetrics(c)),
+        items,
         pagination: result.pagination
       };
     }
 
     if (Array.isArray(result)) {
-      return result.map(c => this.enrichWithSlaMetrics(c));
+      return result.map(c => {
+        const enriched = this.enrichWithSlaMetrics(c);
+        return isOfficer ? enriched : this.sanitizeForCitizen(enriched);
+      });
     }
 
     return [];
   }
 
-  async getComplaintById(idOrRef) {
+  async getComplaintById(idOrRef, isOfficer = false) {
     const complaint = await complaintRepository.findById(idOrRef);
     if (!complaint) return null;
-    return this.enrichWithSlaMetrics(complaint);
+    const enriched = this.enrichWithSlaMetrics(complaint);
+    return isOfficer ? enriched : this.sanitizeForCitizen(enriched);
   }
 
-  async createComplaint(data) {
-    const created = await complaintRepository.create(data);
+  async getComplaintForTracking(idOrRef) {
+    const complaint = await complaintRepository.findById(idOrRef);
+    if (!complaint) return null;
+    const enriched = this.enrichWithSlaMetrics(complaint);
+    return this.sanitizeForTracking(enriched);
+  }
+
+  async createComplaint(data, overrideYear = null) {
+    const created = await complaintRepository.create(data, overrideYear);
     return this.enrichWithSlaMetrics(created);
   }
 

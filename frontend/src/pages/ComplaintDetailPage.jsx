@@ -58,7 +58,7 @@ export default function ComplaintDetailPage() {
       setLoading(true);
       setError(null);
       const [compRes, deptsRes] = await Promise.all([
-        fetchComplaintById(id),
+        fetchComplaintById(id, { role: isOfficerMode ? 'officer' : 'citizen' }),
         fetchDepartments()
       ]);
       setComplaint(compRes.data);

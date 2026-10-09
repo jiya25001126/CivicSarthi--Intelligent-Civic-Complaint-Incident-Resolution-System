@@ -1,8 +1,8 @@
-# JanSahay — Phase 1 Report: Core Platform Implementation
+# CivicSarthi — Phase 1 Report: Core Platform Implementation
 
-**Project:** JanSahay (*JanSahay: AI-assisted grievance resolution layer for CPGRAMS.*)  
-**Tagline:** *"From Complaint to Resolution"*  
-**Disclaimer:** *JanSahay is a prototype and is not affiliated with or endorsed by DARPG/CPGRAMS.*  
+**Project:** CivicSarthi (*CivicSarthi: Intelligent decision-support and civic incident resolution layer for grievance redressal systems.*)  
+**Tagline:** *"From Complaint to Resolution."*  
+**Notice:** *CivicSarthi is an independent civic resolution platform and is not affiliated with or endorsed by DARPG/CPGRAMS.*  
 **Status:** Completed & Fully Verified  
 
 ---
@@ -14,7 +14,7 @@
    - **Citizen Portal**:
      - *Citizen Dashboard*: Live KPI cards (Total registered, in progress, resolved, critical), quick links, and recent cases table.
      - *Submit Complaint Page*: Working grievance registration form with real-time field validation, category selection, Indian state/district selection, locality, preferred language, provisional department assignment, and optional evidence name.
-     - *Confirmation View*: Instant display of generated reference number (`JAN-2026-XXXX`), initial status `SUBMITTED`, default priority `MEDIUM`, and direct navigation to track progress.
+     - *Confirmation View*: Instant display of generated reference number (`CS-2026-XXXX`), initial status `SUBMITTED`, default priority `MEDIUM`, and direct navigation to track progress.
      - *My Complaints Page*: Full table with keyword search, category filtering, status filtering, and sorting.
      - *Track Complaint Page*: Dedicated tracking search bar and visual audit timeline mapping every event in `statusHistory` with timestamps, actor roles, and official remarks.
      - *Complaint Detail View*: Complete complaint narrative, jurisdiction metadata, SLA compliance diagnostic, evidence citations, and timeline.
@@ -27,7 +27,7 @@
 
 2. **Backend API & Domain Logic**:
    - Standardized REST API under `/api/v1` with backward-compatible aliases under `/api`.
-   - Guaranteed unique reference number generator: `JAN-2026-XXXX`.
+   - Guaranteed unique reference number generator: `CS-2026-XXXX`.
    - Strict status transition governance matrix enforcing allowed lifecycle paths and returning `400 Bad Request` with allowed options when an invalid jump is attempted.
    - Department validation preventing invalid department IDs during complaint submission or reassignment.
    - Confidential internal officer review notes saved separately from citizen-facing history.
@@ -156,7 +156,7 @@ npm.cmd test
 | `GET` | `/api/v1/complaints` | List complaints (filters: `search`, `category`, `departmentId`, `status`, `priority`, `sort`, `page`, `limit`) |
 | `GET` | `/api/v1/complaints/stats` | Aggregated real-time metrics (total, submitted, inProgress, resolved, critical, loops, stale) |
 | `GET` | `/api/v1/complaints/:id` | Lookup complaint by ID or Reference Number |
-| `POST` | `/api/v1/complaints` | Submit complaint (validates required fields, generates `JAN-2026-XXXX`, sets `SUBMITTED`, `MEDIUM`) |
+| `POST` | `/api/v1/complaints` | Submit complaint (validates required fields, generates `CS-2026-XXXX`, sets `SUBMITTED`, `MEDIUM`) |
 | `PATCH`| `/api/v1/complaints/:id/status` | Update status (validates transition against governance matrix, logs history) |
 | `PATCH`| `/api/v1/complaints/:id/department` | Reassign department (validates department exists, increments handoffs, logs history) |
 | `POST` | `/api/v1/complaints/:id/notes` | Add confidential internal officer review note |

@@ -702,14 +702,37 @@ export const SEED_COMPLAINTS = [
   }
 ];
 
-export async function runSeed() {
-  console.log('[CivicSarthi Seed] Seeding synthetic demonstration data...');
+export async function runSeed(options = {}) {
+  const isSafeMode = options.safe || process.argv.includes('--safe') || process.argv.includes('--check');
+
+  console.log('[CivicSarthi Seed] NOTICE: Running seed script.');
+  if (isSafeMode) {
+    console.log('[CivicSarthi Seed] Running in --safe mode: verifying existing datasets before writing.');
+  } else {
+    console.log('[CivicSarthi Seed] WARNING: Destructive reset mode active. Overwriting demonstration data fixtures.');
+  }
 
   // Ensure data dir exists
   await fs.mkdir(DATA_DIR, { recursive: true });
 
-  // 1. Write Departments
   const deptFile = path.join(DATA_DIR, 'departments.json');
+  const compFile = path.join(DATA_DIR, 'complaints.json');
+  const histFile = path.join(DATA_DIR, 'status_history.json');
+
+  if (isSafeMode) {
+    try {
+      const existingComp = await fs.readFile(compFile, 'utf-8');
+      const parsed = JSON.parse(existingComp);
+      if (parsed.complaints && parsed.complaints.length > 0) {
+        console.log(`[CivicSarthi Seed] Safe mode: ${compFile} already contains ${parsed.complaints.length} records. Skipping overwrite.`);
+        return { skipped: true, count: parsed.complaints.length };
+      }
+    } catch {
+      // File does not exist, proceed with initial seed
+    }
+  }
+
+  // 1. Write Departments
   const deptData = {
     metadata: {
       synthetic: true,

@@ -2,6 +2,7 @@ import complaintService from '../services/complaint.service.js';
 
 export const listComplaints = async (req, res, next) => {
   try {
+    const isOfficer = req.query.role === 'officer' || req.headers['x-portal-role'] === 'officer';
     const filters = {
       category: req.query.category,
       departmentId: req.query.departmentId,
@@ -14,7 +15,7 @@ export const listComplaints = async (req, res, next) => {
       limit: req.query.limit
     };
 
-    const result = await complaintService.getAllComplaints(filters);
+    const result = await complaintService.getAllComplaints(filters, isOfficer);
 
     if (result && result.pagination) {
       return res.json({
@@ -50,7 +51,8 @@ export const getComplaintStats = async (req, res, next) => {
 export const getComplaint = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const complaint = await complaintService.getComplaintById(id);
+    const isOfficer = req.query.role === 'officer' || req.headers['x-portal-role'] === 'officer';
+    const complaint = await complaintService.getComplaintById(id, isOfficer);
 
     if (!complaint) {
       return res.status(404).json({
@@ -68,14 +70,42 @@ export const getComplaint = async (req, res, next) => {
   }
 };
 
+/**
+ * Public Tracking endpoint.
+ * Returns public lifecycle information while guaranteeing zero exposure of
+ * confidential officer notes or private citizen contact details.
+ */
+export const getComplaintTracking = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const trackingData = await complaintService.getComplaintForTracking(id);
+
+    if (!trackingData) {
+      return res.status(404).json({
+        success: false,
+        error: `Complaint with id or reference '${id}' not found`
+      });
+    }
+
+    res.json({
+      success: true,
+      data: trackingData
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const createComplaint = async (req, res, next) => {
   try {
     const complaint = await complaintService.createComplaint(req.body);
+    // Citizen submission response should be sanitized
+    const citizenSafeData = complaintService.sanitizeForCitizen(complaint);
     res.status(201).json({
       success: true,
       message: 'Complaint submitted successfully',
       referenceNumber: complaint.referenceNumber,
-      data: complaint
+      data: citizenSafeData
     });
   } catch (error) {
     next(error);

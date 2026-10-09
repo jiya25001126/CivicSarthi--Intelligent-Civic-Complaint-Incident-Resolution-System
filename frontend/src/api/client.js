@@ -38,8 +38,12 @@ export async function fetchDepartments() {
   return res.data;
 }
 
-export async function fetchComplaints(params = {}) {
-  const res = await api.get('/complaints', { params });
+export async function fetchComplaints(params = {}, options = {}) {
+  const headers = {};
+  if (options.role) {
+    headers['x-portal-role'] = options.role;
+  }
+  const res = await api.get('/complaints', { params, headers });
   return res.data;
 }
 
@@ -48,8 +52,22 @@ export async function fetchComplaintStats() {
   return res.data;
 }
 
-export async function fetchComplaintById(id) {
-  const res = await api.get(`/complaints/${encodeURIComponent(id)}`);
+export async function fetchComplaintById(id, options = {}) {
+  const headers = {};
+  const params = {};
+  if (options.role) {
+    params.role = options.role;
+    headers['x-portal-role'] = options.role;
+  }
+  const res = await api.get(`/complaints/${encodeURIComponent(id)}`, { params, headers });
+  return res.data;
+}
+
+/**
+ * Public Tracking API: fetches sanitized lifecycle tracking without private contact details or officer notes.
+ */
+export async function fetchComplaintTracking(id) {
+  const res = await api.get(`/complaints/${encodeURIComponent(id)}/track`);
   return res.data;
 }
 

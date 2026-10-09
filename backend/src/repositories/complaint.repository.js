@@ -4,12 +4,36 @@ import { COMPLAINT_STATUS, COMPLAINT_PRIORITY, validateStatusTransition } from '
 import departmentRepository from './department.repository.js';
 
 /**
+ * Lightweight in-process promise-chain mutex for serializing concurrent file writes.
+ */
+class AsyncMutex {
+  constructor() {
+    this._queue = Promise.resolve();
+  }
+
+  run(task) {
+    const result = this._queue.then(() => task());
+    this._queue = result.catch(() => {});
+    return result;
+  }
+}
+
+/**
  * File-backed Complaint Repository.
  * Abstracted so that MongoDB / Mongoose can easily replace this implementation
  * in a subsequent phase without changing services or controllers.
  */
-class ComplaintRepository {
+export class ComplaintRepository {
   constructor() {
+    this.filePath = config.dataPath.complaints;
+    this._mutex = new AsyncMutex();
+  }
+
+  setFilePath(customPath) {
+    this.filePath = customPath;
+  }
+
+  resetFilePath() {
     this.filePath = config.dataPath.complaints;
   }
 
@@ -18,8 +42,54 @@ class ComplaintRepository {
     return JSON.parse(raw);
   }
 
+  /**
+   * Resilient atomic file write with temporary file and retry mechanism.
+   * Prevents file corruption during concurrent operations or process interruption.
+   */
   async _writeFile(data) {
-    await fs.writeFile(this.filePath, JSON.stringify(data, null, 2), 'utf-8');
+    const content = JSON.stringify(data, null, 2);
+    const tempPath = `${this.filePath}.tmp.${Date.now()}.${Math.random().toString(36).slice(2)}`;
+    await fs.writeFile(tempPath, content, 'utf-8');
+
+    let attempts = 0;
+    while (attempts < 5) {
+      try {
+        await fs.rename(tempPath, this.filePath);
+        return;
+      } catch (err) {
+        attempts++;
+        if (attempts >= 5) {
+          try { await fs.unlink(tempPath); } catch {}
+          await fs.writeFile(this.filePath, content, 'utf-8');
+          return;
+        }
+        await new Promise(r => setTimeout(r, 20 * attempts));
+      }
+    }
+  }
+
+  /**
+   * Dynamic unique reference number generator.
+   * Extracts maximum sequence number for the target year and increments safely.
+   * Matches both canonical CS-YYYY-XXXX and legacy JAN-YYYY-XXXX identifiers.
+   */
+  generateReferenceNumber(complaints = [], targetYear = new Date().getFullYear()) {
+    const yearStr = String(targetYear);
+    let maxNum = 0;
+
+    for (const c of complaints) {
+      const ref = c.referenceNumber || c.id || '';
+      const match = ref.match(/(?:CS|JAN)-(\d{4})-(\d+)/i);
+      if (match && match[1] === yearStr) {
+        const num = parseInt(match[2], 10);
+        if (!isNaN(num) && num > maxNum) {
+          maxNum = num;
+        }
+      }
+    }
+
+    const nextSeq = String(maxNum + 1).padStart(4, '0');
+    return `CS-${yearStr}-${nextSeq}`;
   }
 
   /**
@@ -120,116 +190,118 @@ class ComplaintRepository {
   }
 
   /**
-   * Create a new complaint with guaranteed unique reference number
+   * Create a new complaint with concurrency-safe atomic insertion and dynamic year reference.
    */
-  async create(complaintData) {
-    const data = await this._readFile();
-    data.complaints = data.complaints || [];
+  async create(complaintData, overrideYear = null) {
+    return this._mutex.run(async () => {
+      const data = await this._readFile();
+      data.complaints = data.complaints || [];
 
-    // Generate unique reference number: CS-2026-XXXX
-    let maxNum = 0;
-    for (const c of data.complaints) {
-      const match = (c.referenceNumber || c.id || '').match(/(?:CS|JAN)-2026-(\d+)/i);
-      if (match) {
-        const num = parseInt(match[1], 10);
-        if (num > maxNum) maxNum = num;
-      }
-    }
-    const nextRef = `CS-2026-${String(maxNum + 1).padStart(4, '0')}`;
-    const timestamp = new Date().toISOString();
+      const targetYear = overrideYear || new Date().getFullYear();
+      const nextRef = this.generateReferenceNumber(data.complaints, targetYear);
+      const timestamp = new Date().toISOString();
 
-    const newComplaint = {
-      id: nextRef,
-      referenceNumber: nextRef,
-      title: complaintData.title || `Civic Grievance ${nextRef}`,
-      description: complaintData.description || complaintData.text || '',
-      text: complaintData.description || complaintData.text || '',
-      category: complaintData.category || 'roads',
-      state: complaintData.state || 'Maharashtra',
-      district: complaintData.district || 'Pune',
-      locality: complaintData.locality || '',
-      preferredLanguage: complaintData.preferredLanguage || complaintData.language || 'en',
-      language: complaintData.preferredLanguage || complaintData.language || 'en',
-      departmentId: complaintData.departmentId || complaintData.department || 'DEPT_ROADS',
-      department: complaintData.departmentId || complaintData.department || 'DEPT_ROADS',
-      status: COMPLAINT_STATUS.SUBMITTED,
-      officialStatus: 'RECEIVED',
-      priority: COMPLAINT_PRIORITY.MEDIUM, // Neutral placeholder, not AI-assessed
-      createdAt: timestamp,
-      updatedAt: timestamp,
-      lastUpdated: timestamp,
-      reassignments: 0,
-      citizenReminders: 0,
-      evidence: Array.isArray(complaintData.evidence) ? complaintData.evidence : [],
-      statusHistory: [
-        {
-          timestamp,
-          status: COMPLAINT_STATUS.SUBMITTED,
-          actorType: 'CITIZEN',
-          remarks: 'Complaint registered in citizen portal'
-        }
-      ],
-      officerNotes: [],
-      synthetic: true
-    };
+      const newComplaint = {
+        id: nextRef,
+        referenceNumber: nextRef,
+        title: complaintData.title || `Civic Grievance ${nextRef}`,
+        description: complaintData.description || complaintData.text || '',
+        text: complaintData.description || complaintData.text || '',
+        category: complaintData.category || 'roads',
+        state: complaintData.state || 'Maharashtra',
+        district: complaintData.district || 'Pune',
+        locality: complaintData.locality || '',
+        preferredLanguage: complaintData.preferredLanguage || complaintData.language || 'en',
+        language: complaintData.preferredLanguage || complaintData.language || 'en',
+        departmentId: complaintData.departmentId || complaintData.department || 'DEPT_ROADS',
+        department: complaintData.departmentId || complaintData.department || 'DEPT_ROADS',
+        status: COMPLAINT_STATUS.SUBMITTED,
+        officialStatus: 'RECEIVED',
+        priority: COMPLAINT_PRIORITY.MEDIUM, // Neutral placeholder, not AI-assessed
+        createdAt: timestamp,
+        updatedAt: timestamp,
+        lastUpdated: timestamp,
+        reassignments: 0,
+        citizenReminders: 0,
+        evidence: complaintData.evidence || [],
+        // Preserve optional citizen contact info if provided
+        citizenName: complaintData.citizenName || undefined,
+        citizenEmail: complaintData.citizenEmail || undefined,
+        citizenPhone: complaintData.citizenPhone || undefined,
+        statusHistory: [
+          {
+            timestamp,
+            status: COMPLAINT_STATUS.SUBMITTED,
+            actorType: 'CITIZEN',
+            remarks: 'Grievance submitted by citizen'
+          }
+        ],
+        officerNotes: [],
+        synthetic: true
+      };
 
-    data.complaints.unshift(newComplaint);
-    if (!data.metadata) data.metadata = { synthetic: true };
-    data.metadata.total = data.complaints.length;
+      data.complaints.unshift(newComplaint);
+      if (!data.metadata) data.metadata = { synthetic: true };
+      data.metadata.total = data.complaints.length;
 
-    await this._writeFile(data);
-    return newComplaint;
+      await this._writeFile(data);
+      return newComplaint;
+    });
   }
 
   /**
-   * Update complaint status with strict transition validation and history logging
+   * Update complaint status with strict transition validation and history logging.
+   * Serialized via mutex to prevent race conditions.
    */
   async updateStatus(idOrRef, { status, remarks, actorType }) {
-    const data = await this._readFile();
-    const target = String(idOrRef).toLowerCase();
-    const index = (data.complaints || []).findIndex(c =>
-      c.id?.toLowerCase() === target ||
-      c.referenceNumber?.toLowerCase() === target
-    );
+    return this._mutex.run(async () => {
+      const data = await this._readFile();
+      const target = String(idOrRef).toLowerCase();
+      const index = (data.complaints || []).findIndex(c =>
+        c.id?.toLowerCase() === target ||
+        c.referenceNumber?.toLowerCase() === target
+      );
 
-    if (index === -1) return null;
+      if (index === -1) return null;
 
-    const current = data.complaints[index];
-    const transitionCheck = validateStatusTransition(current.status, status);
+      const current = data.complaints[index];
+      const transitionCheck = validateStatusTransition(current.status, status);
 
-    if (!transitionCheck.valid) {
-      const err = new Error(`Invalid status transition from '${current.status}' to '${status}'. Allowed transitions: ${transitionCheck.allowed.join(', ') || 'None'}`);
-      err.status = 400;
-      err.allowed = transitionCheck.allowed;
-      throw err;
-    }
+      if (!transitionCheck.valid) {
+        const err = new Error(`Invalid status transition from '${current.status}' to '${status}'. Allowed transitions: ${transitionCheck.allowed.join(', ') || 'None'}`);
+        err.status = 400;
+        err.allowed = transitionCheck.allowed;
+        throw err;
+      }
 
-    const timestamp = new Date().toISOString();
-    const historyEntry = {
-      timestamp,
-      status,
-      actorType: actorType || 'OFFICER',
-      remarks: remarks || `Status transitioned to ${status}`
-    };
+      const timestamp = new Date().toISOString();
+      const historyEntry = {
+        timestamp,
+        status,
+        actorType: actorType || 'OFFICER',
+        remarks: remarks || `Status transitioned to ${status}`
+      };
 
-    data.complaints[index].status = status;
-    data.complaints[index].updatedAt = timestamp;
-    data.complaints[index].lastUpdated = timestamp;
+      data.complaints[index].status = status;
+      data.complaints[index].updatedAt = timestamp;
+      data.complaints[index].lastUpdated = timestamp;
 
-    if (!Array.isArray(data.complaints[index].statusHistory)) {
-      data.complaints[index].statusHistory = [];
-    }
-    data.complaints[index].statusHistory.push(historyEntry);
+      if (!Array.isArray(data.complaints[index].statusHistory)) {
+        data.complaints[index].statusHistory = [];
+      }
+      data.complaints[index].statusHistory.push(historyEntry);
 
-    await this._writeFile(data);
-    return data.complaints[index];
+      await this._writeFile(data);
+      return data.complaints[index];
+    });
   }
 
   /**
-   * Reassign complaint department with validation and history logging
+   * Reassign complaint department with validation and history logging.
+   * Serialized via mutex to prevent race conditions.
    */
   async updateDepartment(idOrRef, { departmentId, remarks, actorType }) {
-    // Validate target department exists
+    // Validate target department exists before locking
     const deptExists = await departmentRepository.exists(departmentId);
     if (!deptExists) {
       const err = new Error(`Invalid departmentId '${departmentId}'. Department does not exist.`);
@@ -237,66 +309,71 @@ class ComplaintRepository {
       throw err;
     }
 
-    const data = await this._readFile();
-    const target = String(idOrRef).toLowerCase();
-    const index = (data.complaints || []).findIndex(c =>
-      c.id?.toLowerCase() === target ||
-      c.referenceNumber?.toLowerCase() === target
-    );
+    return this._mutex.run(async () => {
+      const data = await this._readFile();
+      const target = String(idOrRef).toLowerCase();
+      const index = (data.complaints || []).findIndex(c =>
+        c.id?.toLowerCase() === target ||
+        c.referenceNumber?.toLowerCase() === target
+      );
 
-    if (index === -1) return null;
+      if (index === -1) return null;
 
-    const previousDept = data.complaints[index].departmentId || data.complaints[index].department;
-    const timestamp = new Date().toISOString();
+      const previousDept = data.complaints[index].departmentId || data.complaints[index].department;
+      const timestamp = new Date().toISOString();
 
-    data.complaints[index].departmentId = departmentId;
-    data.complaints[index].department = departmentId;
-    data.complaints[index].reassignments = (data.complaints[index].reassignments || 0) + 1;
-    data.complaints[index].updatedAt = timestamp;
-    data.complaints[index].lastUpdated = timestamp;
+      data.complaints[index].departmentId = departmentId;
+      data.complaints[index].department = departmentId;
+      data.complaints[index].reassignments = (data.complaints[index].reassignments || 0) + 1;
+      data.complaints[index].updatedAt = timestamp;
+      data.complaints[index].lastUpdated = timestamp;
 
-    if (!Array.isArray(data.complaints[index].statusHistory)) {
-      data.complaints[index].statusHistory = [];
-    }
-    data.complaints[index].statusHistory.push({
-      timestamp,
-      status: data.complaints[index].status,
-      actorType: actorType || 'OFFICER',
-      remarks: remarks || `Reassigned from ${previousDept} to ${departmentId}`
+      if (!Array.isArray(data.complaints[index].statusHistory)) {
+        data.complaints[index].statusHistory = [];
+      }
+      data.complaints[index].statusHistory.push({
+        timestamp,
+        status: data.complaints[index].status,
+        actorType: actorType || 'OFFICER',
+        remarks: remarks || `Reassigned from ${previousDept} to ${departmentId}`
+      });
+
+      await this._writeFile(data);
+      return data.complaints[index];
     });
-
-    await this._writeFile(data);
-    return data.complaints[index];
   }
 
   /**
-   * Add internal officer review note
+   * Add internal officer review note.
+   * Serialized via mutex to prevent race conditions.
    */
   async addOfficerNote(idOrRef, { note, officerId }) {
-    const data = await this._readFile();
-    const target = String(idOrRef).toLowerCase();
-    const index = (data.complaints || []).findIndex(c =>
-      c.id?.toLowerCase() === target ||
-      c.referenceNumber?.toLowerCase() === target
-    );
+    return this._mutex.run(async () => {
+      const data = await this._readFile();
+      const target = String(idOrRef).toLowerCase();
+      const index = (data.complaints || []).findIndex(c =>
+        c.id?.toLowerCase() === target ||
+        c.referenceNumber?.toLowerCase() === target
+      );
 
-    if (index === -1) return null;
+      if (index === -1) return null;
 
-    const timestamp = new Date().toISOString();
-    const noteEntry = {
-      timestamp,
-      note,
-      officerId: officerId || 'OFFICER_ADMIN'
-    };
+      const timestamp = new Date().toISOString();
+      const noteEntry = {
+        timestamp,
+        note,
+        officerId: officerId || 'OFFICER_ADMIN'
+      };
 
-    if (!Array.isArray(data.complaints[index].officerNotes)) {
-      data.complaints[index].officerNotes = [];
-    }
-    data.complaints[index].officerNotes.push(noteEntry);
-    data.complaints[index].updatedAt = timestamp;
+      if (!Array.isArray(data.complaints[index].officerNotes)) {
+        data.complaints[index].officerNotes = [];
+      }
+      data.complaints[index].officerNotes.push(noteEntry);
+      data.complaints[index].updatedAt = timestamp;
 
-    await this._writeFile(data);
-    return data.complaints[index];
+      await this._writeFile(data);
+      return data.complaints[index];
+    });
   }
 
   /**

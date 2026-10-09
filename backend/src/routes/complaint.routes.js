@@ -8,7 +8,8 @@ import {
   updateComplaintStatus,
   updateComplaintDepartment,
   addOfficerNote,
-  getComplaintHistory
+  getComplaintHistory,
+  getComplaintTracking
 } from '../controllers/complaint.controller.js';
 import { validate } from '../middleware/validate.middleware.js';
 import { COMPLAINT_STATUS } from '../constants/status.constants.js';
@@ -87,6 +88,7 @@ const addNoteSchema = {
 router.get('/', validate(listComplaintsSchema), listComplaints);
 router.get('/stats', getComplaintStats);
 router.get('/:id', validate(getComplaintSchema), getComplaint);
+router.get('/:id/track', validate(getComplaintSchema), getComplaintTracking);
 router.post('/', validate(createComplaintSchema), createComplaint);
 router.patch('/:id/status', validate(updateStatusSchema), updateComplaintStatus);
 router.patch('/:id/department', validate(updateDepartmentSchema), updateComplaintDepartment);
