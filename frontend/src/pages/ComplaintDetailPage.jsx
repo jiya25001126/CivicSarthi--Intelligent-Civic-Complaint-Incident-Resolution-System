@@ -221,6 +221,12 @@ export default function ComplaintDetailPage() {
                 {complaint.departmentId || complaint.department}
               </span>
             </p>
+            {complaint.statusDescription && (
+              <div className="bg-blue-50/70 border border-blue-200 text-blue-900 text-xs p-2.5 rounded-xl">
+                <span className="font-semibold">Status Meaning: </span>
+                {complaint.statusDescription}
+              </div>
+            )}
           </div>
 
           <div className="text-left md:text-right self-start md:self-auto space-y-1">

@@ -50,6 +50,30 @@ export const STATUS_TRANSITIONS = {
 };
 
 /**
+ * Citizen-Friendly Status Explanations
+ * Explains each official status clearly in plain language for citizens
+ */
+export const STATUS_DESCRIPTIONS = {
+  SUBMITTED: 'Your grievance has been safely received and registered in the system. It is awaiting initial review by the department triage team.',
+  UNDER_REVIEW: 'A nodal grievance officer is actively assessing your complaint to establish jurisdiction, validity, and necessary remediation steps.',
+  ASSIGNED: 'Your grievance has been officially assigned to the designated field division or handling officer for on-ground investigation.',
+  IN_PROGRESS: 'Field officers and technical teams are currently working to remediate and resolve the reported issue.',
+  AWAITING_INFORMATION: 'The assigned officer has requested additional details or supporting documents from you before proceeding.',
+  RESOLVED: 'Remediation actions have been carried out and reported complete by the department. The case is now awaiting your verification or final closure.',
+  CLOSED: 'Grievance resolution has been officially finalized and the case file is closed.',
+  REOPENED: 'The case has been reopened for follow-up inspection or re-examination.'
+};
+
+/**
+ * Returns plain-language citizen-friendly description for any given status
+ * @param {string} status
+ * @returns {string}
+ */
+export function getStatusDescription(status) {
+  return STATUS_DESCRIPTIONS[status] || 'Status recorded in grievance tracking system.';
+}
+
+/**
  * Validates if status transition is allowed
  * @param {string} currentStatus
  * @param {string} targetStatus

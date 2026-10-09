@@ -124,6 +124,55 @@ export const getComplaint = async (req, res, next) => {
   }
 };
 
+// In-memory idempotency cache for duplicate submission prevention (10-minute TTL)
+const idempotencyCache = new Map();
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, item] of idempotencyCache.entries()) {
+    if (now > item.expiresAt) {
+      idempotencyCache.delete(key);
+    }
+  }
+}, 5 * 60 * 1000).unref();
+
+/**
+ * List complaints owned exclusively by the authenticated citizen (or caller)
+ */
+export const listMyComplaints = async (req, res, next) => {
+  try {
+    const filters = {
+      category: req.query.category,
+      status: req.query.status,
+      priority: req.query.priority,
+      search: req.query.search,
+      sort: req.query.sort,
+      page: req.query.page,
+      limit: req.query.limit,
+      citizenId: req.user.id
+    };
+
+    const result = await complaintService.getAllComplaints(filters, false);
+
+    if (result && result.pagination) {
+      return res.json({
+        success: true,
+        count: result.items.length,
+        pagination: result.pagination,
+        data: result.items.map(c => complaintService.sanitizeForCitizen(c))
+      });
+    }
+
+    const items = Array.isArray(result) ? result : [];
+    res.json({
+      success: true,
+      count: items.length,
+      data: items.map(c => complaintService.sanitizeForCitizen(c))
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 /**
  * Public Tracking endpoint.
  * Returns public lifecycle information without requiring authentication while
@@ -131,13 +180,13 @@ export const getComplaint = async (req, res, next) => {
  */
 export const getComplaintTracking = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const trackingData = await complaintService.getComplaintForTracking(id);
+    const target = req.params.reference || req.params.id;
+    const trackingData = await complaintService.getComplaintForTracking(target);
 
     if (!trackingData) {
       return res.status(404).json({
         success: false,
-        error: `Complaint with id or reference '${id}' not found`
+        error: `Complaint with reference '${target}' not found`
       });
     }
 
@@ -152,22 +201,61 @@ export const getComplaintTracking = async (req, res, next) => {
 
 export const createComplaint = async (req, res, next) => {
   try {
+    // Check idempotency key if supplied
+    const idempotencyKey = req.headers['idempotency-key'] || req.body.idempotencyKey;
+    if (idempotencyKey) {
+      const cacheKey = `${req.user.id}:${idempotencyKey}`;
+      const cached = idempotencyCache.get(cacheKey);
+      if (cached && Date.now() < cached.expiresAt) {
+        return res.status(201).json(cached.response);
+      }
+    }
+
+    // Role check: officers cannot submit citizen grievances through this endpoint
+    if (req.user.role === 'officer') {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied: officers cannot submit citizen grievances through this endpoint'
+      });
+    }
+
+    // Server-controlled identity and sanitized input fields
     const complaintData = {
-      ...req.body,
+      title: req.body.title?.trim(),
+      description: req.body.description?.trim(),
+      text: req.body.description?.trim(),
+      category: req.body.category,
+      state: req.body.state,
+      district: req.body.district,
+      locality: req.body.locality ? req.body.locality.trim() : '',
+      preferredLanguage: req.body.preferredLanguage || 'en',
+      departmentId: req.body.departmentId,
+      evidence: Array.isArray(req.body.evidence) ? req.body.evidence : [],
       citizenId: req.user.id,
       citizenName: req.body.citizenName || req.user.name,
-      citizenEmail: req.body.citizenEmail || req.user.email
+      citizenEmail: req.body.citizenEmail || req.user.email,
+      citizenPhone: req.body.citizenPhone || undefined
     };
 
     const complaint = await complaintService.createComplaint(complaintData);
     const citizenSafeData = complaintService.sanitizeForCitizen(complaint);
 
-    res.status(201).json({
+    const responsePayload = {
       success: true,
       message: 'Complaint submitted successfully',
       referenceNumber: complaint.referenceNumber,
       data: citizenSafeData
-    });
+    };
+
+    if (idempotencyKey) {
+      const cacheKey = `${req.user.id}:${idempotencyKey}`;
+      idempotencyCache.set(cacheKey, {
+        response: responsePayload,
+        expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes TTL
+      });
+    }
+
+    res.status(201).json(responsePayload);
   } catch (error) {
     next(error);
   }
@@ -366,6 +454,7 @@ export const getComplaintHistory = async (req, res, next) => {
 
 export default {
   listComplaints,
+  listMyComplaints,
   getComplaintStats,
   getComplaint,
   getComplaintTracking,

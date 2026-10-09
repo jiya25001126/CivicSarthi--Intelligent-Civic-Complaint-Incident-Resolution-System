@@ -1,7 +1,15 @@
 import complaintRepository from '../repositories/complaint.repository.js';
 import config from '../config/app.config.js';
+import { getStatusDescription } from '../constants/status.constants.js';
 
 export class ComplaintService {
+  /**
+   * Helper to retrieve citizen-friendly description for a status
+   */
+  getStatusDescription(status) {
+    return getStatusDescription(status);
+  }
+
   /**
    * Calculate dynamic SLA health metrics using configurable SLA settings.
    */
@@ -33,31 +41,57 @@ export class ComplaintService {
 
   /**
    * Sanitize complaint for citizen view:
-   * Strips confidential internal officer review notes.
+   * Strips confidential internal officer review notes and enriches with citizen-friendly status explanation.
    */
   sanitizeForCitizen(complaint) {
     if (!complaint) return null;
     const copy = { ...complaint };
     delete copy.officerNotes;
+    copy.statusDescription = this.getStatusDescription(copy.status);
+    if (Array.isArray(copy.statusHistory)) {
+      copy.statusHistory = copy.statusHistory.map(h => ({
+        ...h,
+        statusDescription: this.getStatusDescription(h.status)
+      }));
+    }
     return copy;
   }
 
   /**
    * Sanitize complaint for public tracking:
-   * Strips confidential officer notes AND private citizen contact details.
+   * Strictly projects only public-safe fields.
+   * Never exposes citizenId, citizen contact details, internal notes, or officer IDs.
    */
   sanitizeForTracking(complaint) {
     if (!complaint) return null;
-    const copy = { ...complaint };
-    delete copy.officerNotes;
-    delete copy.citizenName;
-    delete copy.citizenEmail;
-    delete copy.citizenPhone;
-    delete copy.citizenAddress;
-    delete copy.email;
-    delete copy.phone;
-    delete copy.contact;
-    return copy;
+    return {
+      id: complaint.id,
+      referenceNumber: complaint.referenceNumber || complaint.id,
+      title: complaint.title || complaint.text,
+      description: complaint.description || complaint.text,
+      category: complaint.category,
+      state: complaint.state,
+      district: complaint.district,
+      locality: complaint.locality || '',
+      departmentId: complaint.departmentId || complaint.department,
+      department: complaint.departmentId || complaint.department,
+      status: complaint.status,
+      officialStatus: complaint.officialStatus || complaint.status,
+      statusDescription: this.getStatusDescription(complaint.status),
+      priority: complaint.priority,
+      createdAt: complaint.createdAt,
+      updatedAt: complaint.updatedAt || complaint.lastUpdated || complaint.createdAt,
+      lastUpdated: complaint.updatedAt || complaint.lastUpdated || complaint.createdAt,
+      reassignments: complaint.reassignments || 0,
+      evidence: complaint.evidence || [],
+      statusHistory: (complaint.statusHistory || []).map(h => ({
+        timestamp: h.timestamp,
+        status: h.status,
+        statusDescription: this.getStatusDescription(h.status),
+        actorType: h.actorType || 'OFFICER',
+        remarks: h.remarks || `Status updated to ${h.status}`
+      }))
+    };
   }
 
   async getAllComplaints(filters = {}, isOfficer = false) {
@@ -122,7 +156,12 @@ export class ComplaintService {
   }
 
   async getStatusHistory(idOrRef) {
-    return complaintRepository.getStatusHistory(idOrRef);
+    const history = await complaintRepository.getStatusHistory(idOrRef);
+    if (!history) return null;
+    return history.map(h => ({
+      ...h,
+      statusDescription: this.getStatusDescription(h.status)
+    }));
   }
 
   /**
