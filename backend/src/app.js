@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import config from './config/app.config.js';
 import apiRouter from './routes/index.js';
@@ -31,6 +32,9 @@ export const createApp = () => {
     credentials: true
   }));
 
+  // Cookie Parsing for Session Management
+  app.use(cookieParser());
+
   // Rate Limiting
   const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -44,9 +48,9 @@ export const createApp = () => {
   });
   app.use('/api', limiter);
 
-  // Body Parsing
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
+  // Body Parsing with safe size bounds
+  app.use(express.json({ limit: '2mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
   // API Mount
   app.use('/api', apiRouter);

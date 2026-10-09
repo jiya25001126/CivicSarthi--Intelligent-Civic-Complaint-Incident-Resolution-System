@@ -1,7 +1,11 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import LandingPage from './pages/LandingPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import CitizenDashboard from './pages/CitizenDashboard';
 import SubmitComplaintPage from './pages/SubmitComplaintPage';
 import MyComplaintsPage from './pages/MyComplaintsPage';
@@ -17,37 +21,106 @@ import StatusTranslatorPage from './pages/StatusTranslatorPage';
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          {/* Public Landing View */}
-          <Route index element={<LandingPage />} />
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            {/* Public Landing & Authentication Views */}
+            <Route index element={<LandingPage />} />
+            <Route path="login" element={<LoginPage />} />
+            <Route path="register" element={<RegisterPage />} />
 
-          {/* Citizen Portal Routes */}
-          <Route path="citizen" element={<CitizenDashboard />} />
-          <Route path="citizen/submit" element={<SubmitComplaintPage />} />
-          <Route path="citizen/complaints" element={<MyComplaintsPage />} />
-          <Route path="citizen/complaints/:id" element={<ComplaintDetailPage />} />
-          <Route path="citizen/track" element={<TrackComplaintPage />} />
-          <Route path="citizen/track/:id" element={<TrackComplaintPage />} />
+            {/* Public Tracking Endpoint (Accessible without authentication) */}
+            <Route path="citizen/track" element={<TrackComplaintPage />} />
+            <Route path="citizen/track/:id" element={<TrackComplaintPage />} />
 
-          {/* Officer Portal Routes */}
-          <Route path="officer" element={<OfficerDashboard />} />
-          <Route path="officer/complaints" element={<OfficerComplaintManagement />} />
-          <Route path="officer/complaints/:id" element={<ComplaintDetailPage />} />
-          <Route path="officer/departments" element={<DepartmentManagementPage />} />
+            {/* Citizen Portal Protected Routes */}
+            <Route
+              path="citizen"
+              element={
+                <ProtectedRoute allowedRoles={['citizen']}>
+                  <CitizenDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="citizen/submit"
+              element={
+                <ProtectedRoute allowedRoles={['citizen']}>
+                  <SubmitComplaintPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="citizen/complaints"
+              element={
+                <ProtectedRoute allowedRoles={['citizen']}>
+                  <MyComplaintsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="citizen/complaints/:id"
+              element={
+                <ProtectedRoute allowedRoles={['citizen']}>
+                  <ComplaintDetailPage />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Backward compatibility route for Phase 0 */}
-          <Route path="complaints/:id" element={<ComplaintDetailPage />} />
+            {/* Officer Portal Protected Routes (Officer & Admin) */}
+            <Route
+              path="officer"
+              element={
+                <ProtectedRoute allowedRoles={['officer', 'admin']}>
+                  <OfficerDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="officer/complaints"
+              element={
+                <ProtectedRoute allowedRoles={['officer', 'admin']}>
+                  <OfficerComplaintManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="officer/complaints/:id"
+              element={
+                <ProtectedRoute allowedRoles={['officer', 'admin']}>
+                  <ComplaintDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="officer/departments"
+              element={
+                <ProtectedRoute allowedRoles={['officer', 'admin']}>
+                  <DepartmentManagementPage />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Flagship Feature Previews */}
-          <Route path="incident" element={<IncidentPage />} />
-          <Route path="neglect-radar" element={<NeglectRadarPage />} />
-          <Route path="status-translator" element={<StatusTranslatorPage />} />
+            {/* General detail fallback route */}
+            <Route
+              path="complaints/:id"
+              element={
+                <ProtectedRoute>
+                  <ComplaintDetailPage />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
+            {/* Flagship Feature Previews */}
+            <Route path="incident" element={<IncidentPage />} />
+            <Route path="neglect-radar" element={<NeglectRadarPage />} />
+            <Route path="status-translator" element={<StatusTranslatorPage />} />
+
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

@@ -147,6 +147,15 @@ const complaintSchema = new mongoose.Schema(
       type: [String],
       default: []
     },
+    citizenId: {
+      type: String,
+      default: 'SYNTHETIC_CPGRAMS_DEMO',
+      index: true
+    },
+    assignedOfficerId: {
+      type: String,
+      default: null
+    },
     citizenName: {
       type: String,
       trim: true
@@ -203,6 +212,7 @@ complaintSchema.pre('validate', function (next) {
 });
 
 // Compound indexes for optimal search and queue performance
+complaintSchema.index({ citizenId: 1, createdAt: -1 });
 complaintSchema.index({ departmentId: 1, status: 1 });
 complaintSchema.index({ category: 1, createdAt: -1 });
 complaintSchema.index({ createdAt: -1 });

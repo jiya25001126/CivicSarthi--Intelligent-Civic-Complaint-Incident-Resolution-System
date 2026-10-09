@@ -58,7 +58,8 @@
           "note": "Treasury reconciliation letter issued on 29 Jan. Awaiting clearance.",
           "officerId": "OFF_001"
         }
-      ]
+      ],
+      "citizenId": "SYNTHETIC_CPGRAMS_DEMO"
     },
     {
       "id": "CPG-2026-00102",
@@ -112,7 +113,8 @@
           "note": "Re-computing entitlement sheet using updated formula table.",
           "officerId": "OFF_001"
         }
-      ]
+      ],
+      "citizenId": "SYNTHETIC_CPGRAMS_DEMO"
     },
     {
       "id": "CPG-2026-00103",
@@ -148,7 +150,8 @@
           "remarks": "Grievance submitted by senior citizen"
         }
       ],
-      "officerNotes": []
+      "officerNotes": [],
+      "citizenId": "SYNTHETIC_CPGRAMS_DEMO"
     },
     {
       "id": "CPG-2026-00104",
@@ -202,7 +205,8 @@
           "note": "PFMS batch integration pending portal sync.",
           "officerId": "OFF_002"
         }
-      ]
+      ],
+      "citizenId": "SYNTHETIC_CPGRAMS_DEMO"
     },
     {
       "id": "CPG-2026-00105",
@@ -256,7 +260,8 @@
           "note": "Citizen notified via SMS to provide previous roll number.",
           "officerId": "OFF_002"
         }
-      ]
+      ],
+      "citizenId": "SYNTHETIC_CPGRAMS_DEMO"
     },
     {
       "id": "CPG-2026-00106",
@@ -310,7 +315,8 @@
           "note": "Emergency gravel filling completed. Bituminous macadam scheduled.",
           "officerId": "OFF_003"
         }
-      ]
+      ],
+      "citizenId": "SYNTHETIC_CPGRAMS_DEMO"
     },
     {
       "id": "CPG-2026-00107",
@@ -358,7 +364,8 @@
           "note": "Show cause notice sent to contractor for lack of safety barricades.",
           "officerId": "OFF_003"
         }
-      ]
+      ],
+      "citizenId": "SYNTHETIC_CPGRAMS_DEMO"
     },
     {
       "id": "CPG-2026-00108",
@@ -412,7 +419,8 @@
           "note": "Physical completion report signed by Assistant Engineer.",
           "officerId": "OFF_003"
         }
-      ]
+      ],
+      "citizenId": "SYNTHETIC_CPGRAMS_DEMO"
     },
     {
       "id": "CPG-2026-00109",
@@ -466,7 +474,8 @@
           "note": "250 kVA replacement transformer loaded onto crane truck.",
           "officerId": "OFF_004"
         }
-      ]
+      ],
+      "citizenId": "SYNTHETIC_CPGRAMS_DEMO"
     },
     {
       "id": "CPG-2026-00110",
@@ -514,7 +523,8 @@
           "note": "Suspected optical pulse sensor glitch.",
           "officerId": "OFF_004"
         }
-      ]
+      ],
+      "citizenId": "SYNTHETIC_CPGRAMS_DEMO"
     },
     {
       "id": "CPG-2026-00111",
@@ -568,7 +578,8 @@
           "note": "Water samples sent for biological testing. Temporary tanker supply organized.",
           "officerId": "OFF_005"
         }
-      ]
+      ],
+      "citizenId": "SYNTHETIC_CPGRAMS_DEMO"
     },
     {
       "id": "CPG-2026-00112",
@@ -616,7 +627,8 @@
           "remarks": "10,000L tanker delivery completed. Signature obtained from resident representative."
         }
       ],
-      "officerNotes": []
+      "officerNotes": [],
+      "citizenId": "SYNTHETIC_CPGRAMS_DEMO"
     },
     {
       "id": "CPG-2026-00113",
@@ -664,7 +676,8 @@
           "note": "Dealer instructed to use offline OTP fallback mode.",
           "officerId": "OFF_006"
         }
-      ]
+      ],
+      "citizenId": "SYNTHETIC_CPGRAMS_DEMO"
     },
     {
       "id": "CPG-2026-00114",
@@ -712,7 +725,8 @@
           "note": "Stock shipment dispatched from central depot on Oct 1.",
           "officerId": "OFF_007"
         }
-      ]
+      ],
+      "citizenId": "SYNTHETIC_CPGRAMS_DEMO"
     },
     {
       "id": "CPG-2026-00115",
@@ -761,7 +775,8 @@
           "note": "Hospital administration summoned for explanation of guideline violation.",
           "officerId": "OFF_007"
         }
-      ]
+      ],
+      "citizenId": "SYNTHETIC_CPGRAMS_DEMO"
     },
     {
       "id": "CPG-2026-00116",
@@ -816,7 +831,8 @@
           "note": "Submersible pump installed. Water receded by 1.5 feet.",
           "officerId": "OFF_008"
         }
-      ]
+      ],
+      "citizenId": "SYNTHETIC_CPGRAMS_DEMO"
     },
     {
       "id": "CPG-2026-00117",
@@ -864,7 +880,8 @@
           "note": "Medical officers team dispatched to camp.",
           "officerId": "OFF_008"
         }
-      ]
+      ],
+      "citizenId": "SYNTHETIC_CPGRAMS_DEMO"
     },
     {
       "id": "CPG-2026-00118",
@@ -906,7 +923,8 @@
           "remarks": "Assigned to Ward Sanitation Superintendent"
         }
       ],
-      "officerNotes": []
+      "officerNotes": [],
+      "citizenId": "SYNTHETIC_CPGRAMS_DEMO"
     }
   ]
 }

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import {
   fetchComplaintById,
   updateComplaintStatus,
@@ -29,9 +30,10 @@ import {
 export default function ComplaintDetailPage() {
   const { id } = useParams();
   const location = useLocation();
+  const { user, isOfficer, isAdmin } = useAuth();
 
-  // Check if accessed through officer route
-  const isOfficerMode = location.pathname.startsWith('/officer');
+  // Check if accessed through officer route and user is authorized
+  const isOfficerMode = location.pathname.startsWith('/officer') || isOfficer || isAdmin;
 
   const [complaint, setComplaint] = useState(null);
   const [departments, setDepartments] = useState([]);
@@ -58,7 +60,7 @@ export default function ComplaintDetailPage() {
       setLoading(true);
       setError(null);
       const [compRes, deptsRes] = await Promise.all([
-        fetchComplaintById(id, { role: isOfficerMode ? 'officer' : 'citizen' }),
+        fetchComplaintById(id),
         fetchDepartments()
       ]);
       setComplaint(compRes.data);

@@ -762,7 +762,10 @@ export async function runSeed(options = {}) {
   }
 
   // Combine: preserved genuine complaints first, then standard synthetic seed complaints
-  const finalComplaints = [...preservedUserComplaints, ...SEED_COMPLAINTS];
+  const finalComplaints = [...preservedUserComplaints, ...SEED_COMPLAINTS].map(c => ({
+    ...c,
+    citizenId: c.citizenId || (c.synthetic ? 'SYNTHETIC_CPGRAMS_DEMO' : 'UNCLAIMED_RECORD')
+  }));
   const compData = {
     metadata: {
       synthetic: preservedUserComplaints.length === 0,

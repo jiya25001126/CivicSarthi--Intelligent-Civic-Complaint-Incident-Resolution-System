@@ -12,6 +12,7 @@ import {
   getComplaintTracking
 } from '../controllers/complaint.controller.js';
 import { validate } from '../middleware/validate.middleware.js';
+import { authenticate, requireRole } from '../middleware/auth.middleware.js';
 import { COMPLAINT_STATUS } from '../constants/status.constants.js';
 
 const router = express.Router();
@@ -46,7 +47,10 @@ const createComplaintSchema = {
     locality: z.string().optional(),
     preferredLanguage: z.string().optional(),
     departmentId: z.string().optional(),
-    evidence: z.array(z.string()).optional()
+    evidence: z.array(z.string()).optional(),
+    citizenName: z.string().optional(),
+    citizenEmail: z.string().optional(),
+    citizenPhone: z.string().optional()
   })
 };
 
@@ -84,15 +88,17 @@ const addNoteSchema = {
   })
 };
 
-// Route endpoints
-router.get('/', validate(listComplaintsSchema), listComplaints);
+// Public Endpoints (No authentication required)
 router.get('/stats', getComplaintStats);
-router.get('/:id', validate(getComplaintSchema), getComplaint);
 router.get('/:id/track', validate(getComplaintSchema), getComplaintTracking);
-router.post('/', validate(createComplaintSchema), createComplaint);
-router.patch('/:id/status', validate(updateStatusSchema), updateComplaintStatus);
-router.patch('/:id/department', validate(updateDepartmentSchema), updateComplaintDepartment);
-router.get('/:id/history', validate(getComplaintSchema), getComplaintHistory);
-router.post('/:id/notes', validate(addNoteSchema), addOfficerNote);
+
+// Protected Endpoints (Authentication strictly required)
+router.get('/', authenticate, validate(listComplaintsSchema), listComplaints);
+router.get('/:id', authenticate, validate(getComplaintSchema), getComplaint);
+router.post('/', authenticate, validate(createComplaintSchema), createComplaint);
+router.patch('/:id/status', authenticate, requireRole('officer', 'admin'), validate(updateStatusSchema), updateComplaintStatus);
+router.patch('/:id/department', authenticate, requireRole('admin'), validate(updateDepartmentSchema), updateComplaintDepartment);
+router.get('/:id/history', authenticate, validate(getComplaintSchema), getComplaintHistory);
+router.post('/:id/notes', authenticate, requireRole('officer', 'admin'), validate(addNoteSchema), addOfficerNote);
 
 export default router;

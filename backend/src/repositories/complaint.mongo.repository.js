@@ -71,6 +71,11 @@ export class MongoComplaintRepository {
       query.status = filters.status;
     }
 
+    // Filter by Citizen Ownership
+    if (filters.citizenId) {
+      query.citizenId = filters.citizenId;
+    }
+
     // Filter by Priority
     if (filters.priority && filters.priority !== 'ALL') {
       query.priority = filters.priority;
@@ -195,6 +200,8 @@ export class MongoComplaintRepository {
         reassignments: 0,
         citizenReminders: 0,
         evidence: complaintData.evidence || [],
+        citizenId: complaintData.citizenId || 'SYNTHETIC_CPGRAMS_DEMO',
+        assignedOfficerId: complaintData.assignedOfficerId || null,
         citizenName: complaintData.citizenName || undefined,
         citizenEmail: complaintData.citizenEmail || undefined,
         citizenPhone: complaintData.citizenPhone || undefined,
@@ -435,6 +442,9 @@ export class MongoComplaintRepository {
         timestamp: n.timestamp instanceof Date ? n.timestamp.toISOString() : String(n.timestamp)
       }));
     }
+
+    formatted.citizenId = formatted.citizenId || 'SYNTHETIC_CPGRAMS_DEMO';
+    formatted.assignedOfficerId = formatted.assignedOfficerId || null;
 
     return formatted;
   }

@@ -124,6 +124,11 @@ export class JsonComplaintRepository {
       list = list.filter(c => c.status === filters.status);
     }
 
+    // Filter by Citizen Ownership
+    if (filters.citizenId) {
+      list = list.filter(c => (c.citizenId || 'SYNTHETIC_CPGRAMS_DEMO') === filters.citizenId);
+    }
+
     // Filter by Priority
     if (filters.priority && filters.priority !== 'ALL') {
       list = list.filter(c => c.priority === filters.priority);
@@ -194,7 +199,11 @@ export class JsonComplaintRepository {
       c.id?.toLowerCase() === target ||
       c.referenceNumber?.toLowerCase() === target
     );
-    return complaint || null;
+    if (!complaint) return null;
+    return {
+      ...complaint,
+      citizenId: complaint.citizenId || 'SYNTHETIC_CPGRAMS_DEMO'
+    };
   }
 
   /**
@@ -232,6 +241,8 @@ export class JsonComplaintRepository {
         reassignments: 0,
         citizenReminders: 0,
         evidence: complaintData.evidence || [],
+        citizenId: complaintData.citizenId || 'SYNTHETIC_CPGRAMS_DEMO',
+        assignedOfficerId: complaintData.assignedOfficerId || null,
         citizenName: complaintData.citizenName || undefined,
         citizenEmail: complaintData.citizenEmail || undefined,
         citizenPhone: complaintData.citizenPhone || undefined,

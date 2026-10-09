@@ -1,5 +1,6 @@
 import React from 'react';
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import {
   Shield,
   User,
@@ -13,25 +14,19 @@ import {
   AlertTriangle,
   Languages,
   Home,
-  CheckCircle,
-  HelpCircle
+  LogOut,
+  LogIn,
+  UserPlus
 } from 'lucide-react';
 
 export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, logout, isAuthenticated, isCitizen, isOfficer, isAdmin } = useAuth();
 
-  // Determine current context (public, citizen, officer)
-  const isOfficer = location.pathname.startsWith('/officer');
-  const isCitizen = location.pathname.startsWith('/citizen');
-  const isPublic = !isOfficer && !isCitizen;
-
-  const currentMode = isOfficer ? 'officer' : isCitizen ? 'citizen' : 'public';
-
-  const handleModeSwitch = (mode) => {
-    if (mode === 'public') navigate('/');
-    else if (mode === 'citizen') navigate('/citizen');
-    else if (mode === 'officer') navigate('/officer');
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
   };
 
   const citizenNav = [
@@ -58,7 +53,7 @@ export default function Layout() {
       {/* System Transparency Banner */}
       <div className="bg-slate-800 text-slate-300 font-medium px-4 py-1 text-center text-xs tracking-wide border-b border-slate-700 flex items-center justify-center gap-2">
         <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-        <span>Demonstration Environment — Synthetic civic complaint records. Independent resolution decision-support system.</span>
+        <span>CivicSarthi — Role-governed civic complaint resolution & decision support system.</span>
       </div>
 
       {/* Main GovTech Header */}
@@ -85,49 +80,54 @@ export default function Layout() {
             </div>
           </div>
 
-          {/* Role / Access Switcher */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 bg-slate-800/80 p-1.5 rounded-lg border border-slate-700 self-start md:self-auto">
-            <span className="text-[11px] text-slate-300 pl-1 font-medium">
-              Demo Access Mode:
-            </span>
-            <div className="flex rounded-md bg-slate-900 p-0.5 border border-slate-700">
-              <button
-                type="button"
-                onClick={() => handleModeSwitch('public')}
-                className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded transition ${
-                  currentMode === 'public'
-                    ? 'bg-blue-600 text-white shadow'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Home size={13} />
-                Public
-              </button>
-              <button
-                type="button"
-                onClick={() => handleModeSwitch('citizen')}
-                className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded transition ${
-                  currentMode === 'citizen'
-                    ? 'bg-blue-600 text-white shadow'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <User size={13} />
-                Citizen
-              </button>
-              <button
-                type="button"
-                onClick={() => handleModeSwitch('officer')}
-                className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded transition ${
-                  currentMode === 'officer'
-                    ? 'bg-blue-600 text-white shadow'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <ShieldCheck size={13} />
-                Officer
-              </button>
-            </div>
+          {/* Authenticated Identity / Session Management */}
+          <div className="flex items-center gap-3 self-start md:self-auto">
+            {isAuthenticated ? (
+              <div className="flex items-center gap-3 bg-slate-800/90 py-1.5 px-3 rounded-lg border border-slate-700">
+                <div className="text-right">
+                  <div className="text-xs font-semibold text-white flex items-center gap-1.5 justify-end">
+                    {isAdmin ? (
+                      <Shield className="text-amber-400" size={13} />
+                    ) : isOfficer ? (
+                      <ShieldCheck className="text-blue-400" size={13} />
+                    ) : (
+                      <User className="text-emerald-400" size={13} />
+                    )}
+                    <span>{user.name}</span>
+                  </div>
+                  <div className="text-[10px] text-slate-400">
+                    <span className="capitalize font-medium text-slate-300">{user.role}</span>
+                    {user.departmentId && ` • ${user.departmentId}`}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  title="Sign out of session"
+                  className="p-1.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white transition flex items-center gap-1 text-xs"
+                >
+                  <LogOut size={13} />
+                  <span className="hidden sm:inline text-[11px]">Logout</span>
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/login"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 border border-slate-700 transition"
+                >
+                  <LogIn size={13} />
+                  Sign In
+                </Link>
+                <Link
+                  to="/register"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition"
+                >
+                  <UserPlus size={13} />
+                  Register Citizen
+                </Link>
+              </div>
+            )}
           </div>
         </div>
 
@@ -135,8 +135,8 @@ export default function Layout() {
         <nav className="bg-slate-950 border-t border-slate-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between overflow-x-auto">
             <div className="flex items-center">
-              {/* Public Links */}
-              {currentMode === 'public' && (
+              {/* Public Unauthenticated Navigation */}
+              {!isAuthenticated && (
                 <>
                   <NavLink
                     to="/"
@@ -152,24 +152,23 @@ export default function Layout() {
                     Overview
                   </NavLink>
                   <NavLink
-                    to="/citizen"
-                    className="flex items-center gap-2 px-3.5 py-2.5 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200"
+                    to="/citizen/track"
+                    className={({ isActive }) =>
+                      `flex items-center gap-2 px-3.5 py-2.5 text-xs font-medium border-b-2 whitespace-nowrap transition-colors ${
+                        isActive
+                          ? 'border-blue-500 text-white bg-slate-900/60'
+                          : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                      }`
+                    }
                   >
-                    <User size={14} />
-                    Citizen Portal
-                  </NavLink>
-                  <NavLink
-                    to="/officer"
-                    className="flex items-center gap-2 px-3.5 py-2.5 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200"
-                  >
-                    <ShieldCheck size={14} />
-                    Officer Portal
+                    <Search size={14} />
+                    Track Grievance
                   </NavLink>
                 </>
               )}
 
-              {/* Citizen Links */}
-              {currentMode === 'citizen' &&
+              {/* Citizen Navigation Links */}
+              {isCitizen &&
                 citizenNav.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -191,8 +190,8 @@ export default function Layout() {
                   );
                 })}
 
-              {/* Officer Links */}
-              {currentMode === 'officer' &&
+              {/* Officer / Admin Navigation Links */}
+              {(isOfficer || isAdmin) &&
                 officerNav.map((item) => {
                   const Icon = item.icon;
                   return (

@@ -6,6 +6,8 @@ import { fileURLToPath } from 'url';
 import request from 'supertest';
 import createApp from '../src/app.js';
 import complaintRepository, { ComplaintRepository } from '../src/repositories/complaint.repository.js';
+import { userRepository } from '../src/repositories/user.repository.js';
+import { authService } from '../src/services/auth.service.js';
 import { runSeed } from '../src/scripts/seed.js';
 import { connectDatabase } from '../src/config/database.js';
 import config from '../src/config/app.config.js';
@@ -15,22 +17,46 @@ const __dirname = path.dirname(__filename);
 
 const app = createApp();
 const TEST_FILE_PATH = path.resolve(path.dirname(config.dataPath.complaints), 'complaints.test.json');
+const TEST_USERS_PATH = path.resolve(path.dirname(config.dataPath.users), 'users.api-test.json');
 
 describe('CivicSarthi Phase 1 Backend API Tests', () => {
   let createdRefNumber = null;
+  let adminToken = null;
+  let citizenToken = null;
 
   before(async () => {
     // Isolate test data: copy original complaints to isolated test fixture
     const original = await fs.readFile(config.dataPath.complaints, 'utf-8');
     await fs.writeFile(TEST_FILE_PATH, original, 'utf-8');
     complaintRepository.setFilePath(TEST_FILE_PATH);
+    userRepository.setFilePath(TEST_USERS_PATH);
+
+    // Seed test users for authenticated calls
+    const adminUser = await authService.provisionUser({
+      email: 'admin.apitest@civicsarthi.internal',
+      name: 'API Test Admin',
+      password: 'AdminPassword123!',
+      role: 'admin'
+    }, { id: 'TEST_INIT', email: 'init@test', role: 'admin' });
+    adminToken = authService.generateToken(adminUser);
+
+    const citizen = await authService.register({
+      email: 'citizen.apitest@civicsarthi.internal',
+      name: 'API Test Citizen',
+      password: 'CitizenPassword123!'
+    });
+    citizenToken = citizen.token;
   });
 
   after(async () => {
     // Clean up test data and restore original repository path
     complaintRepository.resetFilePath();
+    userRepository.resetFilePath();
     try {
       await fs.unlink(TEST_FILE_PATH);
+    } catch {}
+    try {
+      await fs.unlink(TEST_USERS_PATH);
     } catch {}
   });
 
@@ -60,7 +86,9 @@ describe('CivicSarthi Phase 1 Backend API Tests', () => {
   });
 
   it('GET /api/v1/complaints should return complaints list enriched with SLA metrics', async () => {
-    const res = await request(app).get('/api/v1/complaints');
+    const res = await request(app)
+      .get('/api/v1/complaints')
+      .set('Authorization', `Bearer ${adminToken}`);
     assert.equal(res.status, 200);
     assert.equal(res.body.success, true);
     assert.ok(Array.isArray(res.body.data));
@@ -86,7 +114,9 @@ describe('CivicSarthi Phase 1 Backend API Tests', () => {
   });
 
   it('GET /api/v1/complaints/:id with non-existent id should return 404', async () => {
-    const res = await request(app).get('/api/v1/complaints/CS-NONEXISTENT-9999');
+    const res = await request(app)
+      .get('/api/v1/complaints/CS-NONEXISTENT-9999')
+      .set('Authorization', `Bearer ${adminToken}`);
     assert.equal(res.status, 404);
     assert.equal(res.body.success, false);
     assert.match(res.body.error, /not found/i);
@@ -95,6 +125,7 @@ describe('CivicSarthi Phase 1 Backend API Tests', () => {
   it('POST /api/v1/complaints should return 400 validation error if required fields are missing', async () => {
     const res = await request(app)
       .post('/api/v1/complaints')
+      .set('Authorization', `Bearer ${citizenToken}`)
       .send({
         title: 'Hi', // Too short
         description: 'Short' // Too short
@@ -119,6 +150,7 @@ describe('CivicSarthi Phase 1 Backend API Tests', () => {
 
     const res = await request(app)
       .post('/api/v1/complaints')
+      .set('Authorization', `Bearer ${citizenToken}`)
       .send(payload);
 
     assert.equal(res.status, 201);
@@ -168,7 +200,7 @@ describe('CivicSarthi Phase 1 Backend API Tests', () => {
 
     // Fire all concurrent requests simultaneously
     const responses = await Promise.all(
-      payloads.map(p => request(app).post('/api/v1/complaints').send(p))
+      payloads.map(p => request(app).post('/api/v1/complaints').set('Authorization', `Bearer ${citizenToken}`).send(p))
     );
 
     // Verify each request completed with 201 Created
@@ -192,6 +224,7 @@ describe('CivicSarthi Phase 1 Backend API Tests', () => {
     assert.ok(createdRefNumber, 'Complaint must have been created');
     const res = await request(app)
       .patch(`/api/v1/complaints/${createdRefNumber}/status`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({
         status: 'RESOLVED',
         remarks: 'Trying to bypass process'
@@ -206,6 +239,7 @@ describe('CivicSarthi Phase 1 Backend API Tests', () => {
     assert.ok(createdRefNumber, 'Complaint must have been created');
     const res = await request(app)
       .patch(`/api/v1/complaints/${createdRefNumber}/status`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({
         status: 'UNDER_REVIEW',
         remarks: 'Assigned officer reviewing hydraulic maps',
@@ -223,12 +257,14 @@ describe('CivicSarthi Phase 1 Backend API Tests', () => {
     // Reject non-existent department
     const badRes = await request(app)
       .patch(`/api/v1/complaints/${createdRefNumber}/department`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({ departmentId: 'DEPT_INVALID_999' });
     assert.equal(badRes.status, 400);
 
     // Accept valid department
     const goodRes = await request(app)
       .patch(`/api/v1/complaints/${createdRefNumber}/department`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({
         departmentId: 'DEPT_MUNICIPAL',
         remarks: 'Reassigned to Municipal Drainage Division'
@@ -242,6 +278,7 @@ describe('CivicSarthi Phase 1 Backend API Tests', () => {
     assert.ok(createdRefNumber, 'Complaint must have been created');
     const res = await request(app)
       .post(`/api/v1/complaints/${createdRefNumber}/notes`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({
         note: 'Excavation machine scheduled for tomorrow morning.',
         officerId: 'OFF_005'
@@ -258,15 +295,17 @@ describe('CivicSarthi Phase 1 Backend API Tests', () => {
   it('Data Separation: Citizen view and public tracking must NEVER expose internal officer notes', async () => {
     assert.ok(createdRefNumber, 'Complaint must have been created');
 
-    // 1. Citizen view (default)
-    const citizenRes = await request(app).get(`/api/v1/complaints/${createdRefNumber}`);
+    // 1. Citizen view (default authenticated citizen)
+    const citizenRes = await request(app)
+      .get(`/api/v1/complaints/${createdRefNumber}`)
+      .set('Authorization', `Bearer ${citizenToken}`);
     assert.equal(citizenRes.status, 200);
     assert.equal(citizenRes.body.data.officerNotes, undefined, 'Officer notes must be stripped in citizen view');
 
-    // 2. Officer view (with role parameter / header)
+    // 2. Officer/Admin view
     const officerRes = await request(app)
       .get(`/api/v1/complaints/${createdRefNumber}`)
-      .set('x-portal-role', 'officer');
+      .set('Authorization', `Bearer ${adminToken}`);
     assert.equal(officerRes.status, 200);
     assert.ok(Array.isArray(officerRes.body.data.officerNotes), 'Officer notes must be present in officer view');
     assert.ok(officerRes.body.data.officerNotes.length > 0);
@@ -281,7 +320,9 @@ describe('CivicSarthi Phase 1 Backend API Tests', () => {
 
   it('GET /api/v1/complaints/:id/history should return status audit timeline without officer notes', async () => {
     assert.ok(createdRefNumber, 'Complaint must have been created');
-    const res = await request(app).get(`/api/v1/complaints/${createdRefNumber}/history`);
+    const res = await request(app)
+      .get(`/api/v1/complaints/${createdRefNumber}/history`)
+      .set('Authorization', `Bearer ${adminToken}`);
     assert.equal(res.status, 200);
     assert.equal(res.body.success, true);
     assert.ok(Array.isArray(res.body.data));
@@ -464,26 +505,34 @@ describe('CivicSarthi Phase 1 Backend API Tests', () => {
 
   it('Search, Filtering, Sorting, and Pagination boundaries', async () => {
     // 1. Non-existent category
-    const resBadCat = await request(app).get('/api/v1/complaints?category=NON_EXISTENT_CAT_XYZ');
+    const resBadCat = await request(app)
+      .get('/api/v1/complaints?category=NON_EXISTENT_CAT_XYZ')
+      .set('Authorization', `Bearer ${adminToken}`);
     assert.equal(resBadCat.status, 200);
     assert.equal(resBadCat.body.count, 0);
     assert.deepEqual(resBadCat.body.data, []);
 
     // 2. Non-existent search query
-    const resBadSearch = await request(app).get('/api/v1/complaints?search=ZXYWVUTSRQPONMLKJIHGFEDCBA_NOMATCH');
+    const resBadSearch = await request(app)
+      .get('/api/v1/complaints?search=ZXYWVUTSRQPONMLKJIHGFEDCBA_NOMATCH')
+      .set('Authorization', `Bearer ${adminToken}`);
     assert.equal(resBadSearch.status, 200);
     assert.equal(resBadSearch.body.count, 0);
     assert.deepEqual(resBadSearch.body.data, []);
 
     // 3. Sorting asc vs desc
-    const resAsc = await request(app).get('/api/v1/complaints?sort=createdAt_asc');
+    const resAsc = await request(app)
+      .get('/api/v1/complaints?sort=createdAt_asc')
+      .set('Authorization', `Bearer ${adminToken}`);
     assert.equal(resAsc.status, 200);
     assert.ok(resAsc.body.data.length >= 2);
     const date1 = new Date(resAsc.body.data[0].createdAt).getTime();
     const date2 = new Date(resAsc.body.data[1].createdAt).getTime();
     assert.ok(date1 <= date2, 'Ascending sort should order earliest first');
 
-    const resDesc = await request(app).get('/api/v1/complaints?sort=createdAt_desc');
+    const resDesc = await request(app)
+      .get('/api/v1/complaints?sort=createdAt_desc')
+      .set('Authorization', `Bearer ${adminToken}`);
     assert.equal(resDesc.status, 200);
     assert.ok(resDesc.body.data.length >= 2);
     const descDate1 = new Date(resDesc.body.data[0].createdAt).getTime();
@@ -491,7 +540,9 @@ describe('CivicSarthi Phase 1 Backend API Tests', () => {
     assert.ok(descDate1 >= descDate2, 'Descending sort should order latest first');
 
     // 4. Pagination
-    const resPage1 = await request(app).get('/api/v1/complaints?page=1&limit=3');
+    const resPage1 = await request(app)
+      .get('/api/v1/complaints?page=1&limit=3')
+      .set('Authorization', `Bearer ${adminToken}`);
     assert.equal(resPage1.status, 200);
     assert.equal(resPage1.body.data.length, 3);
     assert.equal(resPage1.body.pagination.page, 1);
@@ -500,7 +551,9 @@ describe('CivicSarthi Phase 1 Backend API Tests', () => {
     assert.ok(resPage1.body.pagination.totalPages >= 4);
 
     // 5. Out of bounds page
-    const resOutOfBounds = await request(app).get('/api/v1/complaints?page=9999&limit=10');
+    const resOutOfBounds = await request(app)
+      .get('/api/v1/complaints?page=9999&limit=10')
+      .set('Authorization', `Bearer ${adminToken}`);
     assert.equal(resOutOfBounds.status, 200);
     assert.equal(resOutOfBounds.body.data.length, 0);
     assert.equal(resOutOfBounds.body.pagination.page, 9999);
@@ -521,55 +574,69 @@ describe('CivicSarthi Phase 1 Backend API Tests', () => {
     // Invalid complaint status update (404)
     const badStatusUpdate = await request(app)
       .patch('/api/v1/complaints/CS-NONEXISTENT-9999/status')
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({ status: 'UNDER_REVIEW' });
     assert.equal(badStatusUpdate.status, 404);
 
     // Invalid complaint department reassign (404)
     const badDeptUpdate = await request(app)
       .patch('/api/v1/complaints/CS-NONEXISTENT-9999/department')
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({ departmentId: 'DEPT_WATER' });
     assert.equal(badDeptUpdate.status, 404);
 
     // Invalid complaint add note (404)
     const badNote = await request(app)
       .post('/api/v1/complaints/CS-NONEXISTENT-9999/notes')
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({ note: 'Some note' });
     assert.equal(badNote.status, 404);
 
     // Invalid complaint history (404)
-    const badHistory = await request(app).get('/api/v1/complaints/CS-NONEXISTENT-9999/history');
+    const badHistory = await request(app)
+      .get('/api/v1/complaints/CS-NONEXISTENT-9999/history')
+      .set('Authorization', `Bearer ${adminToken}`);
     assert.equal(badHistory.status, 404);
   });
 
   it('Audit: Internal officer notes are excluded from all citizen responses and unauthenticated update endpoints', async () => {
     assert.ok(createdRefNumber);
 
-    // 1. List complaints as citizen
-    const listRes = await request(app).get('/api/v1/complaints');
+    // 1. List complaints as citizen (only sees their own, no notes)
+    const listRes = await request(app)
+      .get('/api/v1/complaints')
+      .set('Authorization', `Bearer ${citizenToken}`);
     assert.equal(listRes.status, 200);
     for (const item of listRes.body.data) {
       assert.equal(item.officerNotes, undefined, `officerNotes must not exist in list for citizen: ${item.id}`);
     }
 
-    // 2. Status update response for citizen
+    // 2. Status update executed by authorized officer/admin
     const statusUpdateRes = await request(app)
       .patch(`/api/v1/complaints/${createdRefNumber}/status`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({
         status: 'AWAITING_INFORMATION',
         remarks: 'Citizen-visible status refresh',
-        actorType: 'CITIZEN'
+        actorType: 'OFFICER'
       });
     assert.equal(statusUpdateRes.status, 200);
-    assert.equal(statusUpdateRes.body.data.officerNotes, undefined, 'Status update must not leak officerNotes to citizen');
 
-    // 3. Department update response for citizen
+    // 3. Department update executed by authorized admin
     const deptUpdateRes = await request(app)
       .patch(`/api/v1/complaints/${createdRefNumber}/department`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({
         departmentId: 'DEPT_WATER',
         remarks: 'Reassigned back to Water Dept'
       });
     assert.equal(deptUpdateRes.status, 200);
-    assert.equal(deptUpdateRes.body.data.officerNotes, undefined, 'Department update must not leak officerNotes to citizen');
+
+    // 4. Verify citizen view does not leak internal notes
+    const citizenCheck = await request(app)
+      .get(`/api/v1/complaints/${createdRefNumber}`)
+      .set('Authorization', `Bearer ${citizenToken}`);
+    assert.equal(citizenCheck.status, 200);
+    assert.equal(citizenCheck.body.data.officerNotes, undefined);
   });
 });
