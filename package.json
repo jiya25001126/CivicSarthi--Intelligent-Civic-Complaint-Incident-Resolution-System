@@ -16,6 +16,7 @@
     "build": "npm --prefix frontend run build",
     "test": "npm --prefix backend test",
     "seed": "npm --prefix backend run seed",
+    "seed:reset": "npm --prefix backend run seed:reset",
     "install:all": "npm install --prefix mock-cpgrams && npm install --prefix backend && npm install --prefix frontend"
   },
   "keywords": [

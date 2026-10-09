@@ -75,6 +75,9 @@ export class ComplaintRepository {
    */
   generateReferenceNumber(complaints = [], targetYear = new Date().getFullYear()) {
     const yearStr = String(targetYear);
+    const existingRefs = new Set(
+      complaints.map(c => (c.referenceNumber || c.id || '').toUpperCase())
+    );
     let maxNum = 0;
 
     for (const c of complaints) {
@@ -88,8 +91,14 @@ export class ComplaintRepository {
       }
     }
 
-    const nextSeq = String(maxNum + 1).padStart(4, '0');
-    return `CS-${yearStr}-${nextSeq}`;
+    let candidateSeq = maxNum + 1;
+    let candidateRef = `CS-${yearStr}-${String(candidateSeq).padStart(4, '0')}`;
+    while (existingRefs.has(candidateRef.toUpperCase())) {
+      candidateSeq++;
+      candidateRef = `CS-${yearStr}-${String(candidateSeq).padStart(4, '0')}`;
+    }
+
+    return candidateRef;
   }
 
   /**
@@ -237,11 +246,11 @@ export class ComplaintRepository {
           }
         ],
         officerNotes: [],
-        synthetic: true
+        synthetic: Boolean(complaintData.synthetic) || false
       };
 
       data.complaints.unshift(newComplaint);
-      if (!data.metadata) data.metadata = { synthetic: true };
+      if (!data.metadata) data.metadata = { synthetic: false };
       data.metadata.total = data.complaints.length;
 
       await this._writeFile(data);

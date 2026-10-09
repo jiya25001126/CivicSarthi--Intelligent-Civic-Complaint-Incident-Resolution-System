@@ -703,33 +703,20 @@ export const SEED_COMPLAINTS = [
 ];
 
 export async function runSeed(options = {}) {
-  const isSafeMode = options.safe || process.argv.includes('--safe') || process.argv.includes('--check');
-
-  console.log('[CivicSarthi Seed] NOTICE: Running seed script.');
-  if (isSafeMode) {
-    console.log('[CivicSarthi Seed] Running in --safe mode: verifying existing datasets before writing.');
-  } else {
-    console.log('[CivicSarthi Seed] WARNING: Destructive reset mode active. Overwriting demonstration data fixtures.');
-  }
+  const isReset = options.reset || process.argv.includes('--reset') || process.argv.includes('--force');
+  const targetDir = options.dataDir || DATA_DIR;
 
   // Ensure data dir exists
-  await fs.mkdir(DATA_DIR, { recursive: true });
+  await fs.mkdir(targetDir, { recursive: true });
 
-  const deptFile = path.join(DATA_DIR, 'departments.json');
-  const compFile = path.join(DATA_DIR, 'complaints.json');
-  const histFile = path.join(DATA_DIR, 'status_history.json');
+  const deptFile = path.join(targetDir, 'departments.json');
+  const compFile = path.join(targetDir, 'complaints.json');
+  const histFile = path.join(targetDir, 'status_history.json');
 
-  if (isSafeMode) {
-    try {
-      const existingComp = await fs.readFile(compFile, 'utf-8');
-      const parsed = JSON.parse(existingComp);
-      if (parsed.complaints && parsed.complaints.length > 0) {
-        console.log(`[CivicSarthi Seed] Safe mode: ${compFile} already contains ${parsed.complaints.length} records. Skipping overwrite.`);
-        return { skipped: true, count: parsed.complaints.length };
-      }
-    } catch {
-      // File does not exist, proceed with initial seed
-    }
+  if (isReset) {
+    console.log('[CivicSarthi Seed] NOTICE: Deliberate demo-data reset mode active (--reset/--force). Restoring clean synthetic demonstration fixtures.');
+  } else {
+    console.log('[CivicSarthi Seed] NOTICE: Ordinary seed mode active. Preserving genuine user-created records.');
   }
 
   // 1. Write Departments
@@ -744,27 +731,59 @@ export async function runSeed(options = {}) {
   await fs.writeFile(deptFile, JSON.stringify(deptData, null, 2), 'utf-8');
   console.log(`[CivicSarthi Seed] Wrote ${SEED_DEPARTMENTS.length} departments to ${deptFile}`);
 
-  // 2. Write Complaints
-  const compFile = path.join(DATA_DIR, 'complaints.json');
+  // 2. Determine Complaints to write
+  let preservedUserComplaints = [];
+  let preservedUserHistory = [];
+
+  if (!isReset) {
+    try {
+      const rawComp = await fs.readFile(compFile, 'utf-8');
+      const existingComp = JSON.parse(rawComp);
+      if (Array.isArray(existingComp.complaints)) {
+        preservedUserComplaints = existingComp.complaints.filter(c =>
+          c.synthetic === false ||
+          (c.synthetic !== true && !SEED_COMPLAINTS.some(s => s.id === c.id || s.referenceNumber === c.referenceNumber))
+        );
+      }
+    } catch {
+      // File does not exist yet
+    }
+
+    try {
+      const rawHist = await fs.readFile(histFile, 'utf-8');
+      const existingHist = JSON.parse(rawHist);
+      if (Array.isArray(existingHist.history) && preservedUserComplaints.length > 0) {
+        const userRefIds = new Set(preservedUserComplaints.map(c => c.id || c.referenceNumber));
+        preservedUserHistory = existingHist.history.filter(h => userRefIds.has(h.complaintId) || userRefIds.has(h.referenceNumber));
+      }
+    } catch {
+      // History file does not exist yet
+    }
+  }
+
+  // Combine: preserved genuine complaints first, then standard synthetic seed complaints
+  const finalComplaints = [...preservedUserComplaints, ...SEED_COMPLAINTS];
   const compData = {
     metadata: {
-      synthetic: true,
-      total: SEED_COMPLAINTS.length,
+      synthetic: preservedUserComplaints.length === 0,
+      total: finalComplaints.length,
+      userRecordsCount: preservedUserComplaints.length,
+      demoRecordsCount: SEED_COMPLAINTS.length,
       version: "1.1.0",
-      description: "Synthetic citizen complaints for CivicSarthi decision support demonstration"
+      description: "CivicSarthi complaints repository"
     },
-    complaints: SEED_COMPLAINTS
+    complaints: finalComplaints
   };
   await fs.writeFile(compFile, JSON.stringify(compData, null, 2), 'utf-8');
-  console.log(`[CivicSarthi Seed] Wrote ${SEED_COMPLAINTS.length} complaints to ${compFile}`);
+  console.log(`[CivicSarthi Seed] Wrote ${finalComplaints.length} complaints to ${compFile} (Preserved ${preservedUserComplaints.length} user-created records)`);
 
   // 3. Write Status History
-  const historyRecords = [];
+  const seedHistoryRecords = [];
   let histId = 1;
   for (const c of SEED_COMPLAINTS) {
     if (Array.isArray(c.statusHistory)) {
       for (const h of c.statusHistory) {
-        historyRecords.push({
+        seedHistoryRecords.push({
           id: `HIST-${String(histId++).padStart(3, '0')}`,
           complaintId: c.id,
           referenceNumber: c.referenceNumber,
@@ -777,19 +796,24 @@ export async function runSeed(options = {}) {
     }
   }
 
-  const histFile = path.join(DATA_DIR, 'status_history.json');
+  const finalHistory = [...preservedUserHistory, ...seedHistoryRecords];
   const histData = {
     metadata: {
-      synthetic: true,
+      synthetic: preservedUserHistory.length === 0,
       version: "1.1.0",
-      description: "Synthetic timeline and status history audit trail for complaints"
+      description: "Timeline and status history audit trail for CivicSarthi complaints"
     },
-    history: historyRecords
+    history: finalHistory
   };
   await fs.writeFile(histFile, JSON.stringify(histData, null, 2), 'utf-8');
-  console.log(`[CivicSarthi Seed] Wrote ${historyRecords.length} history records to ${histFile}`);
+  console.log(`[CivicSarthi Seed] Wrote ${finalHistory.length} history records to ${histFile} (Preserved ${preservedUserHistory.length} user history records)`);
 
-  console.log('[CivicSarthi Seed] Successfully completed seeding synthetic demo data.');
+  console.log('[CivicSarthi Seed] Successfully finished seeding process.');
+  return {
+    departmentsCount: SEED_DEPARTMENTS.length,
+    complaintsCount: finalComplaints.length,
+    userRecordsPreserved: preservedUserComplaints.length
+  };
 }
 
 // Execute if run directly

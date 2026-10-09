@@ -130,10 +130,13 @@ export const updateComplaintStatus = async (req, res, next) => {
       });
     }
 
+    const isOfficer = req.query.role === 'officer' || req.headers['x-portal-role'] === 'officer';
+    const responseData = isOfficer ? updated : complaintService.sanitizeForCitizen(updated);
+
     res.json({
       success: true,
       message: `Status updated to ${status}`,
-      data: updated
+      data: responseData
     });
   } catch (error) {
     next(error);
@@ -158,10 +161,13 @@ export const updateComplaintDepartment = async (req, res, next) => {
       });
     }
 
+    const isOfficer = req.query.role === 'officer' || req.headers['x-portal-role'] === 'officer';
+    const responseData = isOfficer ? updated : complaintService.sanitizeForCitizen(updated);
+
     res.json({
       success: true,
       message: `Complaint reassigned to department ${departmentId}`,
-      data: updated
+      data: responseData
     });
   } catch (error) {
     next(error);

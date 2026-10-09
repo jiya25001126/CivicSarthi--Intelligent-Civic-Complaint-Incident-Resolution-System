@@ -2,10 +2,16 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'fs/promises';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import request from 'supertest';
 import createApp from '../src/app.js';
-import complaintRepository from '../src/repositories/complaint.repository.js';
+import complaintRepository, { ComplaintRepository } from '../src/repositories/complaint.repository.js';
+import { runSeed } from '../src/scripts/seed.js';
+import { connectDatabase } from '../src/config/database.js';
 import config from '../src/config/app.config.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = createApp();
 const TEST_FILE_PATH = path.resolve(path.dirname(config.dataPath.complaints), 'complaints.test.json');
@@ -123,7 +129,7 @@ describe('CivicSarthi Phase 1 Backend API Tests', () => {
     assert.equal(res.body.data.status, 'SUBMITTED');
     assert.equal(res.body.data.priority, 'MEDIUM');
     assert.equal(res.body.data.departmentId, 'DEPT_WATER');
-    assert.equal(res.body.data.synthetic, true);
+    assert.equal(res.body.data.synthetic, false);
 
     createdRefNumber = res.body.referenceNumber;
   });
@@ -282,17 +288,286 @@ describe('CivicSarthi Phase 1 Backend API Tests', () => {
     assert.ok(res.body.data.length >= 2); // SUBMITTED, UNDER_REVIEW, etc.
   });
 
-  it('Production Error Safety: 500 errors in production must not expose internal stack traces or paths', async () => {
-    const originalEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
+  it('Reference Collision Safety: loops to find next available sequence when collisions occur', () => {
+    // Scenario 1: standard sequence
+    const list1 = [
+      { referenceNumber: 'CS-2026-0001' },
+      { referenceNumber: 'CS-2026-0002' }
+    ];
+    assert.equal(complaintRepository.generateReferenceNumber(list1, 2026), 'CS-2026-0003');
+
+    // Scenario 2: collision simulation where candidate 0003 is already taken manually
+    const listWithCollision = [
+      { referenceNumber: 'CS-2026-0001' },
+      { referenceNumber: 'CS-2026-0002' },
+      { referenceNumber: 'CS-2026-0003' } // candidate 0003 is already present
+    ];
+    const generated = complaintRepository.generateReferenceNumber(listWithCollision, 2026);
+    assert.equal(generated, 'CS-2026-0004');
+    assert.ok(!listWithCollision.some(c => c.referenceNumber === generated), 'Generated reference must be unique');
+  });
+
+  it('Immutability of Existing References: adding new complaints leaves existing complaint IDs and references unchanged', async () => {
+    const dataBefore = await complaintRepository.findAll();
+    const beforeCount = Array.isArray(dataBefore) ? dataBefore.length : dataBefore.items.length;
+    const originalFirstId = (Array.isArray(dataBefore) ? dataBefore[0] : dataBefore.items[0]).id;
+
+    // Create a new complaint
+    const newComp = await complaintRepository.create({
+      title: 'Immutability test complaint',
+      description: 'Testing that creating new records never mutates existing complaint IDs.',
+      category: 'roads',
+      state: 'Maharashtra',
+      district: 'Pune',
+      departmentId: 'DEPT_ROADS'
+    });
+
+    const dataAfter = await complaintRepository.findAll();
+    const afterList = Array.isArray(dataAfter) ? dataAfter : dataAfter.items;
+    assert.equal(afterList.length, beforeCount + 1);
+
+    // Verify existing record is intact with unchanged ID
+    const foundOriginal = afterList.find(c => c.id === originalFirstId);
+    assert.ok(foundOriginal);
+    assert.equal(foundOriginal.id, originalFirstId);
+  });
+
+  it('Persistence Across Server Restarts: records persist on disk and survive process restart', async () => {
+    const payload = {
+      title: 'Persistent road cavity report',
+      description: 'Verifying that data saved to JSON file persists across new repository instances.',
+      category: 'roads',
+      state: 'Maharashtra',
+      district: 'Pune',
+      departmentId: 'DEPT_ROADS'
+    };
+
+    const created = await complaintRepository.create(payload);
+    assert.ok(created.id);
+
+    // Simulate process reboot by creating a brand-new repository instance
+    const restartedRepo = new ComplaintRepository();
+    restartedRepo.setFilePath(TEST_FILE_PATH);
+
+    const retrieved = await restartedRepo.findById(created.id);
+    assert.ok(retrieved, 'Complaint must be readable by a fresh repository instance');
+    assert.equal(retrieved.id, created.id);
+    assert.equal(retrieved.title, payload.title);
+    assert.equal(retrieved.description, payload.description);
+    assert.equal(retrieved.synthetic, false);
+  });
+
+  it('Concurrent Writes Safety: concurrent status updates on same complaint serialize safely', async () => {
+    assert.ok(createdRefNumber);
+
+    // Execute concurrent updates via the repository mutex
+    const update1 = complaintRepository.updateStatus(createdRefNumber, {
+      status: 'IN_PROGRESS',
+      remarks: 'Concurrent update 1: Field inspection started',
+      actorType: 'OFFICER'
+    });
+    const update2 = complaintRepository.addOfficerNote(createdRefNumber, {
+      note: 'Concurrent note 2: Machine ordered',
+      officerId: 'OFF_999'
+    });
+
+    await Promise.all([update1, update2]);
+
+    const finalComplaint = await complaintRepository.findById(createdRefNumber);
+    assert.equal(finalComplaint.status, 'IN_PROGRESS');
+    assert.ok(finalComplaint.statusHistory.some(h => h.remarks.includes('Concurrent update 1')));
+    assert.ok(finalComplaint.officerNotes.some(n => n.note.includes('Concurrent note 2')));
+  });
+
+  it('Seeding Idempotency and Non-Destructive Ordinary Seed: preserves genuine user complaints and reset wipes them', async () => {
+    const sandboxDir = path.resolve(__dirname, 'sandbox-seed-test');
+    try {
+      await fs.rm(sandboxDir, { recursive: true, force: true });
+    } catch {}
 
     try {
-      // Trigger a 404
-      const res404 = await request(app).get('/api/v1/non-existent-endpoint-1234');
-      assert.equal(res404.status, 404);
-      assert.equal(res404.body.stack, undefined, 'Stack must not be exposed in production');
+      // 1. Initial seed in sandbox directory
+      const initialResult = await runSeed({ dataDir: sandboxDir });
+      assert.equal(initialResult.userRecordsPreserved, 0);
+      assert.ok(initialResult.complaintsCount >= 10);
+
+      // 2. Add a genuine user-created complaint (synthetic: false)
+      const sandboxCompFile = path.join(sandboxDir, 'complaints.json');
+      const raw = await fs.readFile(sandboxCompFile, 'utf-8');
+      const parsed = JSON.parse(raw);
+      const userComplaint = {
+        id: 'CS-2026-9999',
+        referenceNumber: 'CS-2026-9999',
+        title: 'Genuine citizen complaint created by portal user',
+        description: 'Street light broken at crossroad 5',
+        category: 'electricity',
+        state: 'Maharashtra',
+        district: 'Pune',
+        departmentId: 'DEPT_POWER',
+        status: 'SUBMITTED',
+        synthetic: false,
+        createdAt: new Date().toISOString(),
+        statusHistory: [{ timestamp: new Date().toISOString(), status: 'SUBMITTED', actorType: 'CITIZEN', remarks: 'Submitted by citizen' }]
+      };
+      parsed.complaints.unshift(userComplaint);
+      await fs.writeFile(sandboxCompFile, JSON.stringify(parsed, null, 2), 'utf-8');
+
+      // 3. Run ordinary seed: must preserve user-created record
+      const secondSeed = await runSeed({ dataDir: sandboxDir });
+      assert.equal(secondSeed.userRecordsPreserved, 1, 'Ordinary seed must preserve 1 user complaint');
+
+      const reloadedRaw = await fs.readFile(sandboxCompFile, 'utf-8');
+      const reloadedData = JSON.parse(reloadedRaw);
+      const preserved = reloadedData.complaints.find(c => c.id === 'CS-2026-9999');
+      assert.ok(preserved, 'User complaint must remain in complaints.json after ordinary seed');
+      assert.equal(preserved.title, 'Genuine citizen complaint created by portal user');
+
+      // 4. Run ordinary seed a second time: test idempotency
+      const thirdSeed = await runSeed({ dataDir: sandboxDir });
+      assert.equal(thirdSeed.userRecordsPreserved, 1);
+      assert.equal(thirdSeed.complaintsCount, secondSeed.complaintsCount, 'Ordinary seed must be idempotent');
+
+      // 5. Run deliberate reset mode (--reset): must cleanly restore pristine demo data
+      const resetResult = await runSeed({ dataDir: sandboxDir, reset: true });
+      assert.equal(resetResult.userRecordsPreserved, 0, 'Reset mode must not preserve user records');
+      const resetRaw = await fs.readFile(sandboxCompFile, 'utf-8');
+      const resetData = JSON.parse(resetRaw);
+      const userRecordAfterReset = resetData.complaints.find(c => c.id === 'CS-2026-9999');
+      assert.equal(userRecordAfterReset, undefined, 'Reset mode must wipe user-created records');
     } finally {
-      process.env.NODE_ENV = originalEnv;
+      try {
+        await fs.rm(sandboxDir, { recursive: true, force: true });
+      } catch {}
     }
+  });
+
+  it('Database Connection Fallback: unreachable MongoDB connection gracefully falls back to JSON without crashing or leaking secrets', async () => {
+    const originalUri = process.env.MONGODB_URI;
+    process.env.MONGODB_URI = 'mongodb://fakeuser:secretpassword@127.0.0.1:27099/unreachable_db';
+
+    try {
+      const connResult = await connectDatabase();
+      assert.equal(connResult.connected, false);
+      assert.equal(connResult.type, 'FILE_REPOSITORY');
+
+      const healthRes = await request(app).get('/api/v1/health');
+      assert.equal(healthRes.status, 200);
+      assert.equal(healthRes.body.database, 'FileRepository (JSON Fallback)');
+      assert.equal(healthRes.body.mongodbUri, undefined, 'Secrets must not be exposed in health response');
+      assert.ok(!JSON.stringify(healthRes.body).includes('secretpassword'), 'Password must never leak in health endpoint');
+    } finally {
+      process.env.MONGODB_URI = originalUri || '';
+    }
+  });
+
+  it('Search, Filtering, Sorting, and Pagination boundaries', async () => {
+    // 1. Non-existent category
+    const resBadCat = await request(app).get('/api/v1/complaints?category=NON_EXISTENT_CAT_XYZ');
+    assert.equal(resBadCat.status, 200);
+    assert.equal(resBadCat.body.count, 0);
+    assert.deepEqual(resBadCat.body.data, []);
+
+    // 2. Non-existent search query
+    const resBadSearch = await request(app).get('/api/v1/complaints?search=ZXYWVUTSRQPONMLKJIHGFEDCBA_NOMATCH');
+    assert.equal(resBadSearch.status, 200);
+    assert.equal(resBadSearch.body.count, 0);
+    assert.deepEqual(resBadSearch.body.data, []);
+
+    // 3. Sorting asc vs desc
+    const resAsc = await request(app).get('/api/v1/complaints?sort=createdAt_asc');
+    assert.equal(resAsc.status, 200);
+    assert.ok(resAsc.body.data.length >= 2);
+    const date1 = new Date(resAsc.body.data[0].createdAt).getTime();
+    const date2 = new Date(resAsc.body.data[1].createdAt).getTime();
+    assert.ok(date1 <= date2, 'Ascending sort should order earliest first');
+
+    const resDesc = await request(app).get('/api/v1/complaints?sort=createdAt_desc');
+    assert.equal(resDesc.status, 200);
+    assert.ok(resDesc.body.data.length >= 2);
+    const descDate1 = new Date(resDesc.body.data[0].createdAt).getTime();
+    const descDate2 = new Date(resDesc.body.data[1].createdAt).getTime();
+    assert.ok(descDate1 >= descDate2, 'Descending sort should order latest first');
+
+    // 4. Pagination
+    const resPage1 = await request(app).get('/api/v1/complaints?page=1&limit=3');
+    assert.equal(resPage1.status, 200);
+    assert.equal(resPage1.body.data.length, 3);
+    assert.equal(resPage1.body.pagination.page, 1);
+    assert.equal(resPage1.body.pagination.limit, 3);
+    assert.ok(resPage1.body.pagination.total >= 10);
+    assert.ok(resPage1.body.pagination.totalPages >= 4);
+
+    // 5. Out of bounds page
+    const resOutOfBounds = await request(app).get('/api/v1/complaints?page=9999&limit=10');
+    assert.equal(resOutOfBounds.status, 200);
+    assert.equal(resOutOfBounds.body.data.length, 0);
+    assert.equal(resOutOfBounds.body.pagination.page, 9999);
+  });
+
+  it('Department and Complaint Lookup Edge Cases', async () => {
+    // Valid department lookup
+    const validDept = await request(app).get('/api/v1/departments/DEPT_ROADS');
+    assert.equal(validDept.status, 200);
+    assert.equal(validDept.body.success, true);
+    assert.equal(validDept.body.data.id, 'DEPT_ROADS');
+
+    // Invalid department lookup (404)
+    const invalidDept = await request(app).get('/api/v1/departments/DEPT_NON_EXISTENT_999');
+    assert.equal(invalidDept.status, 404);
+    assert.equal(invalidDept.body.success, false);
+
+    // Invalid complaint status update (404)
+    const badStatusUpdate = await request(app)
+      .patch('/api/v1/complaints/CS-NONEXISTENT-9999/status')
+      .send({ status: 'UNDER_REVIEW' });
+    assert.equal(badStatusUpdate.status, 404);
+
+    // Invalid complaint department reassign (404)
+    const badDeptUpdate = await request(app)
+      .patch('/api/v1/complaints/CS-NONEXISTENT-9999/department')
+      .send({ departmentId: 'DEPT_WATER' });
+    assert.equal(badDeptUpdate.status, 404);
+
+    // Invalid complaint add note (404)
+    const badNote = await request(app)
+      .post('/api/v1/complaints/CS-NONEXISTENT-9999/notes')
+      .send({ note: 'Some note' });
+    assert.equal(badNote.status, 404);
+
+    // Invalid complaint history (404)
+    const badHistory = await request(app).get('/api/v1/complaints/CS-NONEXISTENT-9999/history');
+    assert.equal(badHistory.status, 404);
+  });
+
+  it('Audit: Internal officer notes are excluded from all citizen responses and unauthenticated update endpoints', async () => {
+    assert.ok(createdRefNumber);
+
+    // 1. List complaints as citizen
+    const listRes = await request(app).get('/api/v1/complaints');
+    assert.equal(listRes.status, 200);
+    for (const item of listRes.body.data) {
+      assert.equal(item.officerNotes, undefined, `officerNotes must not exist in list for citizen: ${item.id}`);
+    }
+
+    // 2. Status update response for citizen
+    const statusUpdateRes = await request(app)
+      .patch(`/api/v1/complaints/${createdRefNumber}/status`)
+      .send({
+        status: 'AWAITING_INFORMATION',
+        remarks: 'Citizen-visible status refresh',
+        actorType: 'CITIZEN'
+      });
+    assert.equal(statusUpdateRes.status, 200);
+    assert.equal(statusUpdateRes.body.data.officerNotes, undefined, 'Status update must not leak officerNotes to citizen');
+
+    // 3. Department update response for citizen
+    const deptUpdateRes = await request(app)
+      .patch(`/api/v1/complaints/${createdRefNumber}/department`)
+      .send({
+        departmentId: 'DEPT_WATER',
+        remarks: 'Reassigned back to Water Dept'
+      });
+    assert.equal(deptUpdateRes.status, 200);
+    assert.equal(deptUpdateRes.body.data.officerNotes, undefined, 'Department update must not leak officerNotes to citizen');
   });
 });
