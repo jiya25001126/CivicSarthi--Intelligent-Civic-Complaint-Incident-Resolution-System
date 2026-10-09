@@ -76,7 +76,7 @@ export default function TrackComplaintPage() {
             Track Grievance Progression
           </h1>
           <p className="text-sm text-slate-600 mt-1">
-            Enter your unique reference number (e.g. <span className="font-mono font-semibold">JAN-2026-0001</span> or <span className="font-mono font-semibold">CPG-2026-00101</span>) to see the live status audit trail.
+            Enter your unique reference number (e.g. <span className="font-mono font-semibold">CS-2026-0001</span> or <span className="font-mono font-semibold">CPG-2026-00101</span>) to see the live status audit trail.
           </p>
         </div>
 
@@ -86,7 +86,7 @@ export default function TrackComplaintPage() {
             <input
               type="text"
               required
-              placeholder="Enter reference number (e.g. JAN-2026-0001)..."
+              placeholder="Enter reference number (e.g. CS-2026-0001)..."
               value={inputQuery}
               onChange={(e) => setInputQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 font-mono font-semibold"

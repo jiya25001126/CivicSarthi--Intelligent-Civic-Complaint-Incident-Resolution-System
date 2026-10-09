@@ -26,10 +26,10 @@ export default function NeglectRadarPage() {
           Proactive Redressal Stall Radar
         </h2>
         <p className="text-xs text-slate-500 max-w-md mx-auto">
-          Monitors cases cycling between departments without action, flagged by JanSahay's configurable SLA rules (reassignment threshold &gt;= 2, stale updates &gt; 7 days).
+          Monitors cases cycling between departments without action, flagged by CivicSarthi's configurable SLA rules (reassignment threshold &gt;= 2, stale updates &gt; 7 days).
         </p>
         <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-700 rounded text-xs font-medium">
-          <span>Scheduled for Phase 3 Implementation</span>
+          <span>Scheduled for Phase 8 Implementation</span>
           <ArrowRight size={14} />
         </div>
       </div>

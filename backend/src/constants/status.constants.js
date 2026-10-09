@@ -1,5 +1,5 @@
 /**
- * JanSahay Platform Constants & Status Transition Matrix
+ * CivicSarthi Platform Constants & Status Transition Matrix
  */
 
 export const COMPLAINT_STATUS = {

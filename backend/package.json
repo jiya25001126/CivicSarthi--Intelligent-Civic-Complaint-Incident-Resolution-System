@@ -1,7 +1,7 @@
 {
-  "name": "jansahay-backend",
+  "name": "civicsarthi-backend",
   "version": "1.1.0",
-  "description": "Backend API layer for JanSahay - AI-assisted grievance resolution layer for CPGRAMS",
+  "description": "Backend API layer for CivicSarthi — Intelligent Civic Complaint & Incident Resolution System",
   "type": "module",
   "main": "src/server.js",
   "scripts": {

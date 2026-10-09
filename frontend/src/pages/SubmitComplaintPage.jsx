@@ -127,7 +127,7 @@ export default function SubmitComplaintPage() {
             Grievance Successfully Registered
           </h2>
           <p className="text-sm text-slate-600">
-            Your complaint has been logged in the JanSahay demonstration coordination registry.
+            Your complaint has been logged in the CivicSarthi demonstration coordination registry.
           </p>
         </div>
 

@@ -42,18 +42,18 @@ export default function LandingPage() {
         <div className="max-w-3xl space-y-6">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-semibold border border-blue-400/30">
             <span className="w-2 h-2 rounded-full bg-blue-400"></span>
-            Civic Tech Hackathon Prototype
+            Intelligent Civic Incident Redressal System
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
-            JanSahay
+            CivicSarthi
             <span className="block text-blue-400 text-2xl sm:text-3xl font-semibold mt-1">
-              From Complaint to Resolution
+              From Complaint to Resolution.
             </span>
           </h1>
 
           <p className="text-base sm:text-lg text-slate-300 leading-relaxed font-normal">
-            JanSahay: AI-assisted grievance resolution layer for CPGRAMS. Designed to augment existing public grievance portals with intelligent decision-support, cross-department coordination, and transparent citizen communication.
+            CivicSarthi — Intelligent Civic Complaint & Incident Resolution System. Designed to augment existing public grievance portals with intelligent decision-support, cross-department coordination, and transparent citizen communication.
           </p>
 
           {/* Call to Actions */}
@@ -92,12 +92,12 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Disclaimer Callout Box */}
-        <div className="mt-8 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-200 text-xs flex items-start gap-3">
-          <Info size={18} className="shrink-0 text-amber-400 mt-0.5" />
+        {/* Operating Notice Callout Box */}
+        <div className="mt-8 p-4 bg-slate-800/80 border border-slate-700 rounded-xl text-slate-300 text-xs flex items-start gap-3">
+          <Info size={18} className="shrink-0 text-blue-400 mt-0.5" />
           <div>
-            <span className="font-bold text-amber-300">Important Prototype Notice:</span>{' '}
-            JanSahay is a prototype and is not affiliated with or endorsed by DARPG/CPGRAMS. This platform operates entirely on synthetic demonstration data and does not submit complaints to official government systems.
+            <span className="font-bold text-slate-200">System Transparency Notice:</span>{' '}
+            CivicSarthi is an independent civic incident resolution platform. It is not affiliated with or endorsed by DARPG/CPGRAMS. Demonstration records are synthetic and do not submit directly to official government portals without authorization.
           </div>
         </div>
       </div>
@@ -151,7 +151,7 @@ export default function LandingPage() {
       <div>
         <div className="text-center max-w-2xl mx-auto mb-8">
           <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
-            How JanSahay Augments Existing Systems
+            How CivicSarthi Augments Existing Systems
           </h2>
           <p className="text-sm text-slate-600 mt-1">
             Bridging the gap between bureaucratic workflows and citizen reassurance without requiring a rip-and-replace of national infrastructure.
@@ -165,7 +165,7 @@ export default function LandingPage() {
             </div>
             <h3 className="font-bold text-base text-slate-900">Multi-Agency Incident Clustering</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              When disaster strikes (e.g. urban flooding), multiple citizens submit complaints touching roads, water, power, and healthcare. JanSahay groups related complaints under synchronized composite incident roots.
+              When disaster strikes (e.g. urban flooding), multiple citizens submit complaints touching roads, water, power, and healthcare. CivicSarthi groups related complaints under synchronized composite incident roots.
             </p>
             <Link to="/incident" className="inline-flex items-center gap-1 text-xs text-blue-600 font-semibold hover:underline">
               <span>View Incident Concept</span>

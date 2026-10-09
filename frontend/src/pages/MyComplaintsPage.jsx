@@ -153,7 +153,7 @@ export default function MyComplaintsPage() {
           <span className="font-bold text-sm text-slate-800">
             Complaints List ({complaints.length} records)
           </span>
-          <span className="text-xs text-slate-500">Live data from JanSahay repository</span>
+          <span className="text-xs text-slate-500">Live data from CivicSarthi repository</span>
         </div>
 
         {loading ? (

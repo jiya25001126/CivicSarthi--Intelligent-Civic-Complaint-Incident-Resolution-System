@@ -1,7 +1,7 @@
 {
-  "name": "jansahay-mock-cpgrams",
+  "name": "civicsarthi-mock-cpgrams",
   "version": "1.0.0",
-  "description": "Isolated mock CPGRAMS API router and adapter for JanSahay",
+  "description": "Isolated mock CPGRAMS API router and adapter for CivicSarthi",
   "type": "module",
   "main": "index.js",
   "dependencies": {

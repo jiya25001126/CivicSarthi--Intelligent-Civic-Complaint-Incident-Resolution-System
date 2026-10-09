@@ -55,10 +55,10 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans">
-      {/* Top Prototype Warning Banner */}
-      <div className="bg-amber-500 text-slate-950 font-semibold px-4 py-1.5 text-center text-xs tracking-wide shadow-sm flex items-center justify-center gap-2">
-        <span className="inline-block w-2 h-2 rounded-full bg-slate-950 animate-pulse"></span>
-        <span>Prototype — synthetic demonstration data. Does not submit complaints to official government systems.</span>
+      {/* System Transparency Banner */}
+      <div className="bg-slate-800 text-slate-300 font-medium px-4 py-1 text-center text-xs tracking-wide border-b border-slate-700 flex items-center justify-center gap-2">
+        <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+        <span>Demonstration Environment — Synthetic civic complaint records. Independent resolution decision-support system.</span>
       </div>
 
       {/* Main GovTech Header */}
@@ -67,20 +67,20 @@ export default function Layout() {
           {/* Logo & Tagline */}
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
             <div className="w-10 h-10 rounded bg-blue-700 flex items-center justify-center font-bold text-white text-xl tracking-wider shadow">
-              JS
+              CS
             </div>
             <div>
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-extrabold tracking-tight text-white">JanSahay</span>
+                <span className="text-2xl font-extrabold tracking-tight text-white">CivicSarthi</span>
                 <span className="text-xs uppercase px-2 py-0.5 rounded bg-blue-950 text-blue-300 font-semibold border border-blue-800">
-                  Grievance AI Layer
+                  Civic Resolution System
                 </span>
               </div>
               <p className="text-xs text-blue-200 font-medium">
-                From Complaint to Resolution
+                From Complaint to Resolution.
               </p>
               <p className="text-[11px] text-slate-400">
-                JanSahay: AI-assisted grievance resolution layer for CPGRAMS.
+                CivicSarthi — Intelligent Civic Complaint & Incident Resolution System
               </p>
             </div>
           </div>
@@ -246,14 +246,17 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      {/* GovTech Disclaimer Footer */}
+      {/* Civic Transparency Footer */}
       <footer className="bg-slate-900 text-slate-400 border-t border-slate-800 py-6 text-center text-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-2">
           <p className="font-semibold text-slate-300">
-            JanSahay is a prototype and is not affiliated with or endorsed by DARPG/CPGRAMS.
+            CivicSarthi — Intelligent Civic Complaint & Incident Resolution System
+          </p>
+          <p className="text-[11px] text-slate-400">
+            CivicSarthi is an independent civic resolution platform and is not affiliated with or endorsed by DARPG/CPGRAMS.
           </p>
           <p className="text-[11px] text-slate-500">
-            Phase 1 Core Platform &bull; Synthetic grievance management demonstration &bull; All records are simulated demo data.
+            Demonstration environment &bull; Synthetic grievance management data &bull; Does not submit directly to official government portals without authorization.
           </p>
         </div>
       </footer>

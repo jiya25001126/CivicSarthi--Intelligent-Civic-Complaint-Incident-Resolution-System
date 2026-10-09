@@ -9,9 +9,9 @@ await connectDatabase();
 
 const server = app.listen(config.port, () => {
   // eslint-disable-next-line no-console
-  console.log(`[JanSahay Backend] Server running on port ${config.port} (${config.env})`);
+  console.log(`[CivicSarthi Backend] Server running on port ${config.port} (${config.env})`);
   // eslint-disable-next-line no-console
-  console.log(`[JanSahay Backend] Healthcheck available at http://localhost:${config.port}/api/v1/health`);
+  console.log(`[CivicSarthi Backend] Healthcheck available at http://localhost:${config.port}/api/v1/health`);
 });
 
 export default server;

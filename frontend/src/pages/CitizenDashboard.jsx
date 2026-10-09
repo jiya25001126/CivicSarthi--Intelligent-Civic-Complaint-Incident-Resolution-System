@@ -159,7 +159,7 @@ export default function CitizenDashboard() {
         {loading ? (
           <div className="p-12 text-center text-sm text-slate-500 flex flex-col items-center gap-3">
             <RefreshCw size={24} className="animate-spin text-blue-600" />
-            <span>Loading grievances from JanSahay backend...</span>
+            <span>Loading grievances from CivicSarthi backend...</span>
           </div>
         ) : recentComplaints.length === 0 ? (
           <div className="p-12 text-center text-sm text-slate-500">

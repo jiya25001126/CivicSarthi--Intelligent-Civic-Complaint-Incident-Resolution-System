@@ -123,7 +123,7 @@ export const SEED_DEPARTMENTS = [
 export const SEED_COMPLAINTS = [
   {
     id: "CPG-2026-00101",
-    referenceNumber: "JAN-2026-0001",
+    referenceNumber: "CS-2026-0001",
     title: "Family Pension Disbursement Delay Post-Superannuation",
     description: "Family pension has not been credited for the past four months after spouse retired from central civil services. PPO generation is delayed at the zonal accounts office.",
     text: "Family pension has not been credited for the past four months after spouse retired from central civil services. PPO generation is delayed at the zonal accounts office.",
@@ -156,7 +156,7 @@ export const SEED_COMPLAINTS = [
   },
   {
     id: "CPG-2026-00102",
-    referenceNumber: "JAN-2026-0002",
+    referenceNumber: "CS-2026-0002",
     title: "Discrepancy in Revised Dearness Relief Calculation",
     description: "Dearness relief arrears calculation incorrect in revised pension payment order. Seeking revision of revised basic entitlement according to 7th CPC matrix.",
     text: "Dearness relief arrears calculation incorrect in revised pension payment order. Seeking revision of revised basic entitlement according to 7th CPC matrix.",
@@ -189,7 +189,7 @@ export const SEED_COMPLAINTS = [
   },
   {
     id: "CPG-2026-00103",
-    referenceNumber: "JAN-2026-0003",
+    referenceNumber: "CS-2026-0003",
     title: "Jeevan Pramaan Digital Life Certificate Not Mapped at Branch",
     description: "Life certificate submitted via Jeevan Pramaan biometric portal last month but bank branch still marked status as non-compliant and stopped monthly disbursement.",
     text: "Life certificate submitted via Jeevan Pramaan biometric portal last month but bank branch still marked status as non-compliant and stopped monthly disbursement.",
@@ -218,7 +218,7 @@ export const SEED_COMPLAINTS = [
   },
   {
     id: "CPG-2026-00104",
-    referenceNumber: "JAN-2026-0004",
+    referenceNumber: "CS-2026-0004",
     title: "Post-Matric Scholarship DBT Pending Verification",
     description: "Post-matric scholarship DBT disbursement pending for academic year 2025-26 despite biometric institute verification completed in portal 5 months ago.",
     text: "Post-matric scholarship DBT disbursement pending for academic year 2025-26 despite biometric institute verification completed in portal 5 months ago.",
@@ -251,7 +251,7 @@ export const SEED_COMPLAINTS = [
   },
   {
     id: "CPG-2026-00105",
-    referenceNumber: "JAN-2026-0005",
+    referenceNumber: "CS-2026-0005",
     title: "Duplicate Application Error Code on Higher Ed Portal",
     description: "Merit-cum-means scholarship status displaying duplicate application error code ERR_409 even though only one valid registration ID was filed.",
     text: "Merit-cum-means scholarship status displaying duplicate application error code ERR_409 even though only one valid registration ID was filed.",
@@ -284,7 +284,7 @@ export const SEED_COMPLAINTS = [
   },
   {
     id: "CPG-2026-00106",
-    referenceNumber: "JAN-2026-0006",
+    referenceNumber: "CS-2026-0006",
     title: "Hazardous Potholes and Crater Cluster on Arterial Bypass",
     description: "Heavy crater pothole cluster on Sector-12 ring arterial road causing multiple two-wheeler accidents during evening commute. Immediate road resurfacing needed.",
     text: "Heavy crater pothole cluster on Sector-12 ring arterial road causing multiple two-wheeler accidents during evening commute. Immediate road resurfacing needed.",
@@ -317,7 +317,7 @@ export const SEED_COMPLAINTS = [
   },
   {
     id: "CPG-2026-00107",
-    referenceNumber: "JAN-2026-0007",
+    referenceNumber: "CS-2026-0007",
     title: "Unbarricaded Open Storm Water Trench Along Service Lane",
     description: "Unfinished drainage excavation along Main Bypass service lane left without warning barricades or reflector signage for 3 weeks.",
     text: "Unfinished drainage excavation along Main Bypass service lane left without warning barricades or reflector signage for 3 weeks.",
@@ -349,7 +349,7 @@ export const SEED_COMPLAINTS = [
   },
   {
     id: "CPG-2026-00108",
-    referenceNumber: "JAN-2026-0008",
+    referenceNumber: "CS-2026-0008",
     title: "Rectification of Non-Standard IRC Speed Breaker",
     description: "Faulty speed breaker installation constructed without standard IRC height specifications causing undercarriage damage to light vehicles.",
     text: "Faulty speed breaker installation constructed without standard IRC height specifications causing undercarriage damage to light vehicles.",
@@ -382,7 +382,7 @@ export const SEED_COMPLAINTS = [
   },
   {
     id: "CPG-2026-00109",
-    referenceNumber: "JAN-2026-0009",
+    referenceNumber: "CS-2026-0009",
     title: "Distribution Transformer Burnout and Low-Tension Blackout",
     description: "Distribution transformer explosion in Ward 9 causing 48 hours continuous blackout and surging voltage damaging household electronic appliances.",
     text: "Distribution transformer explosion in Ward 9 causing 48 hours continuous blackout and surging voltage damaging household electronic appliances.",
@@ -415,7 +415,7 @@ export const SEED_COMPLAINTS = [
   },
   {
     id: "CPG-2026-00110",
-    referenceNumber: "JAN-2026-0010",
+    referenceNumber: "CS-2026-0010",
     title: "Erroneous High Consumption on Locked Premises Smart Meter",
     description: "Faulty smart meter billing showing 1200 units consumption for a locked residential unit for two consecutive billing cycles.",
     text: "Faulty smart meter billing showing 1200 units consumption for a locked residential unit for two consecutive billing cycles.",
@@ -447,7 +447,7 @@ export const SEED_COMPLAINTS = [
   },
   {
     id: "CPG-2026-00111",
-    referenceNumber: "JAN-2026-0011",
+    referenceNumber: "CS-2026-0011",
     title: "Severe Sewage Odor and Contamination in Potable Water Supply",
     description: "Contaminated yellowish tap water with strong sewage odor supplied to residential colony blocks C and D for past five days.",
     text: "Contaminated yellowish tap water with strong sewage odor supplied to residential colony blocks C and D for past five days.",
@@ -480,7 +480,7 @@ export const SEED_COMPLAINTS = [
   },
   {
     id: "CPG-2026-00112",
-    referenceNumber: "JAN-2026-0012",
+    referenceNumber: "CS-2026-0012",
     title: "Non-Delivery of Scheduled Emergency Municipal Water Tanker",
     description: "Water tanker emergency booking token generated 48 hours ago but no tanker dispatched to Sector-5 community housing.",
     text: "Water tanker emergency booking token generated 48 hours ago but no tanker dispatched to Sector-5 community housing.",
@@ -511,7 +511,7 @@ export const SEED_COMPLAINTS = [
   },
   {
     id: "CPG-2026-00113",
-    referenceNumber: "JAN-2026-0013",
+    referenceNumber: "CS-2026-0013",
     title: "e-PoS Connectivity Failure and Grain Denial at Fair Price Shop",
     description: "Fair Price Shop dealer refusing subsidized wheat and rice allocation citing electronic e-PoS biometric server disconnection.",
     text: "Fair Price Shop dealer refusing subsidized wheat and rice allocation citing electronic e-PoS biometric server disconnection.",
@@ -543,7 +543,7 @@ export const SEED_COMPLAINTS = [
   },
   {
     id: "CPG-2026-00114",
-    referenceNumber: "JAN-2026-0014",
+    referenceNumber: "CS-2026-0014",
     title: "Stock Depletion of Essential Chronic Disease Medications at PHC",
     description: "Primary Health Centre lacks essential insulin and hypertension medications for senior citizens for over three weeks.",
     text: "Primary Health Centre lacks essential insulin and hypertension medications for senior citizens for over three weeks.",
@@ -575,7 +575,7 @@ export const SEED_COMPLAINTS = [
   },
   {
     id: "CPG-2026-00115",
-    referenceNumber: "JAN-2026-0015",
+    referenceNumber: "CS-2026-0015",
     title: "Denial of Cashless Admission Under PM-JAY Ayushman Bharat",
     description: "Denial of cashless admission under Ayushman Bharat scheme at empanelled hospital for urgent cardiac stent surgery.",
     text: "Denial of cashless admission under Ayushman Bharat scheme at empanelled hospital for urgent cardiac stent surgery.",
@@ -607,7 +607,7 @@ export const SEED_COMPLAINTS = [
   },
   {
     id: "CPG-2026-00116",
-    referenceNumber: "JAN-2026-0016",
+    referenceNumber: "CS-2026-0016",
     title: "Flash Flood Submersion and Power Line Disconnection",
     description: "Flash flood inundation in North Ward: Flood water submerged residential ground floors; power transformers shut down leaving 400 families in dark; clean drinking water pipeline snapped.",
     text: "Flash flood inundation in North Ward: Flood water submerged residential ground floors; power transformers shut down leaving 400 families in dark; clean drinking water pipeline snapped.",
@@ -640,7 +640,7 @@ export const SEED_COMPLAINTS = [
   },
   {
     id: "CPG-2026-00117",
-    referenceNumber: "JAN-2026-0017",
+    referenceNumber: "CS-2026-0017",
     title: "Debris Clearance and Emergency Rations for Displaced Families",
     description: "Flood water breached river embankment near East Crossing: Major road bridge blocked by debris; emergency food rations not reaching relief camp; displaced senior citizens lack medical care.",
     text: "Flood water breached river embankment near East Crossing: Major road bridge blocked by debris; emergency food rations not reaching relief camp; displaced senior citizens lack medical care.",
@@ -672,7 +672,7 @@ export const SEED_COMPLAINTS = [
   },
   {
     id: "CPG-2026-00118",
-    referenceNumber: "JAN-2026-0018",
+    referenceNumber: "CS-2026-0018",
     title: "Illegal Waste Dumping and Overflowing Community Dumpster",
     description: "Commercial establishments dumping construction debris and commercial refuse into residential municipal bins, obstructing pedestrian walkway and creating pest infestation.",
     text: "Commercial establishments dumping construction debris and commercial refuse into residential municipal bins, obstructing pedestrian walkway and creating pest infestation.",
@@ -703,7 +703,7 @@ export const SEED_COMPLAINTS = [
 ];
 
 export async function runSeed() {
-  console.log('[JanSahay Seed] Seeding synthetic demonstration data...');
+  console.log('[CivicSarthi Seed] Seeding synthetic demonstration data...');
 
   // Ensure data dir exists
   await fs.mkdir(DATA_DIR, { recursive: true });
@@ -714,12 +714,12 @@ export async function runSeed() {
     metadata: {
       synthetic: true,
       version: "1.1.0",
-      description: "Synthetic demonstration department directory for JanSahay platform"
+      description: "Synthetic demonstration department directory for CivicSarthi platform"
     },
     departments: SEED_DEPARTMENTS
   };
   await fs.writeFile(deptFile, JSON.stringify(deptData, null, 2), 'utf-8');
-  console.log(`[JanSahay Seed] Wrote ${SEED_DEPARTMENTS.length} departments to ${deptFile}`);
+  console.log(`[CivicSarthi Seed] Wrote ${SEED_DEPARTMENTS.length} departments to ${deptFile}`);
 
   // 2. Write Complaints
   const compFile = path.join(DATA_DIR, 'complaints.json');
@@ -728,12 +728,12 @@ export async function runSeed() {
       synthetic: true,
       total: SEED_COMPLAINTS.length,
       version: "1.1.0",
-      description: "Synthetic citizen complaints for JanSahay decision support demonstration"
+      description: "Synthetic citizen complaints for CivicSarthi decision support demonstration"
     },
     complaints: SEED_COMPLAINTS
   };
   await fs.writeFile(compFile, JSON.stringify(compData, null, 2), 'utf-8');
-  console.log(`[JanSahay Seed] Wrote ${SEED_COMPLAINTS.length} complaints to ${compFile}`);
+  console.log(`[CivicSarthi Seed] Wrote ${SEED_COMPLAINTS.length} complaints to ${compFile}`);
 
   // 3. Write Status History
   const historyRecords = [];
@@ -764,15 +764,15 @@ export async function runSeed() {
     history: historyRecords
   };
   await fs.writeFile(histFile, JSON.stringify(histData, null, 2), 'utf-8');
-  console.log(`[JanSahay Seed] Wrote ${historyRecords.length} history records to ${histFile}`);
+  console.log(`[CivicSarthi Seed] Wrote ${historyRecords.length} history records to ${histFile}`);
 
-  console.log('[JanSahay Seed] Successfully completed seeding synthetic demo data.');
+  console.log('[CivicSarthi Seed] Successfully completed seeding synthetic demo data.');
 }
 
 // Execute if run directly
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   runSeed().catch(err => {
-    console.error('[JanSahay Seed Error]', err);
+    console.error('[CivicSarthi Seed Error]', err);
     process.exit(1);
   });
 }

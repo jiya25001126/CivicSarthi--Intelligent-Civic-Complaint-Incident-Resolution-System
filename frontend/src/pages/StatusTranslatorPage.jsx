@@ -29,7 +29,7 @@ export default function StatusTranslatorPage() {
           Converts cryptic official statuses (such as "FORWARDED_TO_SUBORDINATE_OFFICE" or "INTERIM_REPLY") into simple explanations with realistic expected resolution steps.
         </p>
         <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-700 rounded text-xs font-medium">
-          <span>Scheduled for Phase 4 Implementation</span>
+          <span>Scheduled for Phase 12 Implementation</span>
           <ArrowRight size={14} />
         </div>
       </div>

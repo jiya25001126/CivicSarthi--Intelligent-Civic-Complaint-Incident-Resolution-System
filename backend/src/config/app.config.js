@@ -15,9 +15,9 @@ const slaConfigPath = path.resolve(__dirname, 'sla.json');
 const slaConfig = JSON.parse(fs.readFileSync(slaConfigPath, 'utf-8'));
 
 export const config = {
-  appName: 'JanSahay',
+  appName: 'CivicSarthi',
   version: '1.0.0',
-  description: 'JanSahay: AI-assisted grievance resolution layer for CPGRAMS.',
+  description: 'CivicSarthi — Intelligent Civic Complaint & Incident Resolution System',
   port: parseInt(process.env.PORT || '5000', 10),
   frontendOrigin: process.env.FRONTEND_ORIGIN || 'http://localhost:5173',
   env: process.env.NODE_ENV || 'development',

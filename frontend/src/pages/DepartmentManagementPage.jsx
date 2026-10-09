@@ -76,7 +76,7 @@ export default function DepartmentManagementPage() {
       <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 flex items-start gap-2.5">
         <Info size={18} className="shrink-0 text-blue-600 mt-0.5" />
         <div>
-          <span className="font-bold">Demonstration Configuration:</span> These departmental mappings represent synthetic simulation nodes for JanSahay's decision-support layer and do not replace authoritative government directories.
+          <span className="font-bold">Demonstration Configuration:</span> These departmental mappings represent synthetic simulation nodes for CivicSarthi's decision-support layer and do not replace authoritative government directories.
         </div>
       </div>
 

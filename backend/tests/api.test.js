@@ -5,7 +5,7 @@ import createApp from '../src/app.js';
 
 const app = createApp();
 
-describe('JanSahay Phase 1 Backend API Tests', () => {
+describe('CivicSarthi Phase 1 Backend API Tests', () => {
   let createdRefNumber = null;
 
   it('GET /api/v1/health & GET /api/health should return 200 with status ok and service metadata', async () => {
@@ -13,7 +13,7 @@ describe('JanSahay Phase 1 Backend API Tests', () => {
     const resV1 = await request(app).get('/api/v1/health');
     assert.equal(resV1.status, 200);
     assert.equal(resV1.body.status, 'ok');
-    assert.equal(resV1.body.service, 'JanSahay');
+    assert.equal(resV1.body.service, 'CivicSarthi');
     assert.ok(resV1.body.database);
 
     // Test backward compatible /api/health
@@ -60,7 +60,7 @@ describe('JanSahay Phase 1 Backend API Tests', () => {
   });
 
   it('GET /api/v1/complaints/:id with non-existent id should return 404', async () => {
-    const res = await request(app).get('/api/v1/complaints/JAN-NONEXISTENT-9999');
+    const res = await request(app).get('/api/v1/complaints/CS-NONEXISTENT-9999');
     assert.equal(res.status, 404);
     assert.equal(res.body.success, false);
     assert.match(res.body.error, /not found/i);
@@ -97,7 +97,7 @@ describe('JanSahay Phase 1 Backend API Tests', () => {
     assert.equal(res.status, 201);
     assert.equal(res.body.success, true);
     assert.ok(res.body.referenceNumber);
-    assert.match(res.body.referenceNumber, /^JAN-2026-\d{4}$/);
+    assert.match(res.body.referenceNumber, /^CS-2026-\d{4}$/);
     assert.equal(res.body.data.status, 'SUBMITTED');
     assert.equal(res.body.data.priority, 'MEDIUM');
     assert.equal(res.body.data.departmentId, 'DEPT_WATER');

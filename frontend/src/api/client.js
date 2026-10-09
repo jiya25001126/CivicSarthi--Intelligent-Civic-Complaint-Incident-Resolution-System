@@ -14,7 +14,7 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    let errorMsg = 'An unexpected error occurred while communicating with the JanSahay server.';
+    let errorMsg = 'An unexpected error occurred while communicating with the CivicSarthi server.';
     if (error.response?.data?.error) {
       errorMsg = error.response.data.error;
       if (Array.isArray(error.response.data.details)) {

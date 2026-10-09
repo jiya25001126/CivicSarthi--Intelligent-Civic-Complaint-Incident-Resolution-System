@@ -126,16 +126,16 @@ class ComplaintRepository {
     const data = await this._readFile();
     data.complaints = data.complaints || [];
 
-    // Generate unique reference number: JAN-2026-XXXX
+    // Generate unique reference number: CS-2026-XXXX
     let maxNum = 0;
     for (const c of data.complaints) {
-      const match = (c.referenceNumber || c.id || '').match(/JAN-2026-(\d+)/i);
+      const match = (c.referenceNumber || c.id || '').match(/(?:CS|JAN)-2026-(\d+)/i);
       if (match) {
         const num = parseInt(match[1], 10);
         if (num > maxNum) maxNum = num;
       }
     }
-    const nextRef = `JAN-2026-${String(maxNum + 1).padStart(4, '0')}`;
+    const nextRef = `CS-2026-${String(maxNum + 1).padStart(4, '0')}`;
     const timestamp = new Date().toISOString();
 
     const newComplaint = {

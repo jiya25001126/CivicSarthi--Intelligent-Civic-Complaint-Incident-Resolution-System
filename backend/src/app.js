@@ -25,7 +25,7 @@ export const createApp = () => {
       if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-      return callback(new Error(`Origin ${origin} not allowed by JanSahay CORS policy`));
+      return callback(new Error(`Origin ${origin} not allowed by CivicSarthi CORS policy`));
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     credentials: true

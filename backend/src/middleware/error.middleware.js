@@ -1,9 +1,9 @@
 /**
- * Central Error-Handling Middleware for JanSahay Backend
+ * Central Error-Handling Middleware for CivicSarthi Backend
  */
 export const errorHandler = (err, req, res, next) => {
   // eslint-disable-next-line no-console
-  console.error('[JanSahay Error]', {
+  console.error('[CivicSarthi Error]', {
     message: err.message,
     stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
     url: req.originalUrl,

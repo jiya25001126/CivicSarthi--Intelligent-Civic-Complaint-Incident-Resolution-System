@@ -26,10 +26,10 @@ export default function IncidentPage() {
           Composite Incident Detection Engine
         </h2>
         <p className="text-xs text-slate-500 max-w-md mx-auto">
-          In upcoming phases, JanSahay clusters related grievances (e.g. Flood Inundation #1, #2, #3) across Power, Water, and Roads departments into a synchronized multi-agency action incident.
+          In upcoming phases, CivicSarthi clusters related grievances (e.g. Flood Inundation #1, #2, #3) across Power, Water, and Roads departments into a synchronized multi-agency action incident.
         </p>
         <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-700 rounded text-xs font-medium">
-          <span>Scheduled for Phase 2 Implementation</span>
+          <span>Scheduled for Phase 7 Implementation</span>
           <ArrowRight size={14} />
         </div>
       </div>
