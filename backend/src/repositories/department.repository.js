@@ -1,36 +1,40 @@
-import fs from 'fs/promises';
 import config from '../config/app.config.js';
+import { isConnected, getConfiguredPersistenceMode } from '../config/database.js';
+import { jsonDepartmentRepository } from './department.json.repository.js';
+import { mongoDepartmentRepository } from './department.mongo.repository.js';
 
-/**
- * File-backed Department Repository.
- */
-class DepartmentRepository {
-  constructor() {
-    this.filePath = config.dataPath.departments;
-  }
+export class DepartmentRepository {
+  _getActiveAdapter() {
+    const configuredMode = getConfiguredPersistenceMode();
 
-  async _readFile() {
-    const raw = await fs.readFile(this.filePath, 'utf-8');
-    return JSON.parse(raw);
+    if (configuredMode === 'mongodb') {
+      if (!isConnected()) {
+        const err = new Error(
+          'Persistence Error: MongoDB is configured as storage backend, but connection is not active. Silent fallback to JSON is prohibited.'
+        );
+        err.status = 503;
+        throw err;
+      }
+      return mongoDepartmentRepository;
+    }
+
+    if (configuredMode === 'auto') {
+      return isConnected() ? mongoDepartmentRepository : jsonDepartmentRepository;
+    }
+
+    return jsonDepartmentRepository;
   }
 
   async findAll() {
-    const data = await this._readFile();
-    return data.departments || [];
+    return this._getActiveAdapter().findAll();
   }
 
   async findById(id) {
-    if (!id) return null;
-    const data = await this._readFile();
-    const dept = (data.departments || []).find(
-      d => d.id === id || d.code === id || d.id?.toLowerCase() === id?.toLowerCase()
-    );
-    return dept || null;
+    return this._getActiveAdapter().findById(id);
   }
 
   async exists(id) {
-    const dept = await this.findById(id);
-    return Boolean(dept);
+    return this._getActiveAdapter().exists(id);
   }
 }
 

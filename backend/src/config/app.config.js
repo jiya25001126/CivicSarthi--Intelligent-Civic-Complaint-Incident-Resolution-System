@@ -26,6 +26,9 @@ export const config = {
     staleUpdateDays: Number(process.env.SLA_STALE_UPDATE_DAYS || slaConfig.staleUpdateDays),
     reassignmentLoopThreshold: Number(process.env.SLA_REASSIGNMENT_LOOP_THRESHOLD || slaConfig.reassignmentLoopThreshold)
   },
+  persistence: {
+    mode: (process.env.PERSISTENCE_MODE || (process.env.MONGODB_URI ? 'mongodb' : 'json')).toLowerCase()
+  },
   dataPath: {
     complaints: path.resolve(__dirname, '../../../data/complaints.json'),
     departments: path.resolve(__dirname, '../../../data/departments.json'),

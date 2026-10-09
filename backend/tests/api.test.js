@@ -441,22 +441,24 @@ describe('CivicSarthi Phase 1 Backend API Tests', () => {
     }
   });
 
-  it('Database Connection Fallback: unreachable MongoDB connection gracefully falls back to JSON without crashing or leaking secrets', async () => {
+  it('Database Connection Failure: unreachable configured MongoDB reports failure and degraded health without secret leaks', async () => {
     const originalUri = process.env.MONGODB_URI;
     process.env.MONGODB_URI = 'mongodb://fakeuser:secretpassword@127.0.0.1:27099/unreachable_db';
 
     try {
       const connResult = await connectDatabase();
       assert.equal(connResult.connected, false);
-      assert.equal(connResult.type, 'FILE_REPOSITORY');
+      assert.equal(connResult.type, 'MONGODB');
 
       const healthRes = await request(app).get('/api/v1/health');
       assert.equal(healthRes.status, 200);
-      assert.equal(healthRes.body.database, 'FileRepository (JSON Fallback)');
+      assert.equal(healthRes.body.status, 'degraded');
+      assert.equal(healthRes.body.database, 'MongoDB (Disconnected)');
       assert.equal(healthRes.body.mongodbUri, undefined, 'Secrets must not be exposed in health response');
       assert.ok(!JSON.stringify(healthRes.body).includes('secretpassword'), 'Password must never leak in health endpoint');
     } finally {
       process.env.MONGODB_URI = originalUri || '';
+      await connectDatabase(); // restore default local dev state
     }
   });
 
