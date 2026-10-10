@@ -570,4 +570,52 @@ describe('CivicSarthi Phase 3 Authentication, Sessions & RBAC Security Tests', (
     assert.equal(blockedRes.body.success, false);
     assert.match(blockedRes.body.error, /too many/i);
   });
+
+  it('18. Authenticated officers cannot reassign complaint department (HTTP 403 Forbidden)', async () => {
+    // 1. Create an isolated test complaint assigned to DEPT_ROADS
+    const compRes = await request(app)
+      .post('/api/v1/complaints')
+      .set('Authorization', `Bearer ${citizenAToken}`)
+      .send({
+        title: 'Officer Department Reassignment Security Test',
+        description: 'Verify authenticated officer is forbidden from reassigning department.',
+        category: 'roads',
+        state: 'Maharashtra',
+        district: 'Pune',
+        departmentId: 'DEPT_ROADS'
+      });
+    assert.equal(compRes.status, 201);
+    const testRef = compRes.body.referenceNumber;
+
+    // 2. Department officer (role: 'officer') attempts department reassignment
+    const officerDeptRes = await request(app)
+      .patch(`/api/v1/complaints/${testRef}/department`)
+      .set('Authorization', `Bearer ${officerRoadsToken}`)
+      .send({
+        departmentId: 'DEPT_WATER',
+        remarks: 'Officer attempting unauthorized department transfer'
+      });
+
+    assert.equal(officerDeptRes.status, 403);
+    assert.equal(officerDeptRes.body.success, false);
+    assert.match(officerDeptRes.body.error, /access denied|not authorized/i);
+
+    // 3. Cross-department officer (role: 'officer') also attempts reassignment
+    const crossOfficerRes = await request(app)
+      .patch(`/api/v1/complaints/${testRef}/department`)
+      .set('Authorization', `Bearer ${officerWaterToken}`)
+      .send({
+        departmentId: 'DEPT_POWER',
+        remarks: 'Cross-department officer attempting department transfer'
+      });
+
+    assert.equal(crossOfficerRes.status, 403);
+    assert.equal(crossOfficerRes.body.success, false);
+    assert.match(crossOfficerRes.body.error, /access denied|not authorized/i);
+
+    // 4. Verify in persistent storage that the complaint department remains completely unchanged
+    const complaintRecord = await complaintRepository.findById(testRef);
+    assert.ok(complaintRecord, 'Complaint record must exist in repository');
+    assert.equal(complaintRecord.departmentId, 'DEPT_ROADS', 'Complaint department must remain DEPT_ROADS');
+  });
 });

@@ -14,6 +14,7 @@ import {
   Calendar,
   Clock,
   Shield,
+  ShieldCheck,
   FileCheck,
   AlertTriangle,
   FileText,
