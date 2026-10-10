@@ -1,6 +1,7 @@
 import complaintRepository from '../repositories/complaint.repository.js';
 import config from '../config/app.config.js';
 import { getStatusDescription } from '../constants/status.constants.js';
+import aiIntelligenceService, { CATEGORY_DEPARTMENT_MAP } from './aiIntelligence.service.js';
 
 export class ComplaintService {
   /**
@@ -133,8 +134,72 @@ export class ComplaintService {
   }
 
   async createComplaint(data, overrideYear = null) {
-    const created = await complaintRepository.create(data, overrideYear);
+    // If departmentId is missing, automatically resolve default mapping from category
+    let resolvedDept = data.departmentId;
+    if (!resolvedDept && data.category) {
+      resolvedDept = CATEGORY_DEPARTMENT_MAP[data.category.toLowerCase()] || 'DEPT_ROADS';
+    }
+
+    // Run AI intelligence evaluation (graceful try-catch so failure NEVER blocks grievance registration)
+    let intelligence = data.intelligence || null;
+    try {
+      if (!intelligence) {
+        const existingResult = await complaintRepository.findAll();
+        const existingList = Array.isArray(existingResult) ? existingResult : (existingResult?.items || []);
+        const analysis = aiIntelligenceService.evaluateIntelligence(
+          { ...data, departmentId: resolvedDept },
+          existingList
+        );
+        intelligence = {
+          ...analysis.summary,
+          classification: analysis.classification,
+          priorityRecommendation: analysis.priorityRecommendation,
+          duplicates: analysis.duplicates
+        };
+      }
+    } catch (err) {
+      console.warn('AI intelligence evaluation skipped during creation:', err.message);
+    }
+
+    const complaintPayload = {
+      ...data,
+      departmentId: resolvedDept || data.departmentId || 'DEPT_ROADS',
+      intelligence
+    };
+
+    const created = await complaintRepository.create(complaintPayload, overrideYear);
     return this.enrichWithSlaMetrics(created);
+  }
+
+  async updateComplaintPriority(idOrRef, { priority, remarks, actorType }) {
+    const updated = await complaintRepository.updatePriority(idOrRef, { priority, remarks, actorType });
+    if (!updated) return null;
+    return this.enrichWithSlaMetrics(updated);
+  }
+
+  async linkDuplicateComplaint(idOrRef, { duplicateOf, remarks, actorType }) {
+    const updated = await complaintRepository.linkDuplicate(idOrRef, { duplicateOf, remarks, actorType });
+    if (!updated) return null;
+    return this.enrichWithSlaMetrics(updated);
+  }
+
+  async getComplaintIntelligence(idOrRef) {
+    const complaint = await complaintRepository.findById(idOrRef);
+    if (!complaint) return null;
+
+    const existingResult = await complaintRepository.findAll();
+    const existingList = Array.isArray(existingResult) ? existingResult : (existingResult?.items || []);
+    const enriched = this.enrichWithSlaMetrics(complaint);
+    return aiIntelligenceService.evaluateIntelligence(enriched, existingList);
+  }
+
+  async getComplaintDuplicates(idOrRef, options = {}) {
+    const complaint = await complaintRepository.findById(idOrRef);
+    if (!complaint) return null;
+
+    const existingResult = await complaintRepository.findAll();
+    const existingList = Array.isArray(existingResult) ? existingResult : (existingResult?.items || []);
+    return aiIntelligenceService.detectDuplicates(complaint, existingList, options);
   }
 
   async updateComplaintStatus(idOrRef, { status, remarks, actorType }) {

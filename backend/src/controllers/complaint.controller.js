@@ -1,5 +1,7 @@
 import complaintService from '../services/complaint.service.js';
 import { auditLogRepository } from '../repositories/auditLog.repository.js';
+import complaintRepository from '../repositories/complaint.repository.js';
+import aiIntelligenceService from '../services/aiIntelligence.service.js';
 
 export const listComplaints = async (req, res, next) => {
   try {
@@ -452,6 +454,291 @@ export const getComplaintHistory = async (req, res, next) => {
   }
 };
 
+/**
+ * Analyze grievance text in real-time before or during submission.
+ * Returns classification recommendations, priority assessment, and sanitized duplicate warnings.
+ */
+export const analyzeGrievancePreview = async (req, res, next) => {
+  try {
+    const { title, description, category, district, locality } = req.body;
+
+    const existingResult = await complaintRepository.findAll();
+    const existingList = Array.isArray(existingResult) ? existingResult : (existingResult?.items || []);
+
+    const analysis = aiIntelligenceService.evaluateIntelligence(
+      { title, description, category, district, locality },
+      existingList
+    );
+
+    // If caller is citizen or unauthenticated, sanitize duplicate candidate summaries
+    const isOfficerOrAdmin = req.user && (req.user.role === 'officer' || req.user.role === 'admin');
+    const duplicates = isOfficerOrAdmin
+      ? analysis.duplicates
+      : aiIntelligenceService.sanitizeDuplicatesForCitizen(analysis.duplicates);
+
+    res.json({
+      success: true,
+      data: {
+        classification: analysis.classification,
+        priorityRecommendation: analysis.priorityRecommendation,
+        duplicates,
+        potentialDuplicates: duplicates,
+        summary: analysis.summary
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Retrieve intelligence analysis for an existing complaint.
+ * Role-scoped: citizen can only view their own complaint's sanitized intelligence;
+ * officers can only view complaints in their department.
+ */
+export const getComplaintIntelligence = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const isOfficerOrAdmin = req.user.role === 'officer' || req.user.role === 'admin';
+    const complaint = await complaintService.getComplaintById(id, isOfficerOrAdmin);
+
+    if (!complaint) {
+      return res.status(404).json({
+        success: false,
+        error: `Complaint with id '${id}' not found`
+      });
+    }
+
+    if (req.user.role === 'citizen') {
+      if (complaint.citizenId !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied: you do not have permission to view this complaint'
+        });
+      }
+      const intelligence = await complaintService.getComplaintIntelligence(id);
+      return res.json({
+        success: true,
+        data: {
+          classification: intelligence.classification,
+          priorityRecommendation: intelligence.priorityRecommendation,
+          duplicates: aiIntelligenceService.sanitizeDuplicatesForCitizen(intelligence.duplicates),
+          summary: intelligence.summary
+        }
+      });
+    }
+
+    if (req.user.role === 'officer') {
+      if (complaint.departmentId !== req.user.departmentId && complaint.department !== req.user.departmentId) {
+        return res.status(403).json({
+          success: false,
+          error: `Access denied: officer is not authorized for department '${complaint.departmentId}'`
+        });
+      }
+    }
+
+    const intelligence = await complaintService.getComplaintIntelligence(id);
+    res.json({
+      success: true,
+      data: intelligence
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Retrieve potential duplicate grievances for a specific complaint.
+ */
+export const getComplaintDuplicates = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const isOfficerOrAdmin = req.user.role === 'officer' || req.user.role === 'admin';
+    const complaint = await complaintService.getComplaintById(id, isOfficerOrAdmin);
+
+    if (!complaint) {
+      return res.status(404).json({
+        success: false,
+        error: `Complaint with id '${id}' not found`
+      });
+    }
+
+    if (req.user.role === 'citizen') {
+      if (complaint.citizenId !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied: you do not have permission to view this complaint'
+        });
+      }
+      const duplicates = await complaintService.getComplaintDuplicates(id);
+      return res.json({
+        success: true,
+        count: duplicates.length,
+        data: aiIntelligenceService.sanitizeDuplicatesForCitizen(duplicates)
+      });
+    }
+
+    if (req.user.role === 'officer') {
+      if (complaint.departmentId !== req.user.departmentId && complaint.department !== req.user.departmentId) {
+        return res.status(403).json({
+          success: false,
+          error: `Access denied: officer is not authorized for department '${complaint.departmentId}'`
+        });
+      }
+    }
+
+    const duplicates = await complaintService.getComplaintDuplicates(id);
+    res.json({
+      success: true,
+      count: duplicates.length,
+      data: duplicates
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update complaint priority by authorized officer or admin.
+ * Verifies department scope for officers and logs to audit trail.
+ */
+export const updateComplaintPriority = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { priority, remarks } = req.body;
+
+    const complaint = await complaintService.getComplaintById(id, true);
+    if (!complaint) {
+      return res.status(404).json({
+        success: false,
+        error: `Complaint with id '${id}' not found`
+      });
+    }
+
+    // Role scope verification: officers can only adjust priority in their assigned department
+    if (req.user.role === 'officer') {
+      if (complaint.departmentId !== req.user.departmentId && complaint.department !== req.user.departmentId) {
+        return res.status(403).json({
+          success: false,
+          error: `Access denied: officer is not authorized for department '${complaint.departmentId}'`
+        });
+      }
+    }
+
+    const previousPriority = complaint.priority;
+    const updated = await complaintService.updateComplaintPriority(id, {
+      priority,
+      remarks: remarks || `Priority updated by ${req.user.role}`,
+      actorType: 'OFFICER'
+    });
+
+    // Audit logging for consequential human decision
+    try {
+      await auditLogRepository.create({
+        userId: req.user.id,
+        userEmail: req.user.email,
+        role: req.user.role,
+        action: 'UPDATE_PRIORITY',
+        complaintId: complaint.id,
+        targetResource: complaint.referenceNumber || complaint.id,
+        details: {
+          complaintId: complaint.id,
+          fromPriority: previousPriority,
+          toPriority: priority,
+          remarks: remarks || 'Priority modified by officer',
+          ipAddress: req.ip || req.socket?.remoteAddress || '127.0.0.1'
+        }
+      });
+    } catch (auditErr) {
+      console.warn('Audit log creation failed for priority update:', auditErr.message);
+    }
+
+    res.json({
+      success: true,
+      message: `Complaint priority updated from ${previousPriority} to ${priority}`,
+      data: updated
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Link complaint as duplicate of an existing incident without deleting or auto-merging records.
+ */
+export const linkDuplicateComplaint = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const duplicateOf = req.body.duplicateOf || req.body.duplicateOfId;
+    const { remarks } = req.body;
+
+    if (duplicateOf === id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot link complaint as a duplicate of itself'
+      });
+    }
+
+    const complaint = await complaintService.getComplaintById(id, true);
+    if (!complaint) {
+      return res.status(404).json({
+        success: false,
+        error: `Complaint with id '${id}' not found`
+      });
+    }
+
+    const targetComplaint = await complaintService.getComplaintById(duplicateOf, true);
+    if (!targetComplaint) {
+      return res.status(404).json({
+        success: false,
+        error: `Target complaint with id or reference '${duplicateOf}' not found`
+      });
+    }
+
+    if (req.user.role === 'officer') {
+      if (complaint.departmentId !== req.user.departmentId && complaint.department !== req.user.departmentId) {
+        return res.status(403).json({
+          success: false,
+          error: `Access denied: officer is not authorized for department '${complaint.departmentId}'`
+        });
+      }
+    }
+
+    const updated = await complaintService.linkDuplicateComplaint(id, {
+      duplicateOf,
+      remarks: remarks || `Linked as duplicate of ${duplicateOf}`,
+      actorType: 'OFFICER'
+    });
+
+    try {
+      await auditLogRepository.create({
+        userId: req.user.id,
+        userEmail: req.user.email,
+        role: req.user.role,
+        action: 'LINK_DUPLICATE',
+        complaintId: complaint.id,
+        targetResource: complaint.referenceNumber || complaint.id,
+        details: {
+          complaintId: complaint.id,
+          duplicateOf,
+          remarks: remarks || `Linked to parent grievance ${duplicateOf}`,
+          ipAddress: req.ip || req.socket?.remoteAddress || '127.0.0.1'
+        }
+      });
+    } catch (auditErr) {
+      console.warn('Audit log creation failed for duplicate link:', auditErr.message);
+    }
+
+    res.json({
+      success: true,
+      message: `Complaint linked as potential duplicate of ${duplicateOf}`,
+      data: updated
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   listComplaints,
   listMyComplaints,
@@ -462,5 +749,10 @@ export default {
   updateComplaintStatus,
   updateComplaintDepartment,
   addOfficerNote,
-  getComplaintHistory
+  getComplaintHistory,
+  analyzeGrievancePreview,
+  getComplaintIntelligence,
+  getComplaintDuplicates,
+  updateComplaintPriority,
+  linkDuplicateComplaint
 };

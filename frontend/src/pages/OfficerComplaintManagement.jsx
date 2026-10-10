@@ -10,7 +10,10 @@ import {
   AlertCircle,
   Building2,
   Clock,
-  Repeat
+  Repeat,
+  AlertTriangle,
+  Link as LinkIcon,
+  Sparkles
 } from 'lucide-react';
 
 export default function OfficerComplaintManagement() {
@@ -246,10 +249,22 @@ export default function OfficerComplaintManagement() {
                       {item.departmentId || item.department}
                     </td>
                     <td className="px-6 py-3.5 max-w-sm">
-                      <p className="font-semibold text-slate-900 line-clamp-1">
-                        {item.title || item.text}
-                      </p>
-                      <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
+                      <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                        <p className="font-semibold text-slate-900 line-clamp-1">
+                          {item.title || item.text}
+                        </p>
+                        {item.intelligence?.priorityRecommendation?.publicSafetyHazard && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                            <AlertTriangle size={10} /> Hazard
+                          </span>
+                        )}
+                        {item.duplicateOf && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                            <LinkIcon size={10} /> Dup
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-500 line-clamp-1">
                         {item.locality ? `${item.locality}, ` : ''}{item.district}, {item.state}
                       </p>
                     </td>
@@ -258,6 +273,12 @@ export default function OfficerComplaintManagement() {
                     </td>
                     <td className="px-3 py-3.5 whitespace-nowrap">
                       <PriorityBadge priority={item.priority} />
+                      {item.intelligence?.priorityRecommendation?.priority &&
+                        item.intelligence.priorityRecommendation.priority !== item.priority && (
+                          <span className="block text-[10px] text-blue-600 font-semibold mt-0.5">
+                            AI: {item.intelligence.priorityRecommendation.priority}
+                          </span>
+                        )}
                     </td>
                     <td className="px-3 py-3.5 whitespace-nowrap">
                       <span className={`px-2 py-0.5 rounded text-[11px] font-semibold ${

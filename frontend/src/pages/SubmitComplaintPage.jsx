@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { createComplaint, fetchDepartments } from '../api/client';
+import { createComplaint, fetchDepartments, analyzeGrievancePreview } from '../api/client';
 import {
   FilePlus,
   Send,
@@ -12,7 +12,10 @@ import {
   FileText,
   Paperclip,
   Clock,
-  ExternalLink
+  ExternalLink,
+  Sparkles,
+  Copy,
+  Info
 } from 'lucide-react';
 
 const INDIAN_STATES = [
@@ -51,6 +54,11 @@ export default function SubmitComplaintPage() {
   const [departmentId, setDepartmentId] = useState('');
   const [evidenceName, setEvidenceName] = useState('');
 
+  // AI Assistant preview state
+  const [aiSuggestion, setAiSuggestion] = useState(null);
+  const [analyzingAi, setAnalyzingAi] = useState(false);
+  const [aiApplied, setAiApplied] = useState(false);
+
   // Submission state
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -73,6 +81,53 @@ export default function SubmitComplaintPage() {
     }
     loadDepts();
   }, []);
+
+  // Debounced AI intelligence analysis
+  useEffect(() => {
+    const textToAnalyze = `${title} ${description}`.trim();
+    if (textToAnalyze.length < 15) {
+      setAiSuggestion(null);
+      setAiApplied(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        setAnalyzingAi(true);
+        const res = await analyzeGrievancePreview({
+          title,
+          description,
+          category,
+          district,
+          locality
+        });
+        if (res && res.data) {
+          setAiSuggestion(res.data);
+        }
+      } catch (err) {
+        // Non-blocking failure - do not disrupt citizen filing
+        console.info('AI assistant preview unavailable:', err.message);
+      } finally {
+        setAnalyzingAi(false);
+      }
+    }, 700);
+
+    return () => clearTimeout(timer);
+  }, [title, description, district, locality]);
+
+  const handleApplyAiSuggestion = () => {
+    if (!aiSuggestion?.classification) return;
+    const recCategory = aiSuggestion.classification.category;
+    const recDeptId = aiSuggestion.classification.departmentId;
+
+    if (recCategory && CATEGORIES.some((c) => c.value === recCategory)) {
+      setCategory(recCategory);
+    }
+    if (recDeptId && departments.some((d) => d.id === recDeptId)) {
+      setDepartmentId(recDeptId);
+    }
+    setAiApplied(true);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -257,6 +312,85 @@ export default function SubmitComplaintPage() {
           />
           <p className="text-[11px] text-slate-400">Brief 3-200 character summary of the issue.</p>
         </div>
+
+        {/* AI Assistant Category & Duplicate Intelligence Strip */}
+        {(analyzingAi || aiSuggestion) && (
+          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-bold text-blue-900 uppercase tracking-wide">
+                <Sparkles size={16} className="text-blue-600 animate-pulse" />
+                <span>AI Grievance Assistant (Assistive Suggestion)</span>
+              </div>
+              {analyzingAi ? (
+                <span className="text-[11px] text-blue-600 font-medium animate-pulse">
+                  Analyzing grievance narrative...
+                </span>
+              ) : aiSuggestion?.classification?.confidence ? (
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-200 text-blue-900 font-semibold">
+                  Confidence: {Math.round(aiSuggestion.classification.confidence * 100)}%
+                </span>
+              ) : null}
+            </div>
+
+            {aiSuggestion?.classification && (
+              <div className="space-y-2 text-xs text-slate-700">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <span className="text-slate-500">Recommended Category: </span>
+                    <span className="font-bold text-slate-900 capitalize">
+                      {CATEGORIES.find((c) => c.value === aiSuggestion.classification.category)?.label ||
+                        aiSuggestion.classification.category}
+                    </span>
+                    <span className="mx-2 text-slate-300">|</span>
+                    <span className="text-slate-500">Department: </span>
+                    <span className="font-bold text-slate-900">
+                      {aiSuggestion.classification.departmentName}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleApplyAiSuggestion}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition ${
+                      aiApplied || category === aiSuggestion.classification.category
+                        ? 'bg-emerald-600 text-white cursor-default'
+                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    }`}
+                  >
+                    <Sparkles size={12} />
+                    <span>
+                      {aiApplied || category === aiSuggestion.classification.category
+                        ? 'Recommendation Applied'
+                        : 'Apply AI Suggestion'}
+                    </span>
+                  </button>
+                </div>
+
+                {aiSuggestion.classification.explanation && (
+                  <p className="text-[11px] text-slate-600 italic">
+                    Reason: {aiSuggestion.classification.explanation}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Non-blocking Duplicate Advisory */}
+            {aiSuggestion?.potentialDuplicates && aiSuggestion.potentialDuplicates.length > 0 && (
+              <div className="pt-2 border-t border-blue-200/80 text-[11px] text-amber-900 bg-amber-50/70 p-2.5 rounded-lg border border-amber-200 flex items-start gap-2">
+                <Info size={14} className="shrink-0 text-amber-600 mt-0.5" />
+                <div className="space-y-1">
+                  <span className="font-bold block">
+                    Similar complaints found in this jurisdiction ({aiSuggestion.potentialDuplicates.length} candidate match):
+                  </span>
+                  <p className="text-slate-700 leading-relaxed">
+                    Other citizens have reported similar incidents nearby (e.g. "{aiSuggestion.potentialDuplicates[0].title}").
+                    You can still lodge this complaint. Officers will correlate them during triage.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Category & Department */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -384,6 +384,94 @@ export class MongoComplaintRepository {
   }
 
   /**
+   * Update complaint priority with validation and history logging.
+   */
+  async updatePriority(idOrRef, { priority, remarks, actorType }) {
+    if (!Object.values(COMPLAINT_PRIORITY).includes(priority)) {
+      const err = new Error(`Invalid priority '${priority}'. Allowed priorities: ${Object.values(COMPLAINT_PRIORITY).join(', ')}`);
+      err.status = 400;
+      throw err;
+    }
+
+    const target = String(idOrRef).trim();
+    const targetRegex = new RegExp(`^${target}$`, 'i');
+
+    const doc = await ComplaintModel.findOne({
+      $or: [{ id: targetRegex }, { referenceNumber: targetRegex }]
+    });
+
+    if (!doc) return null;
+
+    const previousPriority = doc.priority || COMPLAINT_PRIORITY.MEDIUM;
+    const timestamp = new Date();
+
+    doc.priority = priority;
+    doc.updatedAt = timestamp;
+    doc.lastUpdated = timestamp;
+
+    doc.statusHistory.push({
+      timestamp,
+      status: doc.status,
+      actorType: actorType || 'OFFICER',
+      remarks: remarks || `Priority updated from ${previousPriority} to ${priority}`
+    });
+
+    await doc.save();
+    return this._formatComplaint(doc.toObject());
+  }
+
+  /**
+   * Link complaint as duplicate of an existing parent complaint.
+   */
+  async linkDuplicate(idOrRef, { duplicateOf, remarks, actorType }) {
+    const target = String(idOrRef).trim();
+    const targetRegex = new RegExp(`^${target}$`, 'i');
+
+    const doc = await ComplaintModel.findOne({
+      $or: [{ id: targetRegex }, { referenceNumber: targetRegex }]
+    });
+
+    if (!doc) return null;
+
+    const timestamp = new Date();
+    doc.duplicateOf = duplicateOf;
+    doc.updatedAt = timestamp;
+    doc.lastUpdated = timestamp;
+
+    doc.statusHistory.push({
+      timestamp,
+      status: doc.status,
+      actorType: actorType || 'OFFICER',
+      remarks: remarks || `Linked as potential duplicate of ${duplicateOf}`
+    });
+
+    await doc.save();
+    return this._formatComplaint(doc.toObject());
+  }
+
+  /**
+   * Update intelligence metadata on a complaint.
+   */
+  async updateIntelligence(idOrRef, intelligence) {
+    const target = String(idOrRef).trim();
+    const targetRegex = new RegExp(`^${target}$`, 'i');
+
+    const doc = await ComplaintModel.findOne({
+      $or: [{ id: targetRegex }, { referenceNumber: targetRegex }]
+    });
+
+    if (!doc) return null;
+
+    const timestamp = new Date();
+    doc.intelligence = intelligence;
+    doc.updatedAt = timestamp;
+    doc.lastUpdated = timestamp;
+
+    await doc.save();
+    return this._formatComplaint(doc.toObject());
+  }
+
+  /**
    * Retrieve status progression history
    */
   async getStatusHistory(idOrRef) {
@@ -445,6 +533,8 @@ export class MongoComplaintRepository {
 
     formatted.citizenId = formatted.citizenId || 'SYNTHETIC_CPGRAMS_DEMO';
     formatted.assignedOfficerId = formatted.assignedOfficerId || null;
+    formatted.intelligence = formatted.intelligence || null;
+    formatted.duplicateOf = formatted.duplicateOf || null;
 
     return formatted;
   }
