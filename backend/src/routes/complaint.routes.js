@@ -2,6 +2,7 @@ import express from 'express';
 import { z } from 'zod';
 import {
   listComplaints,
+  listMyComplaints,
   getComplaintStats,
   getComplaint,
   createComplaint,
@@ -12,7 +13,12 @@ import {
   getComplaintTracking
 } from '../controllers/complaint.controller.js';
 import { validate } from '../middleware/validate.middleware.js';
-import { authenticate, requireRole } from '../middleware/auth.middleware.js';
+import {
+  authenticate,
+  requireRole,
+  trackingRateLimiter,
+  submissionRateLimiter
+} from '../middleware/auth.middleware.js';
 import { COMPLAINT_STATUS } from '../constants/status.constants.js';
 
 const router = express.Router();
@@ -37,20 +43,31 @@ const getComplaintSchema = {
   })
 };
 
+const getComplaintByRefSchema = {
+  params: z.object({
+    reference: z.string().min(1, 'Tracking reference is required')
+  })
+};
+
 const createComplaintSchema = {
   body: z.object({
-    title: z.string().min(3, 'Title must be at least 3 characters').max(200, 'Title cannot exceed 200 characters'),
-    description: z.string().min(10, 'Description must be at least 10 characters').max(3000, 'Description cannot exceed 3000 characters'),
+    title: z.string().trim().min(3, 'Title must be at least 3 characters').max(200, 'Title cannot exceed 200 characters'),
+    description: z.string().trim().min(10, 'Description must be at least 10 characters').max(3000, 'Description cannot exceed 3000 characters'),
     category: z.string().min(2, 'Category is required'),
     state: z.string().min(2, 'State is required'),
     district: z.string().min(2, 'District is required'),
-    locality: z.string().optional(),
-    preferredLanguage: z.string().optional(),
+    locality: z.string().max(300, 'Locality cannot exceed 300 characters').optional(),
+    preferredLanguage: z.string().max(20).optional(),
     departmentId: z.string().optional(),
-    evidence: z.array(z.string()).optional(),
-    citizenName: z.string().optional(),
-    citizenEmail: z.string().optional(),
-    citizenPhone: z.string().optional()
+    evidence: z.array(
+      z.string()
+        .max(255)
+        .regex(/^[\w\-.\s]{1,255}$/, 'Evidence must be a safe filename or identifier without directory traversal')
+    ).max(10, 'Maximum 10 attachments allowed').optional(),
+    citizenName: z.string().max(100).optional(),
+    citizenEmail: z.string().email().optional(),
+    citizenPhone: z.string().max(20).optional(),
+    idempotencyKey: z.string().max(100).optional()
   })
 };
 
@@ -88,14 +105,21 @@ const addNoteSchema = {
   })
 };
 
+// ==========================================
 // Public Endpoints (No authentication required)
+// ==========================================
 router.get('/stats', getComplaintStats);
-router.get('/:id/track', validate(getComplaintSchema), getComplaintTracking);
+router.get('/track/:reference', trackingRateLimiter, validate(getComplaintByRefSchema), getComplaintTracking);
+router.get('/:id/track', trackingRateLimiter, validate(getComplaintSchema), getComplaintTracking);
 
+// ==========================================
 // Protected Endpoints (Authentication strictly required)
+// NOTE: Static routes (/my) must precede dynamic param routes (/:id)
+// ==========================================
+router.get('/my', authenticate, validate(listComplaintsSchema), listMyComplaints);
 router.get('/', authenticate, validate(listComplaintsSchema), listComplaints);
 router.get('/:id', authenticate, validate(getComplaintSchema), getComplaint);
-router.post('/', authenticate, validate(createComplaintSchema), createComplaint);
+router.post('/', authenticate, submissionRateLimiter, validate(createComplaintSchema), createComplaint);
 router.patch('/:id/status', authenticate, requireRole('officer', 'admin'), validate(updateStatusSchema), updateComplaintStatus);
 router.patch('/:id/department', authenticate, requireRole('admin'), validate(updateDepartmentSchema), updateComplaintDepartment);
 router.get('/:id/history', authenticate, validate(getComplaintSchema), getComplaintHistory);

@@ -130,11 +130,59 @@ export const createAuthRateLimiter = (customMax = null) => {
 
 export const authRateLimiter = createAuthRateLimiter();
 
+/**
+ * Rate Limiter for public tracking endpoints to prevent automated enumeration
+ */
+export const createTrackingRateLimiter = (customMax = null) => {
+  return rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: customMax !== null
+      ? customMax
+      : (process.env.TRACKING_RATE_LIMIT_MAX
+        ? parseInt(process.env.TRACKING_RATE_LIMIT_MAX, 10)
+        : (process.env.NODE_ENV === 'test' ? 500 : 60)),
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+      success: false,
+      error: 'Too many tracking requests from this IP, please try again after 15 minutes'
+    }
+  });
+};
+
+export const trackingRateLimiter = createTrackingRateLimiter();
+
+/**
+ * Rate Limiter for complaint submission to prevent spamming
+ */
+export const createSubmissionRateLimiter = (customMax = null) => {
+  return rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: customMax !== null
+      ? customMax
+      : (process.env.SUBMISSION_RATE_LIMIT_MAX
+        ? parseInt(process.env.SUBMISSION_RATE_LIMIT_MAX, 10)
+        : (process.env.NODE_ENV === 'test' ? 200 : 30)),
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+      success: false,
+      error: 'Grievance submission rate limit exceeded, please try again later'
+    }
+  });
+};
+
+export const submissionRateLimiter = createSubmissionRateLimiter();
+
 export default {
   authenticate,
   optionalAuthenticate,
   requireRole,
   createAuthRateLimiter,
   authRateLimiter,
+  createTrackingRateLimiter,
+  trackingRateLimiter,
+  createSubmissionRateLimiter,
+  submissionRateLimiter,
   extractToken
 };

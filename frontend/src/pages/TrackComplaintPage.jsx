@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { fetchComplaintTracking, fetchComplaintHistory } from '../api/client';
+import { fetchComplaintTracking } from '../api/client';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
 import {
   Search,
@@ -14,7 +14,9 @@ import {
   FileText,
   MapPin,
   Calendar,
-  ExternalLink
+  ExternalLink,
+  Shield,
+  Lock
 } from 'lucide-react';
 
 export default function TrackComplaintPage() {
@@ -34,16 +36,9 @@ export default function TrackComplaintPage() {
       setError(null);
       const res = await fetchComplaintTracking(searchId.trim());
       setComplaint(res.data);
-
-      // Also load history if available
-      try {
-        const histRes = await fetchComplaintHistory(searchId.trim());
-        setHistory(histRes.data || res.data?.statusHistory || []);
-      } catch {
-        setHistory(res.data?.statusHistory || []);
-      }
+      setHistory(res.data?.statusHistory || []);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Grievance reference not found. Please verify the reference number.');
       setComplaint(null);
       setHistory([]);
     } finally {
@@ -82,8 +77,10 @@ export default function TrackComplaintPage() {
 
         <form onSubmit={handleFormSubmit} className="flex gap-2">
           <div className="relative flex-1">
+            <label htmlFor="track-search-input" className="sr-only">Reference Number</label>
             <Search size={18} className="absolute left-3.5 top-3.5 text-slate-400" />
             <input
+              id="track-search-input"
               type="text"
               required
               placeholder="Enter reference number (e.g. CS-2026-0001)..."
@@ -127,12 +124,18 @@ export default function TrackComplaintPage() {
                 <h2 className="text-base font-bold text-slate-900 mt-1">
                   {complaint.title || complaint.text}
                 </h2>
+                {complaint.statusDescription && (
+                  <p className="text-xs text-blue-800 bg-blue-50/80 p-2.5 rounded-lg border border-blue-200 mt-2">
+                    <span className="font-semibold">Current Status Meaning: </span>
+                    {complaint.statusDescription}
+                  </p>
+                )}
               </div>
               <Link
                 to={`/citizen/complaints/${encodeURIComponent(complaint.id)}`}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold self-start sm:self-auto transition"
               >
-                <span>Full Details</span>
+                <span>Citizen View</span>
                 <ExternalLink size={13} />
               </Link>
             </div>
@@ -160,6 +163,12 @@ export default function TrackComplaintPage() {
                 <span className="text-slate-500 block mb-0.5">Handoffs / Reassignments</span>
                 <span className="font-bold text-slate-800">{complaint.reassignments || 0} times</span>
               </div>
+            </div>
+
+            {/* Privacy Notice */}
+            <div className="flex items-center gap-2 text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+              <Lock size={13} className="text-slate-400 shrink-0" />
+              <span>Public Tracking View: Private citizen contact information and internal officer review notes are strictly protected.</span>
             </div>
           </div>
 
@@ -212,7 +221,13 @@ export default function TrackComplaintPage() {
                           </span>
                         </div>
 
-                        <p className="text-xs text-slate-700 leading-relaxed font-normal pt-1">
+                        {event.statusDescription && (
+                          <p className="text-[11px] text-blue-700 italic font-medium">
+                            {event.statusDescription}
+                          </p>
+                        )}
+
+                        <p className="text-xs text-slate-700 leading-relaxed font-normal pt-0.5">
                           {event.remarks || 'Status updated in system.'}
                         </p>
                       </div>

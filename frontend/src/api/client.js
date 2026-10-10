@@ -97,9 +97,18 @@ export async function fetchComplaintStats() {
  * Public Tracking API: fetches sanitized lifecycle tracking without private contact details or officer notes.
  * No authentication required.
  */
-export async function fetchComplaintTracking(id) {
-  const res = await api.get(`/complaints/${encodeURIComponent(id)}/track`);
-  return res.data;
+export async function fetchComplaintTracking(referenceOrId) {
+  try {
+    const res = await api.get(`/complaints/track/${encodeURIComponent(referenceOrId)}`);
+    return res.data;
+  } catch (err) {
+    // Fallback to legacy tracking route if needed
+    if (err.status === 404 || err.response?.status === 404) {
+      const fallbackRes = await api.get(`/complaints/${encodeURIComponent(referenceOrId)}/track`);
+      return fallbackRes.data;
+    }
+    throw err;
+  }
 }
 
 // ==========================================
@@ -111,13 +120,22 @@ export async function fetchComplaints(params = {}) {
   return res.data;
 }
 
+export async function fetchMyComplaints(params = {}) {
+  const res = await api.get('/complaints/my', { params });
+  return res.data;
+}
+
 export async function fetchComplaintById(id) {
   const res = await api.get(`/complaints/${encodeURIComponent(id)}`);
   return res.data;
 }
 
-export async function createComplaint(payload) {
-  const res = await api.post('/complaints', payload);
+export async function createComplaint(payload, idempotencyKey = null) {
+  const headers = {};
+  if (idempotencyKey) {
+    headers['Idempotency-Key'] = idempotencyKey;
+  }
+  const res = await api.post('/complaints', payload, { headers });
   return res.data;
 }
 
