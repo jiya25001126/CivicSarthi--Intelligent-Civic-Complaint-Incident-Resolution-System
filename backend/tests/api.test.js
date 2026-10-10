@@ -7,6 +7,7 @@ import request from 'supertest';
 import createApp from '../src/app.js';
 import complaintRepository, { ComplaintRepository } from '../src/repositories/complaint.repository.js';
 import { userRepository } from '../src/repositories/user.repository.js';
+import { auditLogRepository } from '../src/repositories/auditLog.repository.js';
 import { authService } from '../src/services/auth.service.js';
 import { runSeed } from '../src/scripts/seed.js';
 import { connectDatabase } from '../src/config/database.js';
@@ -18,6 +19,7 @@ const __dirname = path.dirname(__filename);
 const app = createApp();
 const TEST_FILE_PATH = path.resolve(path.dirname(config.dataPath.complaints), 'complaints.test.json');
 const TEST_USERS_PATH = path.resolve(path.dirname(config.dataPath.users), 'users.api-test.json');
+const TEST_AUDIT_PATH = path.resolve(path.dirname(config.dataPath.auditLogs), 'audit_logs.api-test.json');
 
 describe('CivicSarthi Phase 1 Backend API Tests', () => {
   let createdRefNumber = null;
@@ -30,6 +32,14 @@ describe('CivicSarthi Phase 1 Backend API Tests', () => {
     await fs.writeFile(TEST_FILE_PATH, original, 'utf-8');
     complaintRepository.setFilePath(TEST_FILE_PATH);
     userRepository.setFilePath(TEST_USERS_PATH);
+
+    // Isolate audit logs: configure temporary isolated fixture
+    const initialAudit = {
+      metadata: { version: '1.0.0', description: 'CivicSarthi Test Audit Logs' },
+      logs: []
+    };
+    await fs.writeFile(TEST_AUDIT_PATH, JSON.stringify(initialAudit, null, 2), 'utf-8');
+    auditLogRepository.setFilePath(TEST_AUDIT_PATH);
 
     // Seed test users for authenticated calls
     const adminUser = await authService.provisionUser({
@@ -49,14 +59,24 @@ describe('CivicSarthi Phase 1 Backend API Tests', () => {
   });
 
   after(async () => {
-    // Clean up test data and restore original repository path
-    complaintRepository.resetFilePath();
-    userRepository.resetFilePath();
+    // Clean up test data and restore original repository paths
+    try {
+      complaintRepository.resetFilePath();
+    } catch {}
+    try {
+      userRepository.resetFilePath();
+    } catch {}
+    try {
+      auditLogRepository.resetFilePath();
+    } catch {}
     try {
       await fs.unlink(TEST_FILE_PATH);
     } catch {}
     try {
       await fs.unlink(TEST_USERS_PATH);
+    } catch {}
+    try {
+      await fs.unlink(TEST_AUDIT_PATH);
     } catch {}
   });
 
