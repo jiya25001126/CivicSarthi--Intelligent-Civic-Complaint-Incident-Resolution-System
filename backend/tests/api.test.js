@@ -100,7 +100,12 @@ describe('CivicSarthi Phase 1 Backend API Tests', () => {
     assert.ok(first.category);
     assert.ok(first.status);
     assert.ok(first.slaMetrics);
-    assert.equal(first.synthetic, true);
+    assert.equal(typeof first.synthetic, 'boolean');
+
+    // Verify both user-created and synthetic demo complaints are enriched with SLA metrics
+    const syntheticItem = res.body.data.find(c => c.synthetic === true);
+    assert.ok(syntheticItem, 'Seeded demo dataset should include synthetic complaints');
+    assert.ok(syntheticItem.slaMetrics, 'Synthetic complaints must be enriched with SLA metrics');
   });
 
   it('GET /api/v1/complaints/stats should calculate real KPI metrics', async () => {
