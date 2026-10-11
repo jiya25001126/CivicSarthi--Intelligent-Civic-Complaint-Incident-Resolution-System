@@ -134,6 +134,11 @@ export class JsonComplaintRepository {
       list = list.filter(c => c.priority === filters.priority);
     }
 
+    // Filter by Incident
+    if (filters.incidentId) {
+      list = list.filter(c => c.incidentId === filters.incidentId);
+    }
+
     // Free text search
     if (filters.search && filters.search.trim() !== '') {
       const q = filters.search.trim().toLowerCase();
@@ -470,6 +475,101 @@ export class JsonComplaintRepository {
 
       await this._writeFile(data);
       return data.complaints[index];
+    });
+  }
+
+  /**
+   * Link complaint to a parent incident.
+   * Serialized via mutex to prevent race conditions.
+   */
+  async linkIncident(idOrRef, { incidentId, remarks, actorType } = {}) {
+    return this._mutex.run(async () => {
+      const data = await this._readFile();
+      const target = String(idOrRef).toLowerCase();
+      const index = (data.complaints || []).findIndex(c =>
+        c.id?.toLowerCase() === target ||
+        c.referenceNumber?.toLowerCase() === target
+      );
+
+      if (index === -1) return null;
+
+      const complaint = data.complaints[index];
+
+      // Idempotent: already linked to this exact incident
+      if (complaint.incidentId === incidentId) {
+        return complaint;
+      }
+
+      // Conflict: already linked to a different incident - preserve existing link
+      if (complaint.incidentId && complaint.incidentId !== incidentId) {
+        const err = new Error(
+          `Complaint '${idOrRef}' is already linked to incident '${complaint.incidentId}'. Cannot re-link to '${incidentId}'.`
+        );
+        err.status = 409;
+        err.code = 'CONFLICT';
+        throw err;
+      }
+
+      const timestamp = new Date().toISOString();
+      complaint.incidentId = incidentId;
+      complaint.updatedAt = timestamp;
+      complaint.lastUpdated = timestamp;
+
+      if (!Array.isArray(complaint.statusHistory)) {
+        complaint.statusHistory = [];
+      }
+      complaint.statusHistory.push({
+        timestamp,
+        status: complaint.status,
+        actorType: actorType || 'OFFICER',
+        remarks: remarks || `Linked to parent incident ${incidentId}`
+      });
+
+      await this._writeFile(data);
+      return complaint;
+    });
+  }
+
+  /**
+   * Unlink complaint from its parent incident.
+   * Serialized via mutex to prevent race conditions.
+   */
+  async unlinkIncident(idOrRef, { remarks, actorType } = {}) {
+    return this._mutex.run(async () => {
+      const data = await this._readFile();
+      const target = String(idOrRef).toLowerCase();
+      const index = (data.complaints || []).findIndex(c =>
+        c.id?.toLowerCase() === target ||
+        c.referenceNumber?.toLowerCase() === target
+      );
+
+      if (index === -1) return null;
+
+      const complaint = data.complaints[index];
+
+      // Idempotent: already unlinked
+      if (!complaint.incidentId) {
+        return complaint;
+      }
+
+      const previousIncidentId = complaint.incidentId;
+      const timestamp = new Date().toISOString();
+      complaint.incidentId = null;
+      complaint.updatedAt = timestamp;
+      complaint.lastUpdated = timestamp;
+
+      if (!Array.isArray(complaint.statusHistory)) {
+        complaint.statusHistory = [];
+      }
+      complaint.statusHistory.push({
+        timestamp,
+        status: complaint.status,
+        actorType: actorType || 'OFFICER',
+        remarks: remarks || `Unlinked from parent incident ${previousIncidentId}`
+      });
+
+      await this._writeFile(data);
+      return complaint;
     });
   }
 

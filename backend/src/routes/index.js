@@ -4,6 +4,8 @@ import complaintRoutes from './complaint.routes.js';
 import departmentRoutes from './department.routes.js';
 import authRoutes from './auth.routes.js';
 import adminRoutes from './admin.routes.js';
+import incidentRoutes from './incident.routes.js';
+import subtaskRoutes from './subtask.routes.js';
 import { mockCpgramsRouter } from '../../../mock-cpgrams/index.js';
 
 const apiRouter = express.Router();
@@ -15,6 +17,8 @@ v1Router.use('/auth', authRoutes);
 v1Router.use('/admin', adminRoutes);
 v1Router.use('/complaints', complaintRoutes);
 v1Router.use('/departments', departmentRoutes);
+v1Router.use('/incidents', incidentRoutes);
+v1Router.use('/subtasks', subtaskRoutes);
 v1Router.use('/mock-cpgrams', mockCpgramsRouter);
 
 // Mount /api/v1
@@ -26,6 +30,8 @@ apiRouter.use('/auth', authRoutes);
 apiRouter.use('/admin', adminRoutes);
 apiRouter.use('/complaints', complaintRoutes);
 apiRouter.use('/departments', departmentRoutes);
+apiRouter.use('/incidents', incidentRoutes);
+apiRouter.use('/subtasks', subtaskRoutes);
 apiRouter.use('/mock-cpgrams', mockCpgramsRouter);
 
 export default apiRouter;

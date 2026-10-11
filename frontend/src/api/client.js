@@ -205,6 +205,94 @@ export async function linkComplaintDuplicate(id, { duplicateOf, remarks }) {
 }
 
 // ==========================================
+// Parent Incident Operations (Phase 7)
+// ==========================================
+
+export async function fetchIncidents(params = {}) {
+  const res = await api.get('/incidents', { params });
+  return res.data;
+}
+
+export async function fetchIncidentById(id) {
+  const res = await api.get(`/incidents/${encodeURIComponent(id)}`);
+  return res.data;
+}
+
+export async function createIncident(payload) {
+  const res = await api.post('/incidents', payload);
+  return res.data;
+}
+
+export async function updateIncidentStatus(id, payload) {
+  const res = await api.patch(`/incidents/${encodeURIComponent(id)}/status`, payload);
+  return res.data;
+}
+
+export async function linkComplaintToIncident(incidentId, { complaintId, remarks } = {}) {
+  const res = await api.post(`/incidents/${encodeURIComponent(incidentId)}/complaints`, {
+    complaintId,
+    remarks
+  });
+  return res.data;
+}
+
+export async function unlinkComplaintFromIncident(incidentId, complaintId, { remarks } = {}) {
+  const params = remarks ? { remarks } : {};
+  const res = await api.delete(
+    `/incidents/${encodeURIComponent(incidentId)}/complaints/${encodeURIComponent(complaintId)}`,
+    { params }
+  );
+  return res.data;
+}
+
+export async function transferComplaintBetweenIncidents({ fromIncidentId, toIncidentId, complaintId, justification }) {
+  const res = await api.post('/incidents/transfer-complaint', {
+    fromIncidentId,
+    toIncidentId,
+    complaintId,
+    justification
+  });
+  return res.data;
+}
+
+// ==========================================
+// Multi-Department Subtask Operations (Phase 7)
+// ==========================================
+
+export async function fetchSubtasks(params = {}) {
+  const res = await api.get('/subtasks', { params });
+  return res.data;
+}
+
+export async function fetchIncidentSubtasks(incidentId, params = {}) {
+  const res = await api.get(`/incidents/${encodeURIComponent(incidentId)}/subtasks`, { params });
+  return res.data;
+}
+
+export async function createSubtask(payload) {
+  const res = await api.post('/subtasks', payload);
+  return res.data;
+}
+
+export async function getSubtaskById(id) {
+  const res = await api.get(`/subtasks/${encodeURIComponent(id)}`);
+  return res.data;
+}
+
+export async function updateSubtaskStatus(id, { status, remarks } = {}) {
+  const res = await api.patch(`/subtasks/${encodeURIComponent(id)}/status`, {
+    status,
+    remarks
+  });
+  return res.data;
+}
+
+export async function updateSubtask(id, payload) {
+  const res = await api.patch(`/subtasks/${encodeURIComponent(id)}`, payload);
+  return res.data;
+}
+
+// ==========================================
 // Administrative Operations (Admin only)
 // ==========================================
 
