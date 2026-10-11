@@ -193,6 +193,11 @@ const complaintSchema = new mongoose.Schema(
       type: String,
       default: null
     },
+    incidentId: {
+      type: String,
+      default: null,
+      index: true
+    },
     lastUpdated: {
       type: Date,
       default: Date.now

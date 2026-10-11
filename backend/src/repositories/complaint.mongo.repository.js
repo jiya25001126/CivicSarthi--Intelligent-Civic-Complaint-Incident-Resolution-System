@@ -81,6 +81,11 @@ export class MongoComplaintRepository {
       query.priority = filters.priority;
     }
 
+    // Filter by incident
+    if (filters.incidentId) {
+      query.incidentId = filters.incidentId;
+    }
+
     // Free text search
     if (filters.search && filters.search.trim() !== '') {
       const q = filters.search.trim();
@@ -443,6 +448,85 @@ export class MongoComplaintRepository {
       status: doc.status,
       actorType: actorType || 'OFFICER',
       remarks: remarks || `Linked as potential duplicate of ${duplicateOf}`
+    });
+
+    await doc.save();
+    return this._formatComplaint(doc.toObject());
+  }
+
+  /**
+   * Link complaint to a parent incident.
+   */
+  async linkIncident(idOrRef, { incidentId, remarks, actorType } = {}) {
+    const target = String(idOrRef).trim();
+    const targetRegex = new RegExp(`^${target}$`, 'i');
+
+    const doc = await ComplaintModel.findOne({
+      $or: [{ id: targetRegex }, { referenceNumber: targetRegex }]
+    });
+
+    if (!doc) return null;
+
+    // Idempotent: already linked to this exact incident
+    if (doc.incidentId === incidentId) {
+      return this._formatComplaint(doc.toObject());
+    }
+
+    // Conflict: already linked to a different incident - preserve existing link
+    if (doc.incidentId && doc.incidentId !== incidentId) {
+      const err = new Error(
+        `Complaint '${idOrRef}' is already linked to incident '${doc.incidentId}'. Cannot re-link to '${incidentId}'.`
+      );
+      err.status = 409;
+      err.code = 'CONFLICT';
+      throw err;
+    }
+
+    const timestamp = new Date();
+    doc.incidentId = incidentId;
+    doc.updatedAt = timestamp;
+    doc.lastUpdated = timestamp;
+
+    doc.statusHistory.push({
+      timestamp,
+      status: doc.status,
+      actorType: actorType || 'OFFICER',
+      remarks: remarks || `Linked to parent incident ${incidentId}`
+    });
+
+    await doc.save();
+    return this._formatComplaint(doc.toObject());
+  }
+
+  /**
+   * Unlink complaint from its parent incident.
+   */
+  async unlinkIncident(idOrRef, { remarks, actorType } = {}) {
+    const target = String(idOrRef).trim();
+    const targetRegex = new RegExp(`^${target}$`, 'i');
+
+    const doc = await ComplaintModel.findOne({
+      $or: [{ id: targetRegex }, { referenceNumber: targetRegex }]
+    });
+
+    if (!doc) return null;
+
+    // Idempotent: already unlinked
+    if (!doc.incidentId) {
+      return this._formatComplaint(doc.toObject());
+    }
+
+    const previousIncidentId = doc.incidentId;
+    const timestamp = new Date();
+    doc.incidentId = null;
+    doc.updatedAt = timestamp;
+    doc.lastUpdated = timestamp;
+
+    doc.statusHistory.push({
+      timestamp,
+      status: doc.status,
+      actorType: actorType || 'OFFICER',
+      remarks: remarks || `Unlinked from parent incident ${previousIncidentId}`
     });
 
     await doc.save();

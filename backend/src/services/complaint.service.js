@@ -1,14 +1,50 @@
 import complaintRepository from '../repositories/complaint.repository.js';
+import { incidentRepository as defaultIncidentRepository } from '../repositories/incident.repository.js';
 import config from '../config/app.config.js';
 import { getStatusDescription } from '../constants/status.constants.js';
 import aiIntelligenceService, { CATEGORY_DEPARTMENT_MAP } from './aiIntelligence.service.js';
 
 export class ComplaintService {
+  constructor(
+    complaintRepo = complaintRepository,
+    incidentRepo = defaultIncidentRepository
+  ) {
+    this.complaintRepo = complaintRepo;
+    this.incidentRepo = incidentRepo;
+  }
+
   /**
    * Helper to retrieve citizen-friendly description for a status
    */
   getStatusDescription(status) {
     return getStatusDescription(status);
+  }
+
+  /**
+   * Enriches complaint with sanitized parent incident information if linked.
+   * Strictly omits private incident notes, internal subtasks, and officer assignments.
+   */
+  async _attachParentIncident(complaint) {
+    if (!complaint || !complaint.incidentId) return complaint;
+    try {
+      if (this.incidentRepo && typeof this.incidentRepo.findById === 'function') {
+        const inc = await this.incidentRepo.findById(complaint.incidentId);
+        if (inc) {
+          complaint.parentIncident = {
+            id: inc.id,
+            title: inc.title,
+            status: inc.status,
+            category: inc.category,
+            leadDepartment: inc.leadDepartment,
+            resolvedAt: inc.resolvedAt || null,
+            resolutionSummary: inc.resolutionSummary || null
+          };
+        }
+      }
+    } catch {
+      // Non-blocking fallback
+    }
+    return complaint;
   }
 
   /**
@@ -43,11 +79,22 @@ export class ComplaintService {
   /**
    * Sanitize complaint for citizen view:
    * Strips confidential internal officer review notes and enriches with citizen-friendly status explanation.
+   * Includes sanitized parent incident if linked.
    */
   sanitizeForCitizen(complaint) {
     if (!complaint) return null;
     const copy = { ...complaint };
     delete copy.officerNotes;
+    copy.incidentId = complaint.incidentId || null;
+    copy.parentIncident = complaint.parentIncident ? {
+      id: complaint.parentIncident.id,
+      title: complaint.parentIncident.title,
+      status: complaint.parentIncident.status,
+      category: complaint.parentIncident.category,
+      leadDepartment: complaint.parentIncident.leadDepartment,
+      resolvedAt: complaint.parentIncident.resolvedAt || null,
+      resolutionSummary: complaint.parentIncident.resolutionSummary || null
+    } : null;
     copy.statusDescription = this.getStatusDescription(copy.status);
     if (Array.isArray(copy.statusHistory)) {
       copy.statusHistory = copy.statusHistory.map(h => ({
@@ -62,12 +109,23 @@ export class ComplaintService {
    * Sanitize complaint for public tracking:
    * Strictly projects only public-safe fields.
    * Never exposes citizenId, citizen contact details, internal notes, or officer IDs.
+   * Includes sanitized parent incident if linked.
    */
   sanitizeForTracking(complaint) {
     if (!complaint) return null;
     return {
       id: complaint.id,
       referenceNumber: complaint.referenceNumber || complaint.id,
+      incidentId: complaint.incidentId || null,
+      parentIncident: complaint.parentIncident ? {
+        id: complaint.parentIncident.id,
+        title: complaint.parentIncident.title,
+        status: complaint.parentIncident.status,
+        category: complaint.parentIncident.category,
+        leadDepartment: complaint.parentIncident.leadDepartment,
+        resolvedAt: complaint.parentIncident.resolvedAt || null,
+        resolutionSummary: complaint.parentIncident.resolutionSummary || null
+      } : null,
       title: complaint.title || complaint.text,
       description: complaint.description || complaint.text,
       category: complaint.category,
@@ -96,13 +154,14 @@ export class ComplaintService {
   }
 
   async getAllComplaints(filters = {}, isOfficer = false) {
-    const result = await complaintRepository.findAll(filters);
+    const result = await this.complaintRepo.findAll(filters);
 
     if (result && Array.isArray(result.items)) {
-      const items = result.items.map(c => {
+      const items = await Promise.all(result.items.map(async c => {
+        await this._attachParentIncident(c);
         const enriched = this.enrichWithSlaMetrics(c);
         return isOfficer ? enriched : this.sanitizeForCitizen(enriched);
-      });
+      }));
       return {
         items,
         pagination: result.pagination
@@ -110,25 +169,28 @@ export class ComplaintService {
     }
 
     if (Array.isArray(result)) {
-      return result.map(c => {
+      return Promise.all(result.map(async c => {
+        await this._attachParentIncident(c);
         const enriched = this.enrichWithSlaMetrics(c);
         return isOfficer ? enriched : this.sanitizeForCitizen(enriched);
-      });
+      }));
     }
 
     return [];
   }
 
   async getComplaintById(idOrRef, isOfficer = false) {
-    const complaint = await complaintRepository.findById(idOrRef);
+    const complaint = await this.complaintRepo.findById(idOrRef);
     if (!complaint) return null;
+    await this._attachParentIncident(complaint);
     const enriched = this.enrichWithSlaMetrics(complaint);
     return isOfficer ? enriched : this.sanitizeForCitizen(enriched);
   }
 
   async getComplaintForTracking(idOrRef) {
-    const complaint = await complaintRepository.findById(idOrRef);
+    const complaint = await this.complaintRepo.findById(idOrRef);
     if (!complaint) return null;
+    await this._attachParentIncident(complaint);
     const enriched = this.enrichWithSlaMetrics(complaint);
     return this.sanitizeForTracking(enriched);
   }
@@ -144,7 +206,7 @@ export class ComplaintService {
     let intelligence = data.intelligence || null;
     try {
       if (!intelligence) {
-        const existingResult = await complaintRepository.findAll();
+        const existingResult = await this.complaintRepo.findAll();
         const existingList = Array.isArray(existingResult) ? existingResult : (existingResult?.items || []);
         const analysis = aiIntelligenceService.evaluateIntelligence(
           { ...data, departmentId: resolvedDept },
@@ -167,61 +229,61 @@ export class ComplaintService {
       intelligence
     };
 
-    const created = await complaintRepository.create(complaintPayload, overrideYear);
+    const created = await this.complaintRepo.create(complaintPayload, overrideYear);
     return this.enrichWithSlaMetrics(created);
   }
 
   async updateComplaintPriority(idOrRef, { priority, remarks, actorType }) {
-    const updated = await complaintRepository.updatePriority(idOrRef, { priority, remarks, actorType });
+    const updated = await this.complaintRepo.updatePriority(idOrRef, { priority, remarks, actorType });
     if (!updated) return null;
     return this.enrichWithSlaMetrics(updated);
   }
 
   async linkDuplicateComplaint(idOrRef, { duplicateOf, remarks, actorType }) {
-    const updated = await complaintRepository.linkDuplicate(idOrRef, { duplicateOf, remarks, actorType });
+    const updated = await this.complaintRepo.linkDuplicate(idOrRef, { duplicateOf, remarks, actorType });
     if (!updated) return null;
     return this.enrichWithSlaMetrics(updated);
   }
 
   async getComplaintIntelligence(idOrRef) {
-    const complaint = await complaintRepository.findById(idOrRef);
+    const complaint = await this.complaintRepo.findById(idOrRef);
     if (!complaint) return null;
 
-    const existingResult = await complaintRepository.findAll();
+    const existingResult = await this.complaintRepo.findAll();
     const existingList = Array.isArray(existingResult) ? existingResult : (existingResult?.items || []);
     const enriched = this.enrichWithSlaMetrics(complaint);
     return aiIntelligenceService.evaluateIntelligence(enriched, existingList);
   }
 
   async getComplaintDuplicates(idOrRef, options = {}) {
-    const complaint = await complaintRepository.findById(idOrRef);
+    const complaint = await this.complaintRepo.findById(idOrRef);
     if (!complaint) return null;
 
-    const existingResult = await complaintRepository.findAll();
+    const existingResult = await this.complaintRepo.findAll();
     const existingList = Array.isArray(existingResult) ? existingResult : (existingResult?.items || []);
     return aiIntelligenceService.detectDuplicates(complaint, existingList, options);
   }
 
   async updateComplaintStatus(idOrRef, { status, remarks, actorType }) {
-    const updated = await complaintRepository.updateStatus(idOrRef, { status, remarks, actorType });
+    const updated = await this.complaintRepo.updateStatus(idOrRef, { status, remarks, actorType });
     if (!updated) return null;
     return this.enrichWithSlaMetrics(updated);
   }
 
   async updateComplaintDepartment(idOrRef, { departmentId, remarks, actorType }) {
-    const updated = await complaintRepository.updateDepartment(idOrRef, { departmentId, remarks, actorType });
+    const updated = await this.complaintRepo.updateDepartment(idOrRef, { departmentId, remarks, actorType });
     if (!updated) return null;
     return this.enrichWithSlaMetrics(updated);
   }
 
   async addOfficerNote(idOrRef, { note, officerId }) {
-    const updated = await complaintRepository.addOfficerNote(idOrRef, { note, officerId });
+    const updated = await this.complaintRepo.addOfficerNote(idOrRef, { note, officerId });
     if (!updated) return null;
     return this.enrichWithSlaMetrics(updated);
   }
 
   async getStatusHistory(idOrRef) {
-    const history = await complaintRepository.getStatusHistory(idOrRef);
+    const history = await this.complaintRepo.getStatusHistory(idOrRef);
     if (!history) return null;
     return history.map(h => ({
       ...h,
@@ -233,7 +295,7 @@ export class ComplaintService {
    * Computed summary metrics from live data
    */
   async getSummaryStats() {
-    const all = await complaintRepository.findAll();
+    const all = await this.complaintRepo.findAll();
     const list = Array.isArray(all) ? all : (all.items || []);
 
     const total = list.length;

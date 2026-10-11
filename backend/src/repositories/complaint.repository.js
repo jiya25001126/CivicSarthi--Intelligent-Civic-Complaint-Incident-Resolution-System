@@ -88,6 +88,14 @@ export class ComplaintRepository {
     return this._getActiveAdapter().updateIntelligence(idOrRef, intelligence);
   }
 
+  async linkIncident(idOrRef, { incidentId, remarks, actorType } = {}) {
+    return this._getActiveAdapter().linkIncident(idOrRef, { incidentId, remarks, actorType });
+  }
+
+  async unlinkIncident(idOrRef, { remarks, actorType } = {}) {
+    return this._getActiveAdapter().unlinkIncident(idOrRef, { remarks, actorType });
+  }
+
   async updateDepartment(idOrRef, { departmentId, remarks, actorType }) {
     return this._getActiveAdapter().updateDepartment(idOrRef, { departmentId, remarks, actorType });
   }
