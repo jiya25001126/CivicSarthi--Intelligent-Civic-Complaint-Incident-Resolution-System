@@ -185,6 +185,14 @@ const complaintSchema = new mongoose.Schema(
       type: Boolean,
       default: false
     },
+    intelligence: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null
+    },
+    duplicateOf: {
+      type: String,
+      default: null
+    },
     lastUpdated: {
       type: Date,
       default: Date.now

@@ -170,6 +170,41 @@ export async function fetchComplaintHistory(id) {
 }
 
 // ==========================================
+// AI Complaint Intelligence Operations
+// ==========================================
+
+export async function analyzeGrievancePreview(payload) {
+  const res = await api.post('/complaints/analyze', payload);
+  return res.data;
+}
+
+export async function fetchComplaintIntelligence(id) {
+  const res = await api.get(`/complaints/${encodeURIComponent(id)}/intelligence`);
+  return res.data;
+}
+
+export async function fetchComplaintDuplicates(id) {
+  const res = await api.get(`/complaints/${encodeURIComponent(id)}/duplicates`);
+  return res.data;
+}
+
+export async function updateComplaintPriority(id, { priority, remarks }) {
+  const res = await api.patch(`/complaints/${encodeURIComponent(id)}/priority`, {
+    priority,
+    remarks
+  });
+  return res.data;
+}
+
+export async function linkComplaintDuplicate(id, { duplicateOf, remarks }) {
+  const res = await api.patch(`/complaints/${encodeURIComponent(id)}/duplicate`, {
+    duplicateOf,
+    remarks
+  });
+  return res.data;
+}
+
+// ==========================================
 // Administrative Operations (Admin only)
 // ==========================================
 

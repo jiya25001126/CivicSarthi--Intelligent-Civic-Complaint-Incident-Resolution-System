@@ -76,6 +76,18 @@ export class ComplaintRepository {
     return this._getActiveAdapter().updateStatus(idOrRef, { status, remarks, actorType });
   }
 
+  async updatePriority(idOrRef, { priority, remarks, actorType }) {
+    return this._getActiveAdapter().updatePriority(idOrRef, { priority, remarks, actorType });
+  }
+
+  async linkDuplicate(idOrRef, { duplicateOf, remarks, actorType }) {
+    return this._getActiveAdapter().linkDuplicate(idOrRef, { duplicateOf, remarks, actorType });
+  }
+
+  async updateIntelligence(idOrRef, intelligence) {
+    return this._getActiveAdapter().updateIntelligence(idOrRef, intelligence);
+  }
+
   async updateDepartment(idOrRef, { departmentId, remarks, actorType }) {
     return this._getActiveAdapter().updateDepartment(idOrRef, { departmentId, remarks, actorType });
   }

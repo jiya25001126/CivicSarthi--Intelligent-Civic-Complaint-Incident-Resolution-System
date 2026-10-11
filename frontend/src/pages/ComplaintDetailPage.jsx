@@ -6,7 +6,10 @@ import {
   updateComplaintStatus,
   reassignComplaintDepartment,
   addOfficerNote,
-  fetchDepartments
+  fetchDepartments,
+  updateComplaintPriority,
+  linkComplaintDuplicate,
+  fetchComplaintDuplicates
 } from '../api/client';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
 import {
@@ -25,7 +28,10 @@ import {
   Building2,
   Lock,
   MessageSquare,
-  AlertCircle
+  AlertCircle,
+  Sparkles,
+  Link as LinkIcon,
+  Copy
 } from 'lucide-react';
 
 export default function ComplaintDetailPage() {
@@ -56,6 +62,19 @@ export default function ComplaintDetailPage() {
   const [savingNote, setSavingNote] = useState(false);
   const [noteMessage, setNoteMessage] = useState(null);
 
+  // Phase 6: AI intelligence triage action states
+  const [newPriority, setNewPriority] = useState('');
+  const [priorityRemarks, setPriorityRemarks] = useState('');
+  const [priorityUpdating, setPriorityUpdating] = useState(false);
+  const [priorityMessage, setPriorityMessage] = useState(null);
+
+  const [duplicates, setDuplicates] = useState([]);
+  const [loadingDuplicates, setLoadingDuplicates] = useState(false);
+  const [selectedDuplicateId, setSelectedDuplicateId] = useState('');
+  const [duplicateRemarks, setDuplicateRemarks] = useState('');
+  const [linkingDuplicate, setLinkingDuplicate] = useState(false);
+  const [duplicateMessage, setDuplicateMessage] = useState(null);
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -64,15 +83,75 @@ export default function ComplaintDetailPage() {
         fetchComplaintById(id),
         fetchDepartments()
       ]);
-      setComplaint(compRes.data);
+      const comp = compRes.data;
+      setComplaint(comp);
       setDepartments(deptsRes.data || []);
-      if (compRes.data) {
-        setReassignDeptId(compRes.data.departmentId || compRes.data.department || '');
+      if (comp) {
+        setReassignDeptId(comp.departmentId || comp.department || '');
+        setNewPriority(comp.priority || 'MEDIUM');
+        if (comp.intelligence?.duplicates) {
+          setDuplicates(comp.intelligence.duplicates);
+        }
+      }
+
+      // Fetch fresh candidate duplicates in officer mode
+      if (isOfficerMode) {
+        try {
+          const dupRes = await fetchComplaintDuplicates(id);
+          if (dupRes?.data?.duplicates) {
+            setDuplicates(dupRes.data.duplicates);
+          }
+        } catch (dupErr) {
+          console.info('Fresh duplicates lookup skipped:', dupErr.message);
+        }
       }
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle priority update / override
+  const handlePriorityUpdate = async (e) => {
+    e.preventDefault();
+    if (!newPriority || newPriority === complaint.priority) return;
+    try {
+      setPriorityUpdating(true);
+      setPriorityMessage(null);
+      const res = await updateComplaintPriority(complaint.id, {
+        priority: newPriority,
+        remarks: priorityRemarks.trim(),
+        actorType: 'OFFICER'
+      });
+      setComplaint(res.data);
+      setPriorityMessage({ type: 'success', text: `Priority successfully updated to ${newPriority}` });
+      setPriorityRemarks('');
+    } catch (err) {
+      setPriorityMessage({ type: 'error', text: err.message });
+    } finally {
+      setPriorityUpdating(false);
+    }
+  };
+
+  // Handle linking duplicate
+  const handleLinkDuplicate = async (targetId) => {
+    if (!targetId) return;
+    try {
+      setLinkingDuplicate(true);
+      setDuplicateMessage(null);
+      const res = await linkComplaintDuplicate(complaint.id, {
+        duplicateOfId: targetId,
+        remarks: duplicateRemarks.trim() || 'Correlated duplicate complaint during officer triage'
+      });
+      setComplaint(res.data);
+      setDuplicateMessage({ type: 'success', text: `Successfully linked grievance #${complaint.id} as duplicate of #${targetId}` });
+      setSelectedDuplicateId('');
+      setDuplicateRemarks('');
+    } catch (err) {
+      setDuplicateMessage({ type: 'error', text: err.message });
+    } finally {
+      setLinkingDuplicate(false);
     }
   };
 
@@ -212,6 +291,18 @@ export default function ComplaintDetailPage() {
               <span className="px-2.5 py-0.5 rounded text-xs font-semibold bg-slate-200 text-slate-800 capitalize">
                 {complaint.category}
               </span>
+              {complaint.duplicateOf && (
+                <span className="px-2.5 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
+                  <LinkIcon size={12} />
+                  Linked Duplicate of #{complaint.duplicateOf}
+                </span>
+              )}
+              {complaint.intelligence?.priorityRecommendation?.publicSafetyHazard && (
+                <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300 flex items-center gap-1">
+                  <AlertTriangle size={12} />
+                  Hazard Alert
+                </span>
+              )}
             </div>
             <h1 className="text-xl font-bold text-slate-900">
               {complaint.title || complaint.text}
@@ -385,6 +476,190 @@ export default function ComplaintDetailPage() {
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 font-semibold">
               Authorized Triage Desk
             </span>
+          </div>
+
+          {/* Phase 6: AI Complaint Intelligence & Decision Support Cockpit */}
+          <div className="p-5 bg-gradient-to-br from-slate-50 to-blue-50/50 rounded-xl border border-blue-200 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-blue-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles size={18} className="text-blue-600" />
+                <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+                  AI Complaint Intelligence & Decision Support
+                </h3>
+              </div>
+              <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 font-semibold self-start sm:self-auto">
+                Assistive Advisory (Deterministic v1)
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Card 1: Intelligent Classification */}
+              <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-2.5 text-xs">
+                <span className="font-bold text-slate-700 uppercase tracking-wider block text-[11px]">
+                  Classification & Routing
+                </span>
+                <div>
+                  <span className="text-slate-500">Recommended Category:</span>
+                  <div className="font-bold text-slate-900 capitalize text-sm">
+                    {complaint.intelligence?.classification?.category || complaint.category}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-slate-500">Recommended Department:</span>
+                  <div className="font-semibold text-slate-800">
+                    {complaint.intelligence?.classification?.departmentName || complaint.departmentId || complaint.department}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-500">Confidence:</span>
+                  <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-bold">
+                    {Math.round((complaint.intelligence?.classification?.confidence || 0.8) * 100)}%
+                  </span>
+                </div>
+                {complaint.intelligence?.classification?.explanation && (
+                  <p className="text-[11px] text-slate-600 italic pt-1 border-t border-slate-100">
+                    Rationale: {complaint.intelligence.classification.explanation}
+                  </p>
+                )}
+              </div>
+
+              {/* Card 2: Explainable Priority Recommendation & Officer Action */}
+              <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-3 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-700 uppercase tracking-wider block text-[11px]">
+                    Priority Recommendation
+                  </span>
+                  <PriorityBadge priority={complaint.intelligence?.priorityRecommendation?.priority || 'MEDIUM'} />
+                </div>
+
+                {complaint.intelligence?.priorityRecommendation?.publicSafetyHazard && (
+                  <div className="p-2 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-[11px] font-semibold flex items-center gap-1.5">
+                    <AlertTriangle size={14} className="shrink-0 text-rose-600" />
+                    <span>Public Safety Hazard Flagged in Complaint Narrative</span>
+                  </div>
+                )}
+
+                <div>
+                  <span className="text-slate-500 block mb-1">Reasoning Signals:</span>
+                  <ul className="space-y-1 text-[11px] text-slate-700">
+                    {(complaint.intelligence?.priorityRecommendation?.reasons || [
+                      'Assigned standard category baseline priority.'
+                    ]).map((r, idx) => (
+                      <li key={idx} className="flex items-start gap-1.5">
+                        <span className="text-blue-500 font-bold">•</span>
+                        <span>{r}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Priority Decision Form */}
+                <form onSubmit={handlePriorityUpdate} className="pt-2 border-t border-slate-100 space-y-2">
+                  {priorityMessage && (
+                    <div className={`p-2 rounded-lg text-[11px] ${
+                      priorityMessage.type === 'success' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                    }`}>
+                      {priorityMessage.text}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={newPriority}
+                      onChange={(e) => setNewPriority(e.target.value)}
+                      className="flex-1 px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    >
+                      <option value="CRITICAL">Set CRITICAL</option>
+                      <option value="HIGH">Set HIGH</option>
+                      <option value="MEDIUM">Set MEDIUM</option>
+                      <option value="LOW">Set LOW</option>
+                    </select>
+                    <button
+                      type="submit"
+                      disabled={priorityUpdating || newPriority === complaint.priority}
+                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow transition disabled:opacity-50"
+                    >
+                      {priorityUpdating ? 'Saving...' : 'Apply Priority'}
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Override rationale (e.g. verified on site)..."
+                    value={priorityRemarks}
+                    onChange={(e) => setPriorityRemarks(e.target.value)}
+                    className="w-full px-2.5 py-1 text-[11px] bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </form>
+              </div>
+
+              {/* Card 3: Duplicate Complaint Detection & Review */}
+              <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-3 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-700 uppercase tracking-wider block text-[11px]">
+                    Duplicate Detection
+                  </span>
+                  {complaint.duplicateOf && (
+                    <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-semibold text-[10px]">
+                      Linked to #{complaint.duplicateOf}
+                    </span>
+                  )}
+                </div>
+
+                {duplicateMessage && (
+                  <div className={`p-2 rounded-lg text-[11px] ${
+                    duplicateMessage.type === 'success' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                  }`}>
+                    {duplicateMessage.text}
+                  </div>
+                )}
+
+                {duplicates && duplicates.length > 0 ? (
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    <span className="text-[11px] text-slate-500">
+                      Found {duplicates.length} similar complaints in this jurisdiction:
+                    </span>
+                    {duplicates.map((dup) => (
+                      <div
+                        key={dup.id}
+                        className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg space-y-1.5"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono font-bold text-blue-700 text-[11px]">
+                            #{dup.referenceNumber || dup.id}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-800 font-bold text-[10px]">
+                            {Math.round(dup.matchScore * 100)}% Match
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-800 line-clamp-1 font-medium">
+                          {dup.title}
+                        </p>
+                        {dup.signals && (
+                          <p className="text-[10px] text-slate-500">
+                            Signals: {dup.signals.join(', ')}
+                          </p>
+                        )}
+                        {complaint.duplicateOf !== dup.id && (
+                          <div className="pt-1 flex items-center justify-end">
+                            <button
+                              type="button"
+                              onClick={() => handleLinkDuplicate(dup.id)}
+                              disabled={linkingDuplicate}
+                              className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-[11px] font-semibold transition disabled:opacity-50"
+                            >
+                              {linkingDuplicate ? 'Linking...' : 'Link as Duplicate'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-3 bg-slate-50 rounded-lg text-slate-500 text-[11px] italic text-center">
+                    No matching duplicate grievances detected in this jurisdiction and time window.
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

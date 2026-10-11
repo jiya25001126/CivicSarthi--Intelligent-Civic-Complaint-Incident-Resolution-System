@@ -10,7 +10,12 @@ import {
   updateComplaintDepartment,
   addOfficerNote,
   getComplaintHistory,
-  getComplaintTracking
+  getComplaintTracking,
+  analyzeGrievancePreview,
+  getComplaintIntelligence,
+  getComplaintDuplicates,
+  updateComplaintPriority,
+  linkDuplicateComplaint
 } from '../controllers/complaint.controller.js';
 import { validate } from '../middleware/validate.middleware.js';
 import {
@@ -19,7 +24,7 @@ import {
   trackingRateLimiter,
   submissionRateLimiter
 } from '../middleware/auth.middleware.js';
-import { COMPLAINT_STATUS } from '../constants/status.constants.js';
+import { COMPLAINT_STATUS, COMPLAINT_PRIORITY } from '../constants/status.constants.js';
 
 const router = express.Router();
 
@@ -105,12 +110,49 @@ const addNoteSchema = {
   })
 };
 
+const analyzeSchema = {
+  body: z.object({
+    title: z.string().max(200).optional(),
+    description: z.string().max(3000).optional(),
+    category: z.string().optional(),
+    state: z.string().optional(),
+    district: z.string().optional(),
+    locality: z.string().optional()
+  })
+};
+
+const updatePrioritySchema = {
+  params: z.object({
+    id: z.string().min(1, 'Complaint ID is required')
+  }),
+  body: z.object({
+    priority: z.enum(Object.values(COMPLAINT_PRIORITY), {
+      errorMap: () => ({ message: `Invalid priority. Must be one of: ${Object.values(COMPLAINT_PRIORITY).join(', ')}` })
+    }),
+    remarks: z.string().optional()
+  })
+};
+
+const linkDuplicateSchema = {
+  params: z.object({
+    id: z.string().min(1, 'Complaint ID is required')
+  }),
+  body: z.object({
+    duplicateOf: z.string().optional(),
+    duplicateOfId: z.string().optional(),
+    remarks: z.string().optional()
+  }).refine(data => Boolean(data.duplicateOf || data.duplicateOfId), {
+    message: 'Target duplicate reference number or ID is required'
+  })
+};
+
 // ==========================================
 // Public Endpoints (No authentication required)
 // ==========================================
 router.get('/stats', getComplaintStats);
 router.get('/track/:reference', trackingRateLimiter, validate(getComplaintByRefSchema), getComplaintTracking);
 router.get('/:id/track', trackingRateLimiter, validate(getComplaintSchema), getComplaintTracking);
+router.post('/analyze', submissionRateLimiter, validate(analyzeSchema), analyzeGrievancePreview);
 
 // ==========================================
 // Protected Endpoints (Authentication strictly required)
@@ -119,8 +161,12 @@ router.get('/:id/track', trackingRateLimiter, validate(getComplaintSchema), getC
 router.get('/my', authenticate, validate(listComplaintsSchema), listMyComplaints);
 router.get('/', authenticate, validate(listComplaintsSchema), listComplaints);
 router.get('/:id', authenticate, validate(getComplaintSchema), getComplaint);
+router.get('/:id/intelligence', authenticate, validate(getComplaintSchema), getComplaintIntelligence);
+router.get('/:id/duplicates', authenticate, validate(getComplaintSchema), getComplaintDuplicates);
 router.post('/', authenticate, submissionRateLimiter, validate(createComplaintSchema), createComplaint);
 router.patch('/:id/status', authenticate, requireRole('officer', 'admin'), validate(updateStatusSchema), updateComplaintStatus);
+router.patch('/:id/priority', authenticate, requireRole('officer', 'admin'), validate(updatePrioritySchema), updateComplaintPriority);
+router.patch('/:id/duplicate', authenticate, requireRole('officer', 'admin'), validate(linkDuplicateSchema), linkDuplicateComplaint);
 router.patch('/:id/department', authenticate, requireRole('admin'), validate(updateDepartmentSchema), updateComplaintDepartment);
 router.get('/:id/history', authenticate, validate(getComplaintSchema), getComplaintHistory);
 router.post('/:id/notes', authenticate, requireRole('officer', 'admin'), validate(addNoteSchema), addOfficerNote);

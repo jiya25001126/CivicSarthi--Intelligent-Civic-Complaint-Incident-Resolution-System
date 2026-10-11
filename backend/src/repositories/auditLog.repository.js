@@ -96,6 +96,7 @@ export class JsonAuditLogRepository {
         role: logData.role || 'system',
         action: logData.action,
         targetResource: logData.targetResource || null,
+        complaintId: logData.complaintId || logData.targetResource || null,
         details: logData.details || {},
         ipAddress: logData.ipAddress || '127.0.0.1'
       };
@@ -124,6 +125,10 @@ export class JsonAuditLogRepository {
 
     return logs.map(l => ({ ...l }));
   }
+
+  async queryLogs(filters = {}) {
+    return this.findAll(filters);
+  }
 }
 
 export class MongoAuditLogRepository {
@@ -136,6 +141,7 @@ export class MongoAuditLogRepository {
       role: logData.role || 'system',
       action: logData.action,
       targetResource: logData.targetResource || null,
+      complaintId: logData.complaintId || logData.targetResource || null,
       details: logData.details || {},
       ipAddress: logData.ipAddress || '127.0.0.1'
     };
@@ -153,6 +159,10 @@ export class MongoAuditLogRepository {
       cursor = cursor.limit(parseInt(filters.limit, 10));
     }
     return cursor.lean();
+  }
+
+  async queryLogs(filters = {}) {
+    return this.findAll(filters);
   }
 }
 
@@ -191,6 +201,10 @@ export class AuditLogRepository {
   }
 
   async findAll(filters = {}) {
+    return this._getActiveAdapter().findAll(filters);
+  }
+
+  async queryLogs(filters = {}) {
     return this._getActiveAdapter().findAll(filters);
   }
 }

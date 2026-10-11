@@ -234,7 +234,9 @@ export class JsonComplaintRepository {
         department: complaintData.departmentId || complaintData.department || 'DEPT_ROADS',
         status: COMPLAINT_STATUS.SUBMITTED,
         officialStatus: 'RECEIVED',
-        priority: COMPLAINT_PRIORITY.MEDIUM, // Neutral placeholder, not AI-assessed
+        priority: complaintData.priority || COMPLAINT_PRIORITY.MEDIUM,
+        intelligence: complaintData.intelligence || null,
+        duplicateOf: complaintData.duplicateOf || null,
         createdAt: timestamp,
         updatedAt: timestamp,
         lastUpdated: timestamp,
@@ -387,6 +389,108 @@ export class JsonComplaintRepository {
       }
       data.complaints[index].officerNotes.push(noteEntry);
       data.complaints[index].updatedAt = timestamp;
+
+      await this._writeFile(data);
+      return data.complaints[index];
+    });
+  }
+
+  /**
+   * Update complaint priority with validation and history logging.
+   * Serialized via mutex to prevent race conditions.
+   */
+  async updatePriority(idOrRef, { priority, remarks, actorType }) {
+    if (!Object.values(COMPLAINT_PRIORITY).includes(priority)) {
+      const err = new Error(`Invalid priority '${priority}'. Allowed priorities: ${Object.values(COMPLAINT_PRIORITY).join(', ')}`);
+      err.status = 400;
+      throw err;
+    }
+
+    return this._mutex.run(async () => {
+      const data = await this._readFile();
+      const target = String(idOrRef).toLowerCase();
+      const index = (data.complaints || []).findIndex(c =>
+        c.id?.toLowerCase() === target ||
+        c.referenceNumber?.toLowerCase() === target
+      );
+
+      if (index === -1) return null;
+
+      const previousPriority = data.complaints[index].priority || COMPLAINT_PRIORITY.MEDIUM;
+      const timestamp = new Date().toISOString();
+
+      data.complaints[index].priority = priority;
+      data.complaints[index].updatedAt = timestamp;
+      data.complaints[index].lastUpdated = timestamp;
+
+      if (!Array.isArray(data.complaints[index].statusHistory)) {
+        data.complaints[index].statusHistory = [];
+      }
+      data.complaints[index].statusHistory.push({
+        timestamp,
+        status: data.complaints[index].status,
+        actorType: actorType || 'OFFICER',
+        remarks: remarks || `Priority updated from ${previousPriority} to ${priority}`
+      });
+
+      await this._writeFile(data);
+      return data.complaints[index];
+    });
+  }
+
+  /**
+   * Link complaint as duplicate of an existing parent complaint.
+   * Serialized via mutex to prevent race conditions.
+   */
+  async linkDuplicate(idOrRef, { duplicateOf, remarks, actorType }) {
+    return this._mutex.run(async () => {
+      const data = await this._readFile();
+      const target = String(idOrRef).toLowerCase();
+      const index = (data.complaints || []).findIndex(c =>
+        c.id?.toLowerCase() === target ||
+        c.referenceNumber?.toLowerCase() === target
+      );
+
+      if (index === -1) return null;
+
+      const timestamp = new Date().toISOString();
+      data.complaints[index].duplicateOf = duplicateOf;
+      data.complaints[index].updatedAt = timestamp;
+      data.complaints[index].lastUpdated = timestamp;
+
+      if (!Array.isArray(data.complaints[index].statusHistory)) {
+        data.complaints[index].statusHistory = [];
+      }
+      data.complaints[index].statusHistory.push({
+        timestamp,
+        status: data.complaints[index].status,
+        actorType: actorType || 'OFFICER',
+        remarks: remarks || `Linked as potential duplicate of ${duplicateOf}`
+      });
+
+      await this._writeFile(data);
+      return data.complaints[index];
+    });
+  }
+
+  /**
+   * Update intelligence metadata on a complaint.
+   */
+  async updateIntelligence(idOrRef, intelligence) {
+    return this._mutex.run(async () => {
+      const data = await this._readFile();
+      const target = String(idOrRef).toLowerCase();
+      const index = (data.complaints || []).findIndex(c =>
+        c.id?.toLowerCase() === target ||
+        c.referenceNumber?.toLowerCase() === target
+      );
+
+      if (index === -1) return null;
+
+      const timestamp = new Date().toISOString();
+      data.complaints[index].intelligence = intelligence;
+      data.complaints[index].updatedAt = timestamp;
+      data.complaints[index].lastUpdated = timestamp;
 
       await this._writeFile(data);
       return data.complaints[index];
