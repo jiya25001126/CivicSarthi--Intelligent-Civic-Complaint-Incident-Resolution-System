@@ -311,5 +311,19 @@ export async function fetchAdminAuditLogs(params = {}) {
   return res.data;
 }
 
+// ==========================================
+// Neglect Radar & Supervisory Monitoring (Phase 8)
+// ==========================================
+
+export async function fetchNeglectRadar(params = {}) {
+  const res = await api.get('/neglect-radar', { params });
+  return res.data;
+}
+
+export async function fetchNeglectRadarItem(entityType, id) {
+  const res = await api.get(`/neglect-radar/${encodeURIComponent(entityType)}/${encodeURIComponent(id)}`);
+  return res.data;
+}
+
 export { API_BASE_URL };
 export default api;
