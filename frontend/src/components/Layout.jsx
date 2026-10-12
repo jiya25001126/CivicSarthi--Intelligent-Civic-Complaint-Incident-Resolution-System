@@ -40,6 +40,7 @@ export default function Layout() {
   const officerNav = [
     { name: 'Officer Cockpit', path: '/officer', icon: LayoutDashboard },
     { name: 'Complaint Triage', path: '/officer/complaints', icon: ListFilter },
+    { name: 'Spam Review Desk', path: '/officer/spam-review', icon: ShieldCheck },
     { name: 'Appeals Desk', path: '/officer/appeals', icon: ShieldAlert },
     { name: 'Reopening Desk', path: '/officer/reopening-requests', icon: RotateCcw },
     { name: 'Departments', path: '/officer/departments', icon: Building2 }

@@ -253,6 +253,9 @@ export class JsonComplaintRepository {
         citizenName: complaintData.citizenName || undefined,
         citizenEmail: complaintData.citizenEmail || undefined,
         citizenPhone: complaintData.citizenPhone || undefined,
+        screeningResult: complaintData.screeningResult || null,
+        isFlaggedSpam: Boolean(complaintData.isFlaggedSpam),
+        spamReviewId: complaintData.spamReviewId || null,
         statusHistory: [
           {
             timestamp,
@@ -613,6 +616,32 @@ export class JsonComplaintRepository {
       data.complaints[index].intelligence = intelligence;
       data.complaints[index].updatedAt = timestamp;
       data.complaints[index].lastUpdated = timestamp;
+
+      await this._writeFile(data);
+      return data.complaints[index];
+    });
+  }
+
+  /**
+   * General purpose update method for complaint fields
+   */
+  async update(idOrRef, updates = {}) {
+    return this._mutex.run(async () => {
+      const data = await this._readFile();
+      const target = String(idOrRef).toLowerCase();
+      const index = (data.complaints || []).findIndex(
+        (c) => c.id?.toLowerCase() === target || c.referenceNumber?.toLowerCase() === target
+      );
+
+      if (index === -1) return null;
+
+      const timestamp = new Date().toISOString();
+      data.complaints[index] = {
+        ...data.complaints[index],
+        ...updates,
+        updatedAt: timestamp,
+        lastUpdated: timestamp
+      };
 
       await this._writeFile(data);
       return data.complaints[index];

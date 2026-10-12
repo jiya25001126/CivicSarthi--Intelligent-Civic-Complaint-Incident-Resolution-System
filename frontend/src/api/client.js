@@ -416,5 +416,34 @@ export async function recordReopeningDecision(requestId, payload) {
   return res.data;
 }
 
+// ==========================================
+// Phase 11: Spam/Fake Screening & Review Desk
+// ==========================================
+
+export async function fetchSpamReviews(params = {}) {
+  const res = await api.get('/spam-reviews', { params });
+  return res.data;
+}
+
+export async function fetchSpamReviewById(reviewId) {
+  const res = await api.get(`/spam-reviews/${encodeURIComponent(reviewId)}`);
+  return res.data;
+}
+
+export async function recordSpamReviewDecision(reviewId, payload) {
+  const res = await api.post(`/spam-reviews/${encodeURIComponent(reviewId)}/decision`, payload);
+  return res.data;
+}
+
+export async function fetchMyReputation() {
+  const res = await api.get('/citizen/reputation');
+  return res.data;
+}
+
+export async function fetchCitizenReputation(citizenId) {
+  const res = await api.get(`/spam-reviews/citizens/${encodeURIComponent(citizenId)}/reputation`);
+  return res.data;
+}
+
 export { API_BASE_URL };
 export default api;

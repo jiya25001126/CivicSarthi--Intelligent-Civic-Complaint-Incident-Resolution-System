@@ -5,14 +5,23 @@ import { getStatusDescription, COMPLAINT_STATUS, validateStatusTransition } from
 import aiIntelligenceService, { CATEGORY_DEPARTMENT_MAP } from './aiIntelligence.service.js';
 import { validateResolutionQuality } from './resolutionQuality.validator.js';
 import { RESOLUTION_EXCEPTION_REASONS } from '../constants/resolutionQuality.constants.js';
+import { spamScreeningService } from './spamScreening.service.js';
+import { spamReviewRepository as defaultSpamReviewRepository } from '../repositories/spamReview.repository.js';
+import { citizenReputationService as defaultCitizenReputationService } from './citizenReputation.service.js';
 
 export class ComplaintService {
   constructor(
     complaintRepo = complaintRepository,
-    incidentRepo = defaultIncidentRepository
+    incidentRepo = defaultIncidentRepository,
+    spamScreening = spamScreeningService,
+    spamReviewRepo = defaultSpamReviewRepository,
+    reputationService = defaultCitizenReputationService
   ) {
     this.complaintRepo = complaintRepo;
     this.incidentRepo = incidentRepo;
+    this.spamScreening = spamScreening;
+    this.spamReviewRepo = spamReviewRepo;
+    this.reputationService = reputationService;
   }
 
   /**
@@ -244,10 +253,11 @@ export class ComplaintService {
 
     // Run AI intelligence evaluation (graceful try-catch so failure NEVER blocks grievance registration)
     let intelligence = data.intelligence || null;
+    let existingList = [];
     try {
+      const existingResult = await this.complaintRepo.findAll();
+      existingList = Array.isArray(existingResult) ? existingResult : (existingResult?.items || []);
       if (!intelligence) {
-        const existingResult = await this.complaintRepo.findAll();
-        const existingList = Array.isArray(existingResult) ? existingResult : (existingResult?.items || []);
         const analysis = aiIntelligenceService.evaluateIntelligence(
           { ...data, departmentId: resolvedDept },
           existingList
@@ -263,13 +273,78 @@ export class ComplaintService {
       console.warn('AI intelligence evaluation skipped during creation:', err.message);
     }
 
+    // Run deterministic spam & suspicious screening
+    let screeningResult = data.screeningResult || null;
+    try {
+      if (!screeningResult) {
+        const userRecent = existingList.filter((c) => c.citizenId && c.citizenId === data.citizenId);
+        screeningResult = this.spamScreening.evaluateComplaint(
+          { ...data, departmentId: resolvedDept },
+          {
+            userRecentComplaints: userRecent,
+            candidatePool: existingList,
+            duplicateMatches: intelligence?.duplicates || []
+          }
+        );
+      }
+    } catch (spamErr) {
+      console.warn('Spam screening skipped during creation:', spamErr.message);
+      screeningResult = {
+        score: 0,
+        riskLevel: 'LOW',
+        flagged: false,
+        reasons: [],
+        explanations: ['Screening evaluation deferred due to transient error'],
+        ruleVersion: '1.0.0',
+        evaluatedAt: new Date().toISOString(),
+        reviewStatus: 'NOT_FLAGGED'
+      };
+    }
+
     const complaintPayload = {
       ...data,
       departmentId: resolvedDept || data.departmentId || 'DEPT_ROADS',
-      intelligence
+      intelligence,
+      screeningResult,
+      isFlaggedSpam: Boolean(screeningResult?.flagged)
     };
 
     const created = await this.complaintRepo.create(complaintPayload, overrideYear);
+
+    // If flagged, queue review desk entry and log submission to citizen reputation
+    try {
+      if (screeningResult?.flagged) {
+        const reviewRecord = await this.spamReviewRepo.create({
+          complaintId: created.id,
+          complaintReference: created.referenceNumber || created.id,
+          citizenId: created.citizenId,
+          departmentId: created.departmentId,
+          riskLevel: screeningResult.riskLevel,
+          score: screeningResult.score,
+          reasons: screeningResult.reasons,
+          explanations: screeningResult.explanations,
+          duplicateReferences: (intelligence?.duplicates || []).map((d) => d.referenceNumber).filter(Boolean),
+          ruleVersion: screeningResult.ruleVersion,
+          evaluatedAt: screeningResult.evaluatedAt
+        });
+
+        if (reviewRecord?.id && typeof this.complaintRepo.update === 'function') {
+          await this.complaintRepo.update(created.id, { spamReviewId: reviewRecord.id });
+          created.spamReviewId = reviewRecord.id;
+        }
+      }
+
+      if (created.citizenId && this.reputationService) {
+        await this.reputationService.logSubmission(
+          created.citizenId,
+          created.id,
+          Boolean(screeningResult?.flagged)
+        );
+      }
+    } catch (queueErr) {
+      console.warn('[ComplaintService] Non-fatal review queue warning:', queueErr.message);
+    }
+
     return this.enrichWithSlaMetrics(created);
   }
 

@@ -23,8 +23,8 @@
 | **7** | Parent Incidents & Multi-Agency Subtasks | **VERIFIED** | `main` | `f7c80c9` | [phase7-report.md](file:///docs/phase7-report.md) |
 | **8** | Neglect Radar & Supervisory Alerts | **VERIFIED** | `main` | `9c0b7fc` | [phase8-report.md](file:///docs/phase8-report.md) |
 | **9** | Resolution Quality Checker | **VERIFIED** | `main` | `06f22de` | [phase9-report.md](file:///docs/phase9-report.md) |
-| **10** | Citizen Resolution Feedback & Appeals | **VERIFIED** | `phase-10-citizen-feedback-appeals-ratings` | Feature Branch | [phase10-report.md](file:///docs/phase10-report.md) |
-| **11** | Spam/Fake Complaint Detection & Review | *PLANNED* | &mdash; | &mdash; | Scope defined in Roadmap |
+| **10** | Citizen Resolution Feedback & Appeals | **VERIFIED** | `phase-10-citizen-feedback-appeals-ratings` | `d579aed` | [phase10-report.md](file:///docs/phase10-report.md) |
+| **11** | Spam/Fake Complaint Detection & Review | **VERIFIED** | `phase-11-spam-fake-complaint-detection` | Feature Branch | [phase11-report.md](file:///docs/phase11-report.md) |
 | **12** | Citizen Clarifications & Status Translator | *PLANNED* | &mdash; | &mdash; | Scope defined in Roadmap |
 | **13** | Aggregate Analytics & Reporting | *PLANNED* | &mdash; | &mdash; | Scope defined in Roadmap |
 | **14** | Security, A11y & Deployment Readiness | *PLANNED* | &mdash; | &mdash; | Scope defined in Roadmap |
@@ -128,19 +128,19 @@ Test Runner: Native Node.js Test Runner (node --test)
 Execution Command: npm.cmd test (in /backend)
 Exit Code: 0 (SUCCESS)
 
-Total Test Suites: 67
-Total Tests Executed: 337
-Passed: 337 (100%)
+Total Test Suites: 72
+Total Tests Executed: 364
+Passed: 364 (100%)
 Failed: 0
 Skipped: 0
 Cancelled: 0
-Duration: 11.44 seconds
+Duration: 5.99 seconds
 
 Frontend Build: npm.cmd --prefix frontend run build
 Vite Version: Vite v6.4.4
-Modules Transformed: 1,658
+Modules Transformed: 1,659
 Build Exit Code: 0 (SUCCESS)
-Build Duration: 16.99 seconds
+Build Duration: 3.13 seconds
 ======================================================================
 ```
 

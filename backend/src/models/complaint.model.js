@@ -218,6 +218,20 @@ const complaintSchema = new mongoose.Schema(
       type: String,
       default: '1'
     },
+    screeningResult: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null
+    },
+    isFlaggedSpam: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+    spamReviewId: {
+      type: String,
+      default: null,
+      index: true
+    },
     lastUpdated: {
       type: Date,
       default: Date.now

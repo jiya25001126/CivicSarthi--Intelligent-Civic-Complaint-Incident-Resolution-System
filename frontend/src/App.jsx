@@ -19,6 +19,7 @@ import NeglectRadarPage from './pages/NeglectRadarPage';
 import StatusTranslatorPage from './pages/StatusTranslatorPage';
 import AppealManagementPage from './pages/AppealManagementPage';
 import ReopeningManagementPage from './pages/ReopeningManagementPage';
+import SpamReviewPage from './pages/SpamReviewPage';
 
 export default function App() {
   return (
@@ -115,6 +116,14 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['officer', 'admin']}>
                   <ReopeningManagementPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="officer/spam-review"
+              element={
+                <ProtectedRoute allowedRoles={['officer', 'admin']}>
+                  <SpamReviewPage />
                 </ProtectedRoute>
               }
             />
