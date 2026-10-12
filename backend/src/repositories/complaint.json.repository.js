@@ -304,7 +304,15 @@ export class JsonComplaintRepository {
       data.complaints[index].updatedAt = timestamp;
       data.complaints[index].lastUpdated = timestamp;
 
-      if (resolutionDetails) {
+      if (status === 'REOPENED') {
+        data.complaints[index].reopenedCount = (data.complaints[index].reopenedCount || 0) + 1;
+        data.complaints[index].isReopened = true;
+        if (data.complaints[index].resolutionDetails) {
+          data.complaints[index].previousResolutionDetails = data.complaints[index].resolutionDetails;
+          data.complaints[index].resolutionDetails = null;
+        }
+        data.complaints[index].resolutionMilestone = String((data.complaints[index].reopenedCount || 0) + 1);
+      } else if (resolutionDetails) {
         data.complaints[index].resolutionDetails = resolutionDetails;
       }
 

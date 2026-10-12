@@ -321,5 +321,100 @@ export async function fetchNeglectRadarItem(entityType, id) {
   return res.data;
 }
 
+// ==========================================
+// Phase 10: Feedback, Appeals & Controlled Reopening
+// ==========================================
+
+export async function submitComplaintFeedback(complaintId, payload) {
+  const res = await api.post(`/complaints/${encodeURIComponent(complaintId)}/feedback`, payload);
+  return res.data;
+}
+
+export async function getComplaintFeedback(complaintId) {
+  const res = await api.get(`/complaints/${encodeURIComponent(complaintId)}/feedback`);
+  return res.data;
+}
+
+export async function fetchMyFeedback() {
+  const res = await api.get('/feedback/my');
+  return res.data;
+}
+
+export async function fetchFeedbackSummary(departmentId) {
+  const params = departmentId ? { departmentId } : {};
+  const res = await api.get('/feedback/summary', { params });
+  return res.data;
+}
+
+export async function submitComplaintAppeal(complaintId, payload) {
+  const res = await api.post(`/complaints/${encodeURIComponent(complaintId)}/appeals`, payload);
+  return res.data;
+}
+
+export async function fetchMyAppeals() {
+  const res = await api.get('/appeals/my');
+  return res.data;
+}
+
+export async function fetchAppeals(params = {}) {
+  const res = await api.get('/appeals', { params });
+  return res.data;
+}
+
+export async function fetchAppealById(appealId) {
+  const res = await api.get(`/appeals/${encodeURIComponent(appealId)}`);
+  return res.data;
+}
+
+export async function fetchAppealTracking(reference) {
+  const res = await api.get(`/appeals/track/${encodeURIComponent(reference)}`);
+  return res.data;
+}
+
+export async function updateAppealStatus(appealId, payload) {
+  const res = await api.patch(`/appeals/${encodeURIComponent(appealId)}/status`, payload);
+  return res.data;
+}
+
+export async function addAppealNote(appealId, payload) {
+  const res = await api.post(`/appeals/${encodeURIComponent(appealId)}/notes`, payload);
+  return res.data;
+}
+
+export async function recordAppealDecision(appealId, payload) {
+  const res = await api.post(`/appeals/${encodeURIComponent(appealId)}/decision`, payload);
+  return res.data;
+}
+
+export async function submitReopeningRequest(complaintId, payload) {
+  const res = await api.post(`/complaints/${encodeURIComponent(complaintId)}/reopening-requests`, payload);
+  return res.data;
+}
+
+export async function fetchComplaintReopenings(complaintId) {
+  const res = await api.get(`/complaints/${encodeURIComponent(complaintId)}/reopening-requests`);
+  return res.data;
+}
+
+export async function fetchMyReopeningRequests() {
+  const res = await api.get('/reopening-requests/my');
+  return res.data;
+}
+
+export async function fetchReopeningRequests(params = {}) {
+  const res = await api.get('/reopening-requests', { params });
+  return res.data;
+}
+
+export async function fetchReopeningRequestById(requestId) {
+  const res = await api.get(`/reopening-requests/${encodeURIComponent(requestId)}`);
+  return res.data;
+}
+
+export async function recordReopeningDecision(requestId, payload) {
+  const res = await api.post(`/reopening-requests/${encodeURIComponent(requestId)}/decision`, payload);
+  return res.data;
+}
+
 export { API_BASE_URL };
 export default api;

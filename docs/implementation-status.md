@@ -23,7 +23,7 @@
 | **7** | Parent Incidents & Multi-Agency Subtasks | **VERIFIED** | `main` | `f7c80c9` | [phase7-report.md](file:///docs/phase7-report.md) |
 | **8** | Neglect Radar & Supervisory Alerts | **VERIFIED** | `main` | `9c0b7fc` | [phase8-report.md](file:///docs/phase8-report.md) |
 | **9** | Resolution Quality Checker | **VERIFIED** | `main` | `06f22de` | [phase9-report.md](file:///docs/phase9-report.md) |
-| **10** | Citizen Resolution Feedback & Appeals | *PLANNED* | &mdash; | &mdash; | Scope defined in Roadmap |
+| **10** | Citizen Resolution Feedback & Appeals | **VERIFIED** | `phase-10-citizen-feedback-appeals-ratings` | Feature Branch | [phase10-report.md](file:///docs/phase10-report.md) |
 | **11** | Spam/Fake Complaint Detection & Review | *PLANNED* | &mdash; | &mdash; | Scope defined in Roadmap |
 | **12** | Citizen Clarifications & Status Translator | *PLANNED* | &mdash; | &mdash; | Scope defined in Roadmap |
 | **13** | Aggregate Analytics & Reporting | *PLANNED* | &mdash; | &mdash; | Scope defined in Roadmap |
@@ -103,6 +103,18 @@
 - **Frontend Pages:** `ComplaintDetailPage.jsx` (resolution drawer with live score checklist), `TrackComplaintPage.jsx`.
 - **Verification:** Verified via `resolutionQuality.test.js`, `resolutionQuality.integration.test.js` (57 passing tests).
 
+### Phase 10: Citizen Resolution Feedback, Appeals, Grievance Ratings & Controlled Reopening
+- **Status:** **VERIFIED**
+- **Branch:** `phase-10-citizen-feedback-appeals-ratings`
+- **Scope:**
+  1. Citizen satisfaction feedback & 1–5 numerical rating on eligible resolutions gated by Phase 9 verification, with strict 1-submission-per-milestone deduplication.
+  2. Formal dispute appeals desk with 6-stage lifecycle state machine (`SUBMITTED` &rarr; `UNDER_REVIEW` &rarr; `NEED_MORE_INFORMATION` &rarr; `UPHELD` | `REJECTED` | `WITHDRAWN`), department-scoped queues, isolated internal notes, and safe public tracking. UPHELD appeals never silently reopen complaints.
+  3. Controlled grievance reopening petitions with independent review desk (`/officer/reopening-requests`). Approved reopening atomically transitions complaint to `REOPENED`, resets `resolutionDetails: null` (re-arming Phase 9 quality checker), advances resolution milestone, increments cycle count, and retains earlier feedback intact. Low rating alone never reopens a complaint.
+  4. Scoped departmental feedback summaries and officer review desks.
+- **Backend Files:** `constants/feedback.constants.js`, `models/feedback.model.js`, `models/appeal.model.js`, `models/reopeningRequest.model.js`, `repositories/feedback.*`, `repositories/appeal.*`, `repositories/reopeningRequest.*`, `services/feedback.service.js`, `services/appeal.service.js`, `services/reopening.service.js`, `controllers/*`, `routes/*`.
+- **Frontend Pages:** `ComplaintDetailPage.jsx` (reopening notice banner, 1-5 star card, appeal card, reopening petition card), `AppealManagementPage.jsx`, `ReopeningManagementPage.jsx`.
+- **Verification:** Verified via `backend/tests/feedback.test.js` (28 passing tests). Full regression suite: 337 tests passing (0 failures).
+
 ---
 
 ## 3. Global Automated Verification Summary
@@ -116,19 +128,19 @@ Test Runner: Native Node.js Test Runner (node --test)
 Execution Command: npm.cmd test (in /backend)
 Exit Code: 0 (SUCCESS)
 
-Total Test Suites: 63
-Total Tests Executed: 309
-Passed: 309 (100%)
+Total Test Suites: 67
+Total Tests Executed: 337
+Passed: 337 (100%)
 Failed: 0
 Skipped: 0
 Cancelled: 0
-Duration: 6.40 seconds
+Duration: 11.44 seconds
 
 Frontend Build: npm.cmd --prefix frontend run build
 Vite Version: Vite v6.4.4
-Modules Transformed: 1,656
+Modules Transformed: 1,658
 Build Exit Code: 0 (SUCCESS)
-Build Duration: 5.38 seconds
+Build Duration: 16.99 seconds
 ======================================================================
 ```
 
@@ -137,10 +149,10 @@ Build Duration: 5.38 seconds
 ## 4. Unverified Capabilities & Known Limitations
 
 1. **Live MongoDB Network Operations (NOT VERIFIED):**
-   - Mongoose schemas, model validators, and anti-silent fallback logic are verified by unit tests.
+   - Mongoose schemas, model validators, indexes, and anti-silent fallback logic are verified by unit tests.
    - Live socket connectivity to a running MongoDB instance was not tested because no MongoDB daemon was listening on `localhost:27017` in the local development environment.
 2. **Automated Playwright Browser Driver (UNVERIFIED Automated / 100% Manual Passed):**
    - Playwright automated browser driver download failed due to network CDN restrictions (AzureEdge 404).
-   - Manual browser testing across all portals (Citizen, Officer, Incident Desk, Neglect Radar, Resolution Quality) passed 100%.
-3. **Phases 10–15:**
+   - Manual browser testing across all portals (Citizen, Officer, Incident Desk, Neglect Radar, Resolution Quality, Appeals Desk, Reopening Desk) passed 100%.
+3. **Phases 11–15:**
    - Clearly documented as *PLANNED* in accordance with the revised 16-phase roadmap.

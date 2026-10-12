@@ -25,6 +25,10 @@ import {
   submissionRateLimiter
 } from '../middleware/auth.middleware.js';
 import { COMPLAINT_STATUS, COMPLAINT_PRIORITY } from '../constants/status.constants.js';
+import { APPEAL_REASONS, REOPENING_REASONS } from '../constants/feedback.constants.js';
+import { submitFeedback, getComplaintFeedback } from '../controllers/feedback.controller.js';
+import { createAppeal } from '../controllers/appeal.controller.js';
+import { createReopeningRequest } from '../controllers/reopening.controller.js';
 
 const router = express.Router();
 
@@ -145,6 +149,49 @@ const linkDuplicateSchema = {
     message: 'Target duplicate reference number or ID is required'
   })
 };
+const submitFeedbackSchema = {
+  params: z.object({
+    id: z.string().min(1, 'Complaint ID is required')
+  }),
+  body: z.object({
+    rating: z.number().int().min(1).max(5),
+    comments: z.string().max(2000).optional()
+  })
+};
+
+const createAppealNestedSchema = {
+  params: z.object({
+    id: z.string().min(1, 'Complaint ID is required')
+  }),
+  body: z.object({
+    reasonCategory: z.enum(Object.values(APPEAL_REASONS), {
+      errorMap: () => ({ message: `Invalid reasonCategory. Allowed: ${Object.values(APPEAL_REASONS).join(', ')}` })
+    }),
+    explanation: z.string().trim().optional(),
+    citizenExplanation: z.string().trim().optional(),
+    evidence: z.array(z.string()).optional(),
+    supportingEvidence: z.array(z.string()).optional()
+  }).refine(d => (d.explanation && d.explanation.length >= 10) || (d.citizenExplanation && d.citizenExplanation.length >= 10), {
+    message: 'Appeal explanation must be at least 10 characters'
+  })
+};
+
+const createReopeningNestedSchema = {
+  params: z.object({
+    id: z.string().min(1, 'Complaint ID is required')
+  }),
+  body: z.object({
+    reasonCategory: z.enum(Object.values(REOPENING_REASONS), {
+      errorMap: () => ({ message: `Invalid reasonCategory. Allowed: ${Object.values(REOPENING_REASONS).join(', ')}` })
+    }),
+    explanation: z.string().trim().optional(),
+    citizenExplanation: z.string().trim().optional(),
+    evidence: z.array(z.string()).optional(),
+    supportingEvidence: z.array(z.string()).optional()
+  }).refine(d => (d.explanation && d.explanation.length >= 10) || (d.citizenExplanation && d.citizenExplanation.length >= 10), {
+    message: 'Reopening explanation must be at least 10 characters'
+  })
+};
 
 // ==========================================
 // Public Endpoints (No authentication required)
@@ -170,5 +217,11 @@ router.patch('/:id/duplicate', authenticate, requireRole('officer', 'admin'), va
 router.patch('/:id/department', authenticate, requireRole('admin'), validate(updateDepartmentSchema), updateComplaintDepartment);
 router.get('/:id/history', authenticate, validate(getComplaintSchema), getComplaintHistory);
 router.post('/:id/notes', authenticate, requireRole('officer', 'admin'), validate(addNoteSchema), addOfficerNote);
+
+// Phase 10: Nested Feedback, Appeal, and Reopening Endpoints
+router.post('/:id/feedback', authenticate, validate(submitFeedbackSchema), submitFeedback);
+router.get('/:id/feedback', authenticate, validate(getComplaintSchema), getComplaintFeedback);
+router.post('/:id/appeals', authenticate, validate(createAppealNestedSchema), createAppeal);
+router.post('/:id/reopening-requests', authenticate, validate(createReopeningNestedSchema), createReopeningRequest);
 
 export default router;

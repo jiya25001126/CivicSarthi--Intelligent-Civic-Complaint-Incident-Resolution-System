@@ -7,6 +7,9 @@ import adminRoutes from './admin.routes.js';
 import incidentRoutes from './incident.routes.js';
 import subtaskRoutes from './subtask.routes.js';
 import neglectRadarRoutes from './neglectRadar.routes.js';
+import feedbackRoutes from './feedback.routes.js';
+import appealRoutes from './appeal.routes.js';
+import reopeningRoutes from './reopening.routes.js';
 import { mockCpgramsRouter } from '../../../mock-cpgrams/index.js';
 
 const apiRouter = express.Router();
@@ -21,6 +24,9 @@ v1Router.use('/departments', departmentRoutes);
 v1Router.use('/incidents', incidentRoutes);
 v1Router.use('/subtasks', subtaskRoutes);
 v1Router.use('/neglect-radar', neglectRadarRoutes);
+v1Router.use('/feedback', feedbackRoutes);
+v1Router.use('/appeals', appealRoutes);
+v1Router.use('/reopening-requests', reopeningRoutes);
 v1Router.use('/mock-cpgrams', mockCpgramsRouter);
 
 // Mount /api/v1
@@ -35,6 +41,9 @@ apiRouter.use('/departments', departmentRoutes);
 apiRouter.use('/incidents', incidentRoutes);
 apiRouter.use('/subtasks', subtaskRoutes);
 apiRouter.use('/neglect-radar', neglectRadarRoutes);
+apiRouter.use('/feedback', feedbackRoutes);
+apiRouter.use('/appeals', appealRoutes);
+apiRouter.use('/reopening-requests', reopeningRoutes);
 apiRouter.use('/mock-cpgrams', mockCpgramsRouter);
 
 export default apiRouter;

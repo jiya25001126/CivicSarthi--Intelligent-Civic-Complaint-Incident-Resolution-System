@@ -4,3 +4,6 @@ export { userRepository, UserRepository } from './user.repository.js';
 export { auditLogRepository, AuditLogRepository } from './auditLog.repository.js';
 export { incidentRepository, IncidentRepository } from './incident.repository.js';
 export { subtaskRepository, SubtaskRepository } from './subtask.repository.js';
+export { feedbackRepository, FeedbackRepository } from './feedback.repository.js';
+export { appealRepository, AppealRepository } from './appeal.repository.js';
+export { reopeningRequestRepository, ReopeningRequestRepository } from './reopeningRequest.repository.js';

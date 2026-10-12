@@ -5,3 +5,6 @@ export { UserModel } from './user.model.js';
 export { AuditLogModel } from './auditLog.model.js';
 export { IncidentModel } from './incident.model.js';
 export { SubtaskModel } from './subtask.model.js';
+export { FeedbackModel } from './feedback.model.js';
+export { AppealModel } from './appeal.model.js';
+export { ReopeningRequestModel } from './reopeningRequest.model.js';
