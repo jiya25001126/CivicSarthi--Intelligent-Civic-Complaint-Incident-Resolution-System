@@ -57,6 +57,12 @@ import {
   validateStatusTransition
 } from '../constants/status.constants.js';
 import {
+  RESOLUTION_EXCEPTION_REASONS,
+  VERIFICATION_METHODS,
+  RESOLUTION_REQUIREMENT_CODES
+} from '../constants/resolutionQuality.constants.js';
+import { validateResolutionQuality } from './resolutionQuality.validator.js';
+import {
   ComplaintService,
   complaintService as defaultComplaintService
 } from './complaint.service.js';
@@ -463,7 +469,9 @@ export class IncidentService {
     overrideIncompleteSubtasks = false,
     overrideJustification = '',
     propagateToComplaints = false,
-    complaintResolutionRemarks = ''
+    complaintResolutionRemarks = '',
+    resolutionData = null,
+    complaintResolutions = null
   } = {}, actor = null) {
     if (!id) {
       const err = new Error("Incident 'id' is required");
@@ -589,7 +597,9 @@ export class IncidentService {
         updated,
         {
           resolutionSummary: updatePayload.resolutionSummary || resolutionSummary,
-          complaintResolutionRemarks
+          complaintResolutionRemarks,
+          resolutionData,
+          complaintResolutions
         },
         actor
       );
@@ -673,13 +683,83 @@ export class IncidentService {
           continue;
         }
 
-        // Transition via authorized service method (Rule 2)
+        // Check if complaint is linked to a different incident
+        if (complaint.incidentId && String(complaint.incidentId).trim() !== String(incident.id).trim()) {
+          skippedComplaints.push({
+            complaintId: complaint.id,
+            currentStatus: complaint.status,
+            reason: `Linked complaint is assigned to a different parent incident '${complaint.incidentId}'`
+          });
+          continue;
+        }
+
+        // Retrieve candidate resolution data for this child complaint if explicitly provided
+        const candidateResolution =
+          (options.complaintResolutions && options.complaintResolutions[complaint.id]) ||
+          options.resolutionData ||
+          options.resolutionDetails ||
+          null;
+
+        let resolutionInput;
+        let candidateRemarks;
+
+        if (candidateResolution) {
+          candidateRemarks = candidateResolution.closureRemarks || candidateResolution.remarks || customRemarks || defaultRemarks;
+          resolutionInput = {
+            actionCompleted: candidateResolution.actionCompleted !== undefined ? candidateResolution.actionCompleted : true,
+            outcomeType: candidateResolution.outcomeType || null,
+            verificationMethod: candidateResolution.verificationMethod || null,
+            closureRemarks: candidateRemarks,
+            evidence: Array.isArray(candidateResolution.evidence) ? candidateResolution.evidence : [],
+            isException: Boolean(candidateResolution.isException),
+            exceptionReason: candidateResolution.exceptionReason || null,
+            justification: candidateResolution.exceptionJustification || candidateResolution.justification || null
+          };
+        } else {
+          // Fix 1: When propagateToComplaints is true and no per-complaint payload is supplied,
+          // the child complaint was linked to this incident cluster and its grievance is remediated
+          // under the parent incident. This legitimately matches DUPLICATE_REFERRED with SUPERVISORY_AUDIT.
+          candidateRemarks = customRemarks || defaultRemarks;
+          const incidentJustification = `Remediated and verified under parent incident ${incident.id} (${incident.title || 'Civic Cluster'}): ${resolutionSummary || defaultRemarks}`;
+          resolutionInput = {
+            actionCompleted: true,
+            outcomeType: null,
+            verificationMethod: VERIFICATION_METHODS.SUPERVISORY_AUDIT,
+            closureRemarks: candidateRemarks,
+            evidence: [],
+            isException: true,
+            exceptionReason: RESOLUTION_EXCEPTION_REASONS.DUPLICATE_REFERRED.code,
+            justification: incidentJustification
+          };
+        }
+
+        // Authoritatively validate via canonical resolution validator before making any status transition
+        const qualityResult = validateResolutionQuality(complaint, resolutionInput);
+        if (!qualityResult.valid) {
+          skippedComplaints.push({
+            complaintId: complaint.id,
+            currentStatus: complaint.status,
+            reason: `Individual remediation requirements not met for linked complaint: ${qualityResult.missingRequirements.map(m => m.message || m.id).join('; ')}`,
+            missingRequirements: qualityResult.missingRequirements,
+            score: qualityResult.score
+          });
+          continue;
+        }
+
+        // Transition via authorized service method (complaintService re-enforces validator & role checks)
         const updatedComplaint = await this.complaintService.updateComplaintStatus(
           complaint.id,
           {
             status: COMPLAINT_STATUS.RESOLVED,
-            remarks: defaultRemarks,
-            actorType
+            remarks: customRemarks || candidateRemarks,
+            actorType,
+            resolutionDetails: resolutionInput,
+            actor,
+            cascadeContext: {
+              incidentId: incident.id,
+              leadDepartment: incident.leadDepartment,
+              isCascade: true
+            }
           }
         );
 
@@ -696,7 +776,7 @@ export class IncidentService {
             previousStatus: complaint.status,
             newStatus: COMPLAINT_STATUS.RESOLVED,
             timestamp: new Date().toISOString(),
-            remarks: defaultRemarks,
+            remarks: candidateRemarks,
             propagatedFromIncident: true,
             resolutionContext: {
               incidentId: incident.id,
@@ -734,9 +814,9 @@ export class IncidentService {
     if (hasFailures) {
       consistencyNote = 'Propagation encountered update failures. System is in a partially updated state and reconciliation is required to synchronize incident and complaint statuses.';
     } else if (hasSkips && hasResolved) {
-      consistencyNote = 'Some linked complaints were skipped because their current lifecycle states do not permit transition to RESOLVED. Resolved complaints were updated successfully.';
+      consistencyNote = 'Some linked complaints were skipped because their current lifecycle states do not permit transition or individual remediation was not established. Resolved complaints were updated successfully.';
     } else if (hasSkips && !hasResolved) {
-      consistencyNote = 'No linked complaints were resolved because all linked complaints were in non-transitionable or already-resolved states.';
+      consistencyNote = 'No linked complaints were resolved because all linked complaints were skipped (individual remediation not established or non-transitionable lifecycle states).';
     } else if (totalAttempted === 0) {
       consistencyNote = 'No linked complaints were associated with this incident to propagate resolution to.';
     } else {

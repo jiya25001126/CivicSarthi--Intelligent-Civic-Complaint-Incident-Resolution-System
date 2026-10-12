@@ -278,7 +278,7 @@ export class JsonComplaintRepository {
    * Update complaint status with strict transition validation and history logging.
    * Serialized via mutex to prevent race conditions.
    */
-  async updateStatus(idOrRef, { status, remarks, actorType }) {
+  async updateStatus(idOrRef, { status, remarks, actorType, resolutionDetails }) {
     return this._mutex.run(async () => {
       const data = await this._readFile();
       const target = String(idOrRef).toLowerCase();
@@ -304,12 +304,26 @@ export class JsonComplaintRepository {
       data.complaints[index].updatedAt = timestamp;
       data.complaints[index].lastUpdated = timestamp;
 
+      if (resolutionDetails) {
+        data.complaints[index].resolutionDetails = resolutionDetails;
+      }
+
       const historyEntry = {
         timestamp,
         status,
         actorType: actorType || 'OFFICER',
         remarks: remarks || `Status changed from ${currentStatus} to ${status}`
       };
+
+      if (resolutionDetails) {
+        historyEntry.resolutionDetails = {
+          score: resolutionDetails.score,
+          isException: Boolean(resolutionDetails.isException),
+          exceptionReason: resolutionDetails.exceptionReason || null,
+          outcomeType: resolutionDetails.outcomeType || null,
+          verificationMethod: resolutionDetails.verificationMethod || null
+        };
+      }
 
       if (!Array.isArray(data.complaints[index].statusHistory)) {
         data.complaints[index].statusHistory = [];

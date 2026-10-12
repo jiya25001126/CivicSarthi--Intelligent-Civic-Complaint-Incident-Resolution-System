@@ -2,6 +2,8 @@ import complaintService from '../services/complaint.service.js';
 import { auditLogRepository } from '../repositories/auditLog.repository.js';
 import complaintRepository from '../repositories/complaint.repository.js';
 import aiIntelligenceService from '../services/aiIntelligence.service.js';
+import { validateResolutionQuality } from '../services/resolutionQuality.validator.js';
+import { COMPLAINT_STATUS, validateStatusTransition } from '../constants/status.constants.js';
 
 export const listComplaints = async (req, res, next) => {
   try {
@@ -285,10 +287,94 @@ export const updateComplaintStatus = async (req, res, next) => {
       }
     }
 
+    const { valid: transitionValid, allowed: allowedTransitions } = validateStatusTransition(complaint.status, status);
+    if (!transitionValid) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid status transition from '${complaint.status}' to '${status}'. Allowed transitions: ${allowedTransitions.join(', ')}`
+      });
+    }
+
+    const isResolution = (status === COMPLAINT_STATUS.RESOLVED || status === COMPLAINT_STATUS.CLOSED);
+    let persistedResolutionDetails = null;
+
+    if (isResolution) {
+      const isExceptionRequested = Boolean(
+        req.body.isException === true || req.body.resolution?.isException === true
+      );
+
+      // Server-side enforcement: Only supervisory administrators can authorize resolution exceptions
+      if (isExceptionRequested && req.user.role !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied: supervisory administrative authorization is required to approve a resolution exception',
+          code: 'FORBIDDEN_EXCEPTION_APPROVAL'
+        });
+      }
+
+      const resolutionInput = (req.body.resolution && typeof req.body.resolution === 'object')
+        ? req.body.resolution
+        : req.body;
+
+      const resolutionData = {
+        actionCompleted: req.body.actionCompleted !== undefined
+          ? req.body.actionCompleted
+          : resolutionInput.actionCompleted,
+        outcomeType: req.body.outcomeType || resolutionInput.outcomeType,
+        verificationMethod: req.body.verificationMethod || resolutionInput.verificationMethod,
+        closureRemarks: req.body.closureRemarks || req.body.remarks || resolutionInput.closureRemarks || resolutionInput.remarks,
+        evidence: req.body.evidence || resolutionInput.evidence || [],
+        isException: isExceptionRequested,
+        exceptionReason: req.body.exceptionReason || resolutionInput.exceptionReason,
+        justification: req.body.exceptionJustification || req.body.justification || resolutionInput.exceptionJustification || resolutionInput.justification
+      };
+
+      const qualityResult = validateResolutionQuality(complaint, resolutionData);
+      if (!qualityResult.valid) {
+        return res.status(400).json({
+          success: false,
+          error: 'Resolution quality validation failed',
+          code: 'RESOLUTION_QUALITY_FAILED',
+          score: qualityResult.score,
+          scoreExplanation: qualityResult.scoreExplanation,
+          valid: false,
+          missingRequirements: qualityResult.missingRequirements,
+          checklist: qualityResult.checklist,
+          warnings: qualityResult.warnings || [],
+          category: qualityResult.category,
+          categoryGuidance: qualityResult.categoryGuidance
+        });
+      }
+
+      persistedResolutionDetails = {
+        valid: true,
+        score: qualityResult.score,
+        scoreExplanation: qualityResult.scoreExplanation,
+        isException: qualityResult.isException,
+        outcomeType: qualityResult.isException ? null : (resolutionData.outcomeType || null),
+        actionCompleted: qualityResult.isException ? null : (resolutionData.actionCompleted === true),
+        verificationMethod: qualityResult.isException ? null : (resolutionData.verificationMethod || null),
+        closureRemarks: resolutionData.closureRemarks || null,
+        evidence: Array.isArray(resolutionData.evidence) ? resolutionData.evidence : [],
+        exceptionReason: qualityResult.isException ? qualityResult.exceptionReason : null,
+        exceptionJustification: qualityResult.isException ? qualityResult.justification : null,
+        checklist: qualityResult.checklist,
+        warnings: qualityResult.warnings || [],
+        resolvedAt: new Date().toISOString(),
+        resolvedBy: {
+          userId: req.user.id,
+          role: req.user.role,
+          departmentId: req.user.departmentId || null
+        }
+      };
+    }
+
     const updated = await complaintService.updateComplaintStatus(id, {
       status,
       remarks,
-      actorType: req.user.role === 'admin' ? (actorType || 'SYSTEM') : 'OFFICER'
+      actorType: req.user.role === 'admin' ? (actorType || 'SYSTEM') : 'OFFICER',
+      resolutionDetails: persistedResolutionDetails,
+      actor: req.user
     });
 
     if (!updated) {
@@ -298,12 +384,76 @@ export const updateComplaintStatus = async (req, res, next) => {
       });
     }
 
+    // Record audit log for resolution decisions
+    if (isResolution && persistedResolutionDetails) {
+      try {
+        await auditLogRepository.create({
+          userId: req.user.id,
+          userEmail: req.user.email,
+          role: req.user.role,
+          action: persistedResolutionDetails.isException ? 'RESOLVE_COMPLAINT_EXCEPTION' : 'RESOLVE_COMPLAINT',
+          complaintId: complaint.id,
+          targetResource: complaint.referenceNumber || complaint.id,
+          details: {
+            complaintId: complaint.id,
+            fromStatus: complaint.status,
+            toStatus: status,
+            isException: persistedResolutionDetails.isException,
+            score: persistedResolutionDetails.score,
+            outcomeType: persistedResolutionDetails.outcomeType,
+            verificationMethod: persistedResolutionDetails.verificationMethod,
+            exceptionReason: persistedResolutionDetails.exceptionReason,
+            exceptionJustification: persistedResolutionDetails.exceptionJustification,
+            evidenceCount: persistedResolutionDetails.evidence.length,
+            remarks: persistedResolutionDetails.closureRemarks,
+            ipAddress: req.ip || req.socket?.remoteAddress || '127.0.0.1'
+          }
+        });
+      } catch (auditErr) {
+        console.warn(`[Audit Log Failure] Failed to record resolution audit event for complaint ${complaint.id}:`, auditErr.message);
+      }
+    }
+
     res.json({
       success: true,
       message: `Status updated to ${status}`,
       data: updated
     });
   } catch (error) {
+    if (error.code === 'RESOLUTION_QUALITY_FAILED') {
+      return res.status(400).json({
+        success: false,
+        error: error.message || 'Resolution quality validation failed',
+        code: 'RESOLUTION_QUALITY_FAILED',
+        score: error.score,
+        scoreExplanation: error.scoreExplanation,
+        valid: false,
+        missingRequirements: error.missingRequirements || [],
+        checklist: error.checklist || [],
+        warnings: error.warnings || [],
+        category: error.category,
+        categoryGuidance: error.categoryGuidance
+      });
+    }
+    if (error.code === 'FORBIDDEN_EXCEPTION_APPROVAL') {
+      return res.status(403).json({
+        success: false,
+        error: error.message,
+        code: 'FORBIDDEN_EXCEPTION_APPROVAL'
+      });
+    }
+    if (error.code === 'FORBIDDEN_DEPARTMENT_MISMATCH') {
+      return res.status(403).json({
+        success: false,
+        error: error.message
+      });
+    }
+    if (error.code === 'INVALID_TRANSITION') {
+      return res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
     next(error);
   }
 };

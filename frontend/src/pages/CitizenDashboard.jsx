@@ -16,6 +16,7 @@ import {
   TrendingUp,
   Inbox
 } from 'lucide-react';
+import { formatOutcomeType } from '../constants/resolutionQuality.constants';
 
 export default function CitizenDashboard() {
   const [complaints, setComplaints] = useState([]);
@@ -246,7 +247,17 @@ export default function CitizenDashboard() {
                     <td className="px-4 py-3.5 whitespace-nowrap">
                       <div>
                         <StatusBadge status={item.status} />
-                        {item.statusDescription && (
+                        {item.resolutionDetails?.outcomeType && (
+                          <span className="block mt-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 w-fit">
+                            {formatOutcomeType(item.resolutionDetails.outcomeType)}
+                          </span>
+                        )}
+                        {item.resolutionDetails?.isException && !item.resolutionDetails?.outcomeType && (
+                          <span className="block mt-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200 w-fit">
+                            Exception Granted
+                          </span>
+                        )}
+                        {item.statusDescription && !item.resolutionDetails?.outcomeType && (
                           <p className="text-[10px] text-slate-500 mt-1 max-w-[180px] line-clamp-1">
                             {item.statusDescription}
                           </p>

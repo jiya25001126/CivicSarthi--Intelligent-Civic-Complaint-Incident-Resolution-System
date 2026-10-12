@@ -81,7 +81,7 @@ const updateIncidentStatusSchema = {
     overrideJustification: z.string().optional(),
     propagateToComplaints: z.boolean().optional(),
     complaintResolutionRemarks: z.string().optional()
-  })
+  }).passthrough()
 };
 
 const linkComplaintSchema = {

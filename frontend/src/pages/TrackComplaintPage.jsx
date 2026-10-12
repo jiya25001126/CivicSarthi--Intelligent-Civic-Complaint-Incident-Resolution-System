@@ -18,6 +18,11 @@ import {
   Shield,
   Lock
 } from 'lucide-react';
+import {
+  formatOutcomeType,
+  formatVerificationMethod,
+  formatExceptionReason
+} from '../constants/resolutionQuality.constants';
 
 export default function TrackComplaintPage() {
   const { id } = useParams();
@@ -171,6 +176,89 @@ export default function TrackComplaintPage() {
               <span>Public Tracking View: Private citizen contact information and internal officer review notes are strictly protected.</span>
             </div>
           </div>
+
+          {/* Official Resolution Verification Record Card (Citizen Public Tracking View) */}
+          {complaint.resolutionDetails && (
+            <div className="bg-gradient-to-br from-emerald-50/50 to-white p-6 rounded-2xl border-2 border-emerald-500 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={20} className="text-emerald-600 shrink-0" />
+                  <div>
+                    <h3 className="font-bold text-base text-slate-900">
+                      Official Resolution Verification Record
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Procedural quality criteria verified under Phase 9 Resolution Standards
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    Status: {complaint.status}
+                  </span>
+                  {typeof complaint.resolutionDetails.score === 'number' && (
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-300">
+                      {complaint.resolutionDetails.score}% Compliance Score
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+                <div className="p-3 bg-white rounded-xl border border-emerald-200/80">
+                  <span className="text-slate-500 block mb-0.5">Remediation Outcome</span>
+                  <span className="font-bold text-slate-900">
+                    {formatOutcomeType(complaint.resolutionDetails.outcomeType)}
+                  </span>
+                </div>
+
+                <div className="p-3 bg-white rounded-xl border border-emerald-200/80">
+                  <span className="text-slate-500 block mb-0.5">Verification Method</span>
+                  <span className="font-bold text-slate-900">
+                    {formatVerificationMethod(complaint.resolutionDetails.verificationMethod)}
+                  </span>
+                </div>
+
+                <div className="p-3 bg-white rounded-xl border border-emerald-200/80">
+                  <span className="text-slate-500 block mb-0.5">Resolution Date</span>
+                  <span className="font-bold text-slate-900">
+                    {complaint.resolutionDetails.resolvedAt
+                      ? new Date(complaint.resolutionDetails.resolvedAt).toLocaleString('en-IN', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      : 'Recorded'}
+                  </span>
+                </div>
+              </div>
+
+              {complaint.resolutionDetails.closureRemarks && (
+                <div className="p-3.5 bg-white rounded-xl border border-emerald-200/80 space-y-1">
+                  <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
+                    Official Closure Summary
+                  </span>
+                  <p className="text-xs text-slate-800 leading-relaxed font-normal">
+                    {complaint.resolutionDetails.closureRemarks}
+                  </p>
+                </div>
+              )}
+
+              {complaint.resolutionDetails.isException && (
+                <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-start gap-2">
+                  <ShieldCheck size={16} className="text-amber-700 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold">Supervisory Administrative Exception Applied: </span>
+                    <span>
+                      {formatExceptionReason(complaint.resolutionDetails.exceptionReason)}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Status Progression Timeline */}
           <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">

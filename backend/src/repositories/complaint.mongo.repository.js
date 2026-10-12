@@ -237,8 +237,8 @@ export class MongoComplaintRepository {
             actorType: 'CITIZEN',
             remarks: 'Grievance submitted by citizen'
           });
-        } catch {
-          // Non-blocking history record
+        } catch (histErr) {
+          console.warn(`[Persistence Warning] Standalone StatusHistoryModel creation failed for complaint ${created.id}:`, histErr.message);
         }
 
         return this._formatComplaint(created.toObject());
@@ -257,7 +257,7 @@ export class MongoComplaintRepository {
   /**
    * Update complaint status with strict transition validation and history logging.
    */
-  async updateStatus(idOrRef, { status, remarks, actorType }) {
+  async updateStatus(idOrRef, { status, remarks, actorType, resolutionDetails }) {
     const target = String(idOrRef).trim();
     const targetRegex = new RegExp(`^${target}$`, 'i');
 
@@ -281,6 +281,9 @@ export class MongoComplaintRepository {
     doc.status = status;
     doc.updatedAt = timestamp;
     doc.lastUpdated = timestamp;
+    if (resolutionDetails !== undefined) {
+      doc.resolutionDetails = resolutionDetails;
+    }
 
     const historyEntry = {
       timestamp,
@@ -288,6 +291,9 @@ export class MongoComplaintRepository {
       actorType: actorType || 'OFFICER',
       remarks: remarks || `Status changed from ${currentStatus} to ${status}`
     };
+    if (resolutionDetails !== undefined) {
+      historyEntry.resolutionDetails = resolutionDetails;
+    }
 
     doc.statusHistory.push(historyEntry);
     await doc.save();
@@ -301,9 +307,12 @@ export class MongoComplaintRepository {
         timestamp,
         status,
         actorType: actorType || 'OFFICER',
-        remarks: historyEntry.remarks
+        remarks: historyEntry.remarks,
+        resolutionDetails: resolutionDetails !== undefined ? resolutionDetails : null
       });
-    } catch {}
+    } catch (histErr) {
+      console.warn(`[Persistence Warning] Standalone StatusHistoryModel creation failed for complaint ${doc.id}:`, histErr.message);
+    }
 
     return this._formatComplaint(doc.toObject());
   }
@@ -357,7 +366,9 @@ export class MongoComplaintRepository {
         actorType: actorType || 'OFFICER',
         remarks: historyEntry.remarks
       });
-    } catch {}
+    } catch (histErr) {
+      console.warn(`[Persistence Warning] Standalone StatusHistoryModel creation failed for complaint ${doc.id}:`, histErr.message);
+    }
 
     return this._formatComplaint(doc.toObject());
   }
@@ -619,6 +630,7 @@ export class MongoComplaintRepository {
     formatted.assignedOfficerId = formatted.assignedOfficerId || null;
     formatted.intelligence = formatted.intelligence || null;
     formatted.duplicateOf = formatted.duplicateOf || null;
+    formatted.resolutionDetails = formatted.resolutionDetails || null;
 
     return formatted;
   }

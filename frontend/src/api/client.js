@@ -139,12 +139,8 @@ export async function createComplaint(payload, idempotencyKey = null) {
   return res.data;
 }
 
-export async function updateComplaintStatus(id, { status, remarks, actorType }) {
-  const res = await api.patch(`/complaints/${encodeURIComponent(id)}/status`, {
-    status,
-    remarks,
-    actorType
-  });
+export async function updateComplaintStatus(id, payload) {
+  const res = await api.patch(`/complaints/${encodeURIComponent(id)}/status`, payload);
   return res.data;
 }
 
