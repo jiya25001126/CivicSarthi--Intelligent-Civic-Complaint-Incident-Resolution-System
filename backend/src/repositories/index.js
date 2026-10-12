@@ -9,3 +9,5 @@ export { appealRepository, AppealRepository } from './appeal.repository.js';
 export { reopeningRequestRepository, ReopeningRequestRepository } from './reopeningRequest.repository.js';
 export { spamReviewRepository, SpamReviewRepositoryFactory } from './spamReview.repository.js';
 export { citizenReputationRepository, CitizenReputationRepositoryFactory } from './citizenReputation.repository.js';
+export { clarificationRepository, ClarificationRepositoryFactory } from './clarification.repository.js';
+export { reminderRepository, ReminderRepositoryFactory } from './reminder.repository.js';

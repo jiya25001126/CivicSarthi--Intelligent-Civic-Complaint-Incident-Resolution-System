@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { fetchComplaintTracking } from '../api/client';
+import { fetchComplaintTracking, fetchComplaintStatusExplanation } from '../api/client';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
 import {
   Search,
@@ -16,7 +16,9 @@ import {
   Calendar,
   ExternalLink,
   Shield,
-  Lock
+  Lock,
+  Languages,
+  Info
 } from 'lucide-react';
 import {
   formatOutcomeType,
@@ -31,10 +33,23 @@ export default function TrackComplaintPage() {
   const [inputQuery, setInputQuery] = useState(id || '');
   const [complaint, setComplaint] = useState(null);
   const [history, setHistory] = useState([]);
+  const [statusExplanation, setStatusExplanation] = useState(null);
+  const [translatorLang, setTranslatorLang] = useState('en');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const performSearch = async (searchId) => {
+  const fetchExplanation = async (searchId, lang) => {
+    try {
+      const expRes = await fetchComplaintStatusExplanation(searchId, { lang });
+      if (expRes?.data) {
+        setStatusExplanation(expRes.data);
+      }
+    } catch (expErr) {
+      console.info('Status explanation fallback:', expErr.message);
+    }
+  };
+
+  const performSearch = async (searchId, lang = translatorLang) => {
     if (!searchId || !searchId.trim()) return;
     try {
       setLoading(true);
@@ -42,10 +57,12 @@ export default function TrackComplaintPage() {
       const res = await fetchComplaintTracking(searchId.trim());
       setComplaint(res.data);
       setHistory(res.data?.statusHistory || []);
+      await fetchExplanation(searchId.trim(), lang);
     } catch (err) {
       setError(err.message || 'Grievance reference not found. Please verify the reference number.');
       setComplaint(null);
       setHistory([]);
+      setStatusExplanation(null);
     } finally {
       setLoading(false);
     }
@@ -176,6 +193,97 @@ export default function TrackComplaintPage() {
               <span>Public Tracking View: Private citizen contact information and internal officer review notes are strictly protected.</span>
             </div>
           </div>
+
+          {/* Phase 12: Citizen-Friendly Vernacular Status Translator Card */}
+          {statusExplanation && (
+            <div className="bg-white p-6 rounded-2xl border border-emerald-200/80 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-emerald-100 text-emerald-700 rounded-lg">
+                    <Languages size={18} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-slate-900">
+                      Plain-Language Vernacular Status Breakdown
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Explained without administrative jargon or bureaucratic abbreviations
+                    </p>
+                  </div>
+                </div>
+
+                {/* Language Toggle */}
+                <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTranslatorLang('en');
+                      fetchExplanation(complaint.referenceNumber || complaint.id, 'en');
+                    }}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-md transition ${
+                      translatorLang === 'en'
+                        ? 'bg-emerald-600 text-white shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    English
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTranslatorLang('hi');
+                      fetchExplanation(complaint.referenceNumber || complaint.id, 'hi');
+                    }}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-md transition ${
+                      translatorLang === 'hi'
+                        ? 'bg-emerald-600 text-white shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    हिंदी
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/70 space-y-1">
+                  <span className="font-bold text-slate-700 block">
+                    {translatorLang === 'hi' ? 'इस स्थिति का क्या अर्थ है?' : 'What this status means'}
+                  </span>
+                  <p className="text-slate-800 leading-relaxed font-medium">
+                    {statusExplanation.meaning}
+                  </p>
+                </div>
+
+                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/70 space-y-1">
+                  <span className="font-bold text-slate-700 block">
+                    {translatorLang === 'hi' ? 'अब तक क्या हुआ है?' : 'What has actually happened'}
+                  </span>
+                  <p className="text-slate-800 leading-relaxed font-medium">
+                    {statusExplanation.whatHappened}
+                  </p>
+                </div>
+
+                <div className="p-3.5 bg-amber-50/70 rounded-xl border border-amber-200/70 space-y-1">
+                  <span className="font-bold text-amber-900 block">
+                    {translatorLang === 'hi' ? 'आप आगे क्या कर सकते हैं?' : 'What you can do next'}
+                  </span>
+                  <p className="text-amber-950 leading-relaxed font-medium">
+                    {statusExplanation.nextSteps}
+                  </p>
+                </div>
+
+                <div className="p-3.5 bg-blue-50/70 rounded-xl border border-blue-200/70 space-y-1">
+                  <span className="font-bold text-blue-900 block">
+                    {translatorLang === 'hi' ? 'समय-सीमा व प्रगति' : 'SLA & Expected Timelines'}
+                  </span>
+                  <p className="text-blue-950 leading-relaxed font-medium">
+                    {statusExplanation.slaGuidance}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Official Resolution Verification Record Card (Citizen Public Tracking View) */}
           {complaint.resolutionDetails && (

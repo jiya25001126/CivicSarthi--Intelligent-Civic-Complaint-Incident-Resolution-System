@@ -11,6 +11,8 @@ import feedbackRoutes from './feedback.routes.js';
 import appealRoutes from './appeal.routes.js';
 import reopeningRoutes from './reopening.routes.js';
 import spamReviewRoutes from './spamReview.routes.js';
+import clarificationRoutes from './clarification.routes.js';
+import reminderRoutes from './reminder.routes.js';
 import { mockCpgramsRouter } from '../../../mock-cpgrams/index.js';
 
 const apiRouter = express.Router();
@@ -30,6 +32,8 @@ v1Router.use('/appeals', appealRoutes);
 v1Router.use('/reopening-requests', reopeningRoutes);
 v1Router.use('/spam-reviews', spamReviewRoutes);
 v1Router.use('/citizen', spamReviewRoutes);
+v1Router.use('/clarifications', clarificationRoutes);
+v1Router.use('/reminders', reminderRoutes);
 v1Router.use('/mock-cpgrams', mockCpgramsRouter);
 
 // Mount /api/v1
@@ -49,6 +53,8 @@ apiRouter.use('/appeals', appealRoutes);
 apiRouter.use('/reopening-requests', reopeningRoutes);
 apiRouter.use('/spam-reviews', spamReviewRoutes);
 apiRouter.use('/citizen', spamReviewRoutes);
+apiRouter.use('/clarifications', clarificationRoutes);
+apiRouter.use('/reminders', reminderRoutes);
 apiRouter.use('/mock-cpgrams', mockCpgramsRouter);
 
 export default apiRouter;

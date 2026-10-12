@@ -445,5 +445,59 @@ export async function fetchCitizenReputation(citizenId) {
   return res.data;
 }
 
+// ==========================================
+// Phase 12: Citizen Clarification, Reminders & Status Translator
+// ==========================================
+
+export async function submitComplaintClarification(complaintId, payload) {
+  const res = await api.post(`/complaints/${encodeURIComponent(complaintId)}/clarifications`, payload);
+  return res.data;
+}
+
+export async function fetchComplaintClarifications(complaintId) {
+  const res = await api.get(`/complaints/${encodeURIComponent(complaintId)}/clarifications`);
+  return res.data;
+}
+
+export async function fetchClarifications(params = {}) {
+  const res = await api.get('/clarifications', { params });
+  return res.data;
+}
+
+export async function fetchClarificationById(clarificationId) {
+  const res = await api.get(`/clarifications/${encodeURIComponent(clarificationId)}`);
+  return res.data;
+}
+
+export async function respondToClarification(clarificationId, payload) {
+  const res = await api.post(`/clarifications/${encodeURIComponent(clarificationId)}/respond`, payload);
+  return res.data;
+}
+
+export async function closeClarification(clarificationId, payload = {}) {
+  const res = await api.post(`/clarifications/${encodeURIComponent(clarificationId)}/close`, payload);
+  return res.data;
+}
+
+export async function requestComplaintReminder(complaintId) {
+  const res = await api.post(`/complaints/${encodeURIComponent(complaintId)}/reminders`);
+  return res.data;
+}
+
+export async function fetchComplaintReminderStatus(complaintId) {
+  const res = await api.get(`/complaints/${encodeURIComponent(complaintId)}/reminders/eligibility`);
+  return res.data;
+}
+
+export async function fetchComplaintReminders(complaintId) {
+  const res = await api.get(`/complaints/${encodeURIComponent(complaintId)}/reminders`);
+  return res.data;
+}
+
+export async function fetchComplaintStatusExplanation(complaintIdOrRef, params = {}) {
+  const res = await api.get(`/complaints/${encodeURIComponent(complaintIdOrRef)}/status-explanation`, { params });
+  return res.data;
+}
+
 export { API_BASE_URL };
 export default api;

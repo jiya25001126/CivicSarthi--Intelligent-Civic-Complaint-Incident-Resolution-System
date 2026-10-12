@@ -10,3 +10,5 @@ export { AppealModel } from './appeal.model.js';
 export { ReopeningRequestModel } from './reopeningRequest.model.js';
 export { SpamReviewModel } from './spamReview.model.js';
 export { CitizenReputationModel } from './citizenReputation.model.js';
+export { ClarificationModel } from './clarification.model.js';
+export { ReminderModel } from './reminder.model.js';

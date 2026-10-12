@@ -35,6 +35,9 @@ export const errorHandler = (err, req, res, next) => {
   if (err.details) {
     responseBody.details = err.details;
   }
+  if (err.code) {
+    responseBody.code = err.code;
+  }
 
   res.status(statusCode).json(responseBody);
 };
