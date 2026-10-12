@@ -202,6 +202,22 @@ const complaintSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: null
     },
+    previousResolutionDetails: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null
+    },
+    reopenedCount: {
+      type: Number,
+      default: 0
+    },
+    isReopened: {
+      type: Boolean,
+      default: false
+    },
+    resolutionMilestone: {
+      type: String,
+      default: '1'
+    },
     lastUpdated: {
       type: Date,
       default: Date.now

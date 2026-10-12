@@ -9,7 +9,17 @@ import {
   fetchDepartments,
   updateComplaintPriority,
   linkComplaintDuplicate,
-  fetchComplaintDuplicates
+  fetchComplaintDuplicates,
+  submitComplaintFeedback,
+  getComplaintFeedback,
+  submitComplaintAppeal,
+  fetchAppeals,
+  updateAppealStatus,
+  addAppealNote,
+  recordAppealDecision,
+  submitReopeningRequest,
+  fetchComplaintReopenings,
+  recordReopeningDecision
 } from '../api/client';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
 import {
@@ -35,7 +45,13 @@ import {
   X,
   Plus,
   Check,
-  HelpCircle
+  HelpCircle,
+  Star,
+  RotateCcw,
+  ShieldAlert,
+  ThumbsUp,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import {
   RESOLUTION_OUTCOME_OPTIONS,
@@ -91,6 +107,29 @@ export default function ComplaintDetailPage() {
   const [linkingDuplicate, setLinkingDuplicate] = useState(false);
   const [duplicateMessage, setDuplicateMessage] = useState(null);
 
+  // Phase 10: Feedback, Appeals & Controlled Reopening State
+  const [feedbackList, setFeedbackList] = useState([]);
+  const [appealsList, setAppealsList] = useState([]);
+  const [reopeningsList, setReopeningsList] = useState([]);
+
+  const [feedbackRating, setFeedbackRating] = useState(5);
+  const [feedbackComments, setFeedbackComments] = useState('');
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState(null);
+
+  const [showAppealForm, setShowAppealForm] = useState(false);
+  const [appealReasonCategory, setAppealReasonCategory] = useState('INCOMPLETE_WORK');
+  const [appealExplanation, setAppealExplanation] = useState('');
+  const [appealEvidence, setAppealEvidence] = useState('');
+  const [submittingAppeal, setSubmittingAppeal] = useState(false);
+  const [appealMessage, setAppealMessage] = useState(null);
+
+  const [showReopeningForm, setShowReopeningForm] = useState(false);
+  const [reopeningReasonCategory, setReopeningReasonCategory] = useState('ISSUE_PERSISTS');
+  const [reopeningExplanation, setReopeningExplanation] = useState('');
+  const [submittingReopening, setSubmittingReopening] = useState(false);
+  const [reopeningMessage, setReopeningMessage] = useState(null);
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -121,10 +160,90 @@ export default function ComplaintDetailPage() {
           console.info('Fresh duplicates lookup skipped:', dupErr.message);
         }
       }
+
+      // Phase 10: Fetch feedback, appeals, and reopening requests for this complaint
+      try {
+        const [fbRes, appRes, reopRes] = await Promise.allSettled([
+          getComplaintFeedback(id),
+          fetchAppeals({ complaintId: id }),
+          fetchComplaintReopenings(id)
+        ]);
+        if (fbRes.status === 'fulfilled' && fbRes.value?.data) {
+          setFeedbackList(fbRes.value.data);
+        }
+        if (appRes.status === 'fulfilled' && appRes.value?.data) {
+          setAppealsList(appRes.value.data);
+        }
+        if (reopRes.status === 'fulfilled' && reopRes.value?.data) {
+          setReopeningsList(reopRes.value.data);
+        }
+      } catch (p10Err) {
+        console.warn('Phase 10 data load notice:', p10Err.message);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFeedbackSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setSubmittingFeedback(true);
+      setFeedbackMessage(null);
+      const res = await submitComplaintFeedback(complaint.id, {
+        rating: Number(feedbackRating),
+        comments: feedbackComments.trim()
+      });
+      setFeedbackMessage({ type: 'success', text: 'Thank you! Your resolution feedback has been recorded.' });
+      setFeedbackList(prev => [...prev, res.data]);
+    } catch (err) {
+      setFeedbackMessage({ type: 'error', text: err.message });
+    } finally {
+      setSubmittingFeedback(false);
+    }
+  };
+
+  const handleAppealSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setSubmittingAppeal(true);
+      setAppealMessage(null);
+      const res = await submitComplaintAppeal(complaint.id, {
+        reasonCategory: appealReasonCategory,
+        citizenExplanation: appealExplanation.trim(),
+        supportingEvidence: appealEvidence.trim() ? [appealEvidence.trim()] : []
+      });
+      setAppealMessage({ type: 'success', text: `Appeal submitted successfully (Ref: ${res.data.referenceNumber || res.data.id}).` });
+      setAppealsList(prev => [...prev, res.data]);
+      setShowAppealForm(false);
+      setAppealExplanation('');
+      setAppealEvidence('');
+    } catch (err) {
+      setAppealMessage({ type: 'error', text: err.message });
+    } finally {
+      setSubmittingAppeal(false);
+    }
+  };
+
+  const handleReopeningSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setSubmittingReopening(true);
+      setReopeningMessage(null);
+      const res = await submitReopeningRequest(complaint.id, {
+        reasonCategory: reopeningReasonCategory,
+        citizenExplanation: reopeningExplanation.trim()
+      });
+      setReopeningMessage({ type: 'success', text: `Reopening request lodged successfully (ID: ${res.data.id}). Awaiting supervisor review.` });
+      setReopeningsList(prev => [...prev, res.data]);
+      setShowReopeningForm(false);
+      setReopeningExplanation('');
+    } catch (err) {
+      setReopeningMessage({ type: 'error', text: err.message });
+    } finally {
+      setSubmittingReopening(false);
     }
   };
 
@@ -704,6 +823,450 @@ export default function ComplaintDetailPage() {
           )}
         </div>
       )}
+
+      {/* Reopened Case Banner (Phase 10) */}
+      {(complaint.status === 'REOPENED' || complaint.isReopened) && (
+        <div className="p-5 bg-amber-50/90 rounded-2xl border-2 border-amber-500 shadow-sm space-y-2">
+          <div className="flex items-center gap-2 text-amber-900 font-bold text-sm">
+            <RotateCcw size={18} className="text-amber-600 shrink-0" />
+            <span>Grievance Reopened (Investigation Cycle #{complaint.reopenedCount || 1})</span>
+          </div>
+          <p className="text-xs text-amber-800 leading-relaxed">
+            This grievance was reopened following an approved citizen review petition. The assigned department is actively re-investigating the reported civic issue.
+            Under CivicSarthi Phase 9 standards, a subsequent closure will require a complete re-verification pass.
+          </p>
+          {complaint.previousResolutionDetails && (
+            <div className="pt-2 border-t border-amber-200/80 text-[11px] text-amber-900">
+              <span className="font-semibold">Previous Milestone #{complaint.reopenedCount || 1} Outcome: </span>
+              <span>
+                {formatOutcomeType(complaint.previousResolutionDetails.outcomeType)} ({formatVerificationMethod(complaint.previousResolutionDetails.verificationMethod)})
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* PHASE 10: CITIZEN RESOLUTION FEEDBACK & RATINGS */}
+      {(complaint.status === 'RESOLVED' || complaint.status === 'CLOSED' || feedbackList.length > 0) && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+            <div className="flex items-center gap-2">
+              <Star size={20} className="text-amber-500 fill-amber-400" />
+              <h2 className="font-bold text-base text-slate-900">
+                Citizen Resolution Satisfaction & Ratings
+              </h2>
+            </div>
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800">
+              Phase 10 Feedback
+            </span>
+          </div>
+
+          {/* List existing feedback */}
+          {feedbackList.length > 0 ? (
+            <div className="space-y-3">
+              {feedbackList.map((fb, idx) => (
+                <div key={idx} className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <div className="flex text-amber-400">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            size={16}
+                            className={star <= fb.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}
+                          />
+                        ))}
+                      </div>
+                      <span className="font-bold text-slate-800 ml-1">
+                        {fb.rating} / 5 Stars
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-500">
+                      Milestone #{fb.resolutionMilestone || 1} • {new Date(fb.createdAt).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
+                    </span>
+                  </div>
+                  {fb.comments && (
+                    <p className="text-slate-700 italic bg-white p-2.5 rounded-lg border border-slate-100">
+                      "{fb.comments}"
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-500 italic">No citizen satisfaction ratings recorded yet for this resolution milestone.</p>
+          )}
+
+          {/* Citizen Feedback Submission Form (Only shown if owner or citizen and no feedback for current milestone) */}
+          {(!isOfficerMode || (user && user.id === complaint.citizenId)) &&
+            (complaint.status === 'RESOLVED' || complaint.status === 'CLOSED') &&
+            !feedbackList.some(f => f.resolutionMilestone === (complaint.resolutionMilestone || '1')) && (
+              <form onSubmit={handleFeedbackSubmit} className="pt-3 border-t border-slate-200 space-y-3">
+                <span className="text-xs font-bold text-slate-800 block">
+                  Rate Your Experience with this Resolution (Milestone #{complaint.resolutionMilestone || '1'})
+                </span>
+
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-slate-500">Rating:</span>
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setFeedbackRating(star)}
+                        className="p-1 text-amber-400 hover:scale-110 transition"
+                      >
+                        <Star
+                          size={22}
+                          className={star <= feedbackRating ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  <span className="text-xs font-bold text-slate-700 font-mono">
+                    ({feedbackRating} / 5)
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Citizen Comments (Optional, max 1000 characters)
+                  </label>
+                  <textarea
+                    rows={2}
+                    maxLength={1000}
+                    value={feedbackComments}
+                    onChange={(e) => setFeedbackComments(e.target.value)}
+                    placeholder="Share whether the work was completed adequately, timeliness, officer conduct..."
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                {feedbackMessage && (
+                  <div className={`p-3 rounded-lg text-xs ${
+                    feedbackMessage.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'
+                  }`}>
+                    {feedbackMessage.text}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={submittingFeedback}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold shadow-sm transition disabled:opacity-50"
+                >
+                  {submittingFeedback ? 'Recording Rating...' : 'Submit Resolution Rating'}
+                </button>
+              </form>
+            )}
+        </div>
+      )}
+
+      {/* PHASE 10: FORMAL RESOLUTION APPEALS & DISPUTES */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+          <div className="flex items-center gap-2">
+            <ShieldAlert size={20} className="text-purple-600" />
+            <h2 className="font-bold text-base text-slate-900">
+              Formal Resolution Appeals Desk
+            </h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800">
+              Dispute Escalation
+            </span>
+            {(!isOfficerMode || (user && user.id === complaint.citizenId)) &&
+              (complaint.status === 'RESOLVED' || complaint.status === 'CLOSED') && (
+                <button
+                  type="button"
+                  onClick={() => setShowAppealForm(!showAppealForm)}
+                  className="text-xs px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition"
+                >
+                  {showAppealForm ? 'Cancel Appeal' : 'File Appeal'}
+                </button>
+              )}
+          </div>
+        </div>
+
+        {/* Existing Appeals List */}
+        {appealsList.length > 0 ? (
+          <div className="space-y-3">
+            {appealsList.map((appeal) => (
+              <div key={appeal.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-purple-700">
+                      {appeal.referenceNumber || appeal.id}
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-slate-200 text-slate-700 text-[10px] font-bold">
+                      {appeal.reasonCategory}
+                    </span>
+                  </div>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                    appeal.status === 'UPHELD' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
+                    appeal.status === 'REJECTED' ? 'bg-rose-100 text-rose-800 border-rose-300' :
+                    'bg-amber-100 text-amber-800 border-amber-300'
+                  }`}>
+                    {appeal.status}
+                  </span>
+                </div>
+
+                <p className="text-slate-800 italic bg-white p-2.5 rounded-lg border border-slate-100">
+                  "{appeal.citizenExplanation}"
+                </p>
+
+                {appeal.decision && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-[11px] space-y-1">
+                    <div className="flex items-center justify-between font-bold text-blue-900">
+                      <span>Adjudication Verdict: {appeal.decision}</span>
+                      <span>Decided: {new Date(appeal.decidedAt).toLocaleDateString('en-IN')}</span>
+                    </div>
+                    {appeal.citizenExplanationDecision && (
+                      <p className="text-blue-800">
+                        {appeal.citizenExplanationDecision}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-slate-500 italic">No formal appeals lodged against this grievance.</p>
+        )}
+
+        {/* Appeal Filing Form */}
+        {showAppealForm && (
+          <form onSubmit={handleAppealSubmit} className="p-4 bg-purple-50/70 border border-purple-200 rounded-xl space-y-3 text-xs">
+            <h3 className="font-bold text-purple-900 text-xs">
+              Lodge Formal Resolution Appeal
+            </h3>
+            <p className="text-[11px] text-purple-800">
+              Submit a formal dispute if the remediation is incomplete, the evidence does not support the claimed outcome, or procedural rules were violated.
+            </p>
+
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">
+                Dispute Reason Category *
+              </label>
+              <select
+                value={appealReasonCategory}
+                onChange={(e) => setAppealReasonCategory(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="INCOMPLETE_WORK">Incomplete Work</option>
+                <option value="POOR_QUALITY">Poor Remediation Quality</option>
+                <option value="RECURRING_DEFECT">Recurring Defect</option>
+                <option value="EVIDENCE_DISPUTED">Evidence Disputed / Inaccurate</option>
+                <option value="PROCEDURAL_VIOLATION">Procedural Violation</option>
+                <option value="UNSATISFACTORY_EXPLANATION">Unsatisfactory Officer Explanation</option>
+                <option value="OTHER">Other Reason</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">
+                Detailed Explanation * (Min 10 characters)
+              </label>
+              <textarea
+                required
+                rows={3}
+                value={appealExplanation}
+                onChange={(e) => setAppealExplanation(e.target.value)}
+                placeholder="Explain why the resolution is disputed and what corrective action is expected..."
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">
+                Supporting Evidence Reference (Optional URL or File ID)
+              </label>
+              <input
+                type="text"
+                value={appealEvidence}
+                onChange={(e) => setAppealEvidence(e.target.value)}
+                placeholder="e.g. https://... or photo verification ID"
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+
+            {appealMessage && (
+              <div className={`p-3 rounded-lg text-xs ${
+                appealMessage.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'
+              }`}>
+                {appealMessage.text}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowAppealForm(false)}
+                className="px-3 py-1.5 border border-slate-300 rounded-lg text-slate-700 font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submittingAppeal || appealExplanation.trim().length < 10}
+                className="px-4 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold shadow-sm transition disabled:opacity-50"
+              >
+                {submittingAppeal ? 'Submitting Appeal...' : 'Submit Appeal'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+
+      {/* PHASE 10: CONTROLLED GRIEVANCE REOPENING */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+          <div className="flex items-center gap-2">
+            <RotateCcw size={20} className="text-rose-600" />
+            <h2 className="font-bold text-base text-slate-900">
+              Controlled Grievance Reopening Desk
+            </h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800">
+              Re-Investigation Petitions
+            </span>
+            {(!isOfficerMode || (user && user.id === complaint.citizenId)) &&
+              (complaint.status === 'RESOLVED' || complaint.status === 'CLOSED') &&
+              complaint.status !== 'REOPENED' && (
+                <button
+                  type="button"
+                  onClick={() => setShowReopeningForm(!showReopeningForm)}
+                  className="text-xs px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-semibold transition"
+                >
+                  {showReopeningForm ? 'Cancel Request' : 'Request Reopening'}
+                </button>
+              )}
+          </div>
+        </div>
+
+        {/* Existing Reopening Requests */}
+        {reopeningsList.length > 0 ? (
+          <div className="space-y-3">
+            {reopeningsList.map((req) => (
+              <div key={req.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-rose-700">
+                      #{req.id}
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-slate-200 text-slate-700 text-[10px] font-bold">
+                      {req.reasonCategory}
+                    </span>
+                  </div>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                    req.status === 'APPROVED' ? 'bg-rose-100 text-rose-800 border-rose-300' :
+                    req.status === 'REJECTED' ? 'bg-slate-200 text-slate-700 border-slate-300' :
+                    'bg-amber-100 text-amber-800 border-amber-300'
+                  }`}>
+                    {req.status}
+                  </span>
+                </div>
+
+                <p className="text-slate-800 italic bg-white p-2.5 rounded-lg border border-slate-100">
+                  "{req.citizenExplanation}"
+                </p>
+
+                {req.decision && (
+                  <div className="p-3 bg-slate-100 border border-slate-200 rounded-lg text-[11px] space-y-1">
+                    <div className="flex items-center justify-between font-bold text-slate-900">
+                      <span>Supervisor Verdict: {req.decision}</span>
+                      <span>Decided: {new Date(req.decidedAt).toLocaleDateString('en-IN')}</span>
+                    </div>
+                    {req.decisionReason && (
+                      <p className="text-slate-700">
+                        Reason: {req.decisionReason}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-slate-500 italic">No reopening petitions filed for this grievance.</p>
+        )}
+
+        {/* Reopening Petition Form */}
+        {showReopeningForm && (
+          <form onSubmit={handleReopeningSubmit} className="p-4 bg-rose-50/70 border border-rose-200 rounded-xl space-y-3 text-xs">
+            <h3 className="font-bold text-rose-900 text-xs">
+              Lodge Grievance Reopening Petition
+            </h3>
+            <p className="text-[11px] text-rose-800">
+              Petition for official case reopening if the issue persists on the ground or physical repair failed.
+              An approved request resets the case status to REOPENED and requires departmental remediation.
+            </p>
+
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">
+                Reopening Reason Category *
+              </label>
+              <select
+                value={reopeningReasonCategory}
+                onChange={(e) => setReopeningReasonCategory(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
+              >
+                <option value="ISSUE_PERSISTS">Issue Still Persists On Ground</option>
+                <option value="RECURRING_FAILURE">Recurring Defect / Failure</option>
+                <option value="INCOMPLETE_REMEDIATION">Incomplete Remediation</option>
+                <option value="EVIDENCE_UNVERIFIABLE">Evidence Unverifiable / False</option>
+                <option value="SAFETY_HAZARD_REMAINS">Public Safety Hazard Remains</option>
+                <option value="OTHER">Other Reason</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">
+                Citizen Explanation * (Min 10 characters)
+              </label>
+              <textarea
+                required
+                rows={3}
+                value={reopeningExplanation}
+                onChange={(e) => setReopeningExplanation(e.target.value)}
+                placeholder="State clearly why the grievance must be reopened and what remains unresolved..."
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
+              />
+            </div>
+
+            {reopeningMessage && (
+              <div className={`p-3 rounded-lg text-xs ${
+                reopeningMessage.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'
+              }`}>
+                {reopeningMessage.text}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowReopeningForm(false)}
+                className="px-3 py-1.5 border border-slate-300 rounded-lg text-slate-700 font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submittingReopening || reopeningExplanation.trim().length < 10}
+                className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold shadow-sm transition disabled:opacity-50"
+              >
+                {submittingReopening ? 'Lodging Petition...' : 'Submit Reopening Petition'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
 
       {/* OFFICER ACTION & REVIEW COCKPIT (Only rendered in Officer Mode or when reviewing) */}
       {isOfficerMode && (

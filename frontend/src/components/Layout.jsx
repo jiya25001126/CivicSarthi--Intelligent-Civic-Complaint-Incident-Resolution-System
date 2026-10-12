@@ -16,7 +16,8 @@ import {
   Home,
   LogOut,
   LogIn,
-  UserPlus
+  UserPlus,
+  RotateCcw
 } from 'lucide-react';
 
 export default function Layout() {
@@ -39,6 +40,8 @@ export default function Layout() {
   const officerNav = [
     { name: 'Officer Cockpit', path: '/officer', icon: LayoutDashboard },
     { name: 'Complaint Triage', path: '/officer/complaints', icon: ListFilter },
+    { name: 'Appeals Desk', path: '/officer/appeals', icon: ShieldAlert },
+    { name: 'Reopening Desk', path: '/officer/reopening-requests', icon: RotateCcw },
     { name: 'Departments', path: '/officer/departments', icon: Building2 }
   ];
 

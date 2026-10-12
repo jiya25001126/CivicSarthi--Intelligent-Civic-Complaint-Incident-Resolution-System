@@ -17,6 +17,8 @@ import DepartmentManagementPage from './pages/DepartmentManagementPage';
 import IncidentPage from './pages/IncidentPage';
 import NeglectRadarPage from './pages/NeglectRadarPage';
 import StatusTranslatorPage from './pages/StatusTranslatorPage';
+import AppealManagementPage from './pages/AppealManagementPage';
+import ReopeningManagementPage from './pages/ReopeningManagementPage';
 
 export default function App() {
   return (
@@ -97,6 +99,22 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['officer', 'admin']}>
                   <DepartmentManagementPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="officer/appeals"
+              element={
+                <ProtectedRoute allowedRoles={['officer', 'admin']}>
+                  <AppealManagementPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="officer/reopening-requests"
+              element={
+                <ProtectedRoute allowedRoles={['officer', 'admin']}>
+                  <ReopeningManagementPage />
                 </ProtectedRoute>
               }
             />

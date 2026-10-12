@@ -170,6 +170,9 @@ export class ComplaintService {
       updatedAt: complaint.updatedAt || complaint.lastUpdated || complaint.createdAt,
       lastUpdated: complaint.updatedAt || complaint.lastUpdated || complaint.createdAt,
       reassignments: complaint.reassignments || 0,
+      reopenedCount: complaint.reopenedCount || 0,
+      isReopened: Boolean(complaint.isReopened),
+      resolutionMilestone: complaint.resolutionMilestone || '1',
       evidence: complaint.evidence || [],
       resolutionDetails: complaint.resolutionDetails ? {
         score: complaint.resolutionDetails.score,

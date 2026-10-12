@@ -53,7 +53,10 @@ export const config = {
     subtasks: path.resolve(__dirname, '../../../data/subtasks.json'),
     statusHistory: path.resolve(__dirname, '../../../data/status_history.json'),
     users: path.resolve(__dirname, '../../../data/users.json'),
-    auditLogs: path.resolve(__dirname, '../../../data/audit_logs.json')
+    auditLogs: path.resolve(__dirname, '../../../data/audit_logs.json'),
+    feedback: path.resolve(__dirname, '../../../data/feedback.json'),
+    appeals: path.resolve(__dirname, '../../../data/appeals.json'),
+    reopeningRequests: path.resolve(__dirname, '../../../data/reopening_requests.json')
   }
 };
 

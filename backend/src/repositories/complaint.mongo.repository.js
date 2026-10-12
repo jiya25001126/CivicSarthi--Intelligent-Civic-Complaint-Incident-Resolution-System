@@ -281,7 +281,16 @@ export class MongoComplaintRepository {
     doc.status = status;
     doc.updatedAt = timestamp;
     doc.lastUpdated = timestamp;
-    if (resolutionDetails !== undefined) {
+
+    if (status === 'REOPENED') {
+      doc.reopenedCount = (doc.reopenedCount || 0) + 1;
+      doc.isReopened = true;
+      if (doc.resolutionDetails) {
+        doc.previousResolutionDetails = doc.resolutionDetails;
+        doc.resolutionDetails = null;
+      }
+      doc.resolutionMilestone = String((doc.reopenedCount || 0) + 1);
+    } else if (resolutionDetails !== undefined) {
       doc.resolutionDetails = resolutionDetails;
     }
 
@@ -291,7 +300,7 @@ export class MongoComplaintRepository {
       actorType: actorType || 'OFFICER',
       remarks: remarks || `Status changed from ${currentStatus} to ${status}`
     };
-    if (resolutionDetails !== undefined) {
+    if (resolutionDetails !== undefined && resolutionDetails !== null) {
       historyEntry.resolutionDetails = resolutionDetails;
     }
 
@@ -631,6 +640,10 @@ export class MongoComplaintRepository {
     formatted.intelligence = formatted.intelligence || null;
     formatted.duplicateOf = formatted.duplicateOf || null;
     formatted.resolutionDetails = formatted.resolutionDetails || null;
+    formatted.reopenedCount = typeof formatted.reopenedCount === 'number' ? formatted.reopenedCount : 0;
+    formatted.isReopened = Boolean(formatted.isReopened);
+    formatted.resolutionMilestone = formatted.resolutionMilestone || '1';
+    formatted.previousResolutionDetails = formatted.previousResolutionDetails || null;
 
     return formatted;
   }
