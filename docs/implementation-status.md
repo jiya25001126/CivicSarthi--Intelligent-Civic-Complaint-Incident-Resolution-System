@@ -24,7 +24,7 @@
 | **8** | Neglect Radar & Supervisory Alerts | **VERIFIED** | `main` | `9c0b7fc` | [phase8-report.md](file:///docs/phase8-report.md) |
 | **9** | Resolution Quality Checker | **VERIFIED** | `main` | `06f22de` | [phase9-report.md](file:///docs/phase9-report.md) |
 | **10** | Citizen Resolution Feedback & Appeals | **VERIFIED** | `phase-10-citizen-feedback-appeals-ratings` | `d579aed` | [phase10-report.md](file:///docs/phase10-report.md) |
-| **11** | Spam/Fake Complaint Detection & Review | **VERIFIED** | `phase-11-spam-fake-complaint-detection` | Feature Branch | [phase11-report.md](file:///docs/phase11-report.md) |
+| **11** | Spam/Fake Complaint Detection & Review | **VERIFIED** | `phase-11-spam-fake-complaint-detection` | `89d0024` | [phase11-report.md](file:///docs/phase11-report.md) |
 | **12** | Citizen Clarifications & Status Translator | *PLANNED* | &mdash; | &mdash; | Scope defined in Roadmap |
 | **13** | Aggregate Analytics & Reporting | *PLANNED* | &mdash; | &mdash; | Scope defined in Roadmap |
 | **14** | Security, A11y & Deployment Readiness | *PLANNED* | &mdash; | &mdash; | Scope defined in Roadmap |

@@ -306,5 +306,9 @@ Mounted under `/api/v1` and legacy `/api`:
 
 - **Dedicated Branch:** `phase-11-spam-fake-complaint-detection`
 - **Base Commit:** `d579aed` (Phase 10 verified HEAD)
+- **Local Commit Hash:** `89d0024`
 - **Canonical Remote:** `https://github.com/jiya25001126/CivicSarthi--Intelligent-Civic-Complaint-Incident-Resolution-System.git`
+- **Canonical Remote Branch:** `refs/heads/phase-11-spam-fake-complaint-detection`
+- **Verified Remote Commit Hash:** `89d0024c8465d02b0ed41c81b9895da35c5d3257`
+- **Hash Matching Verification:** **PASS (Local `89d0024` matches remote `89d0024c8465d02b0ed41c81b9895da35c5d3257`)**
 - **Recommended Next Phase:** **Phase 12 — Citizen Clarifications & Status Translator**
