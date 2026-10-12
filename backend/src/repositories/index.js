@@ -7,3 +7,5 @@ export { subtaskRepository, SubtaskRepository } from './subtask.repository.js';
 export { feedbackRepository, FeedbackRepository } from './feedback.repository.js';
 export { appealRepository, AppealRepository } from './appeal.repository.js';
 export { reopeningRequestRepository, ReopeningRequestRepository } from './reopeningRequest.repository.js';
+export { spamReviewRepository, SpamReviewRepositoryFactory } from './spamReview.repository.js';
+export { citizenReputationRepository, CitizenReputationRepositoryFactory } from './citizenReputation.repository.js';

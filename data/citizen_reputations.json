@@ -1,0 +1,302 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "description": "CivicSarthi Citizen Account Reputation Directory"
+  },
+  "reputations": [
+    {
+      "id": "REP-USR-MV5PPVIJ-MIVT",
+      "citizenId": "USR-MV5PPVIJ-MIVT",
+      "standing": "GOOD_STANDING",
+      "score": 100,
+      "totalSubmissions": 11,
+      "flaggedCount": 0,
+      "confirmedAbuseCount": 0,
+      "clearedLegitimateCount": 0,
+      "events": [
+        {
+          "eventId": "EVT-1791837391266-pcs8",
+          "sourceEventId": null,
+          "eventType": "SUBMISSION_LOGGED",
+          "complaintId": "CS-2026-0019",
+          "reason": "Standard complaint submitted",
+          "reviewerId": null,
+          "delta": 0,
+          "timestamp": "2026-10-12T20:36:31.266Z"
+        },
+        {
+          "eventId": "EVT-1791837391335-wc9i",
+          "sourceEventId": null,
+          "eventType": "SUBMISSION_LOGGED",
+          "complaintId": "CS-2026-0020",
+          "reason": "Standard complaint submitted",
+          "reviewerId": null,
+          "delta": 0,
+          "timestamp": "2026-10-12T20:36:31.335Z"
+        },
+        {
+          "eventId": "EVT-1791837391343-5xcv",
+          "sourceEventId": null,
+          "eventType": "SUBMISSION_LOGGED",
+          "complaintId": "CS-2026-0021",
+          "reason": "Standard complaint submitted",
+          "reviewerId": null,
+          "delta": 0,
+          "timestamp": "2026-10-12T20:36:31.343Z"
+        },
+        {
+          "eventId": "EVT-1791837391356-kc4g",
+          "sourceEventId": null,
+          "eventType": "SUBMISSION_LOGGED",
+          "complaintId": "CS-2026-0022",
+          "reason": "Standard complaint submitted",
+          "reviewerId": null,
+          "delta": 0,
+          "timestamp": "2026-10-12T20:36:31.356Z"
+        },
+        {
+          "eventId": "EVT-1791837391363-g60r",
+          "sourceEventId": null,
+          "eventType": "SUBMISSION_LOGGED",
+          "complaintId": "CS-2026-0023",
+          "reason": "Standard complaint submitted",
+          "reviewerId": null,
+          "delta": 0,
+          "timestamp": "2026-10-12T20:36:31.363Z"
+        },
+        {
+          "eventId": "EVT-1791837391372-yzsh",
+          "sourceEventId": null,
+          "eventType": "SUBMISSION_LOGGED",
+          "complaintId": "CS-2026-0024",
+          "reason": "Standard complaint submitted",
+          "reviewerId": null,
+          "delta": 0,
+          "timestamp": "2026-10-12T20:36:31.372Z"
+        },
+        {
+          "eventId": "EVT-1791837391380-hytn",
+          "sourceEventId": null,
+          "eventType": "SUBMISSION_LOGGED",
+          "complaintId": "CS-2026-0025",
+          "reason": "Standard complaint submitted",
+          "reviewerId": null,
+          "delta": 0,
+          "timestamp": "2026-10-12T20:36:31.380Z"
+        },
+        {
+          "eventId": "EVT-1791837391387-2wrf",
+          "sourceEventId": null,
+          "eventType": "SUBMISSION_LOGGED",
+          "complaintId": "CS-2026-0026",
+          "reason": "Standard complaint submitted",
+          "reviewerId": null,
+          "delta": 0,
+          "timestamp": "2026-10-12T20:36:31.387Z"
+        },
+        {
+          "eventId": "EVT-1791837391394-g1c2",
+          "sourceEventId": null,
+          "eventType": "SUBMISSION_LOGGED",
+          "complaintId": "CS-2026-0027",
+          "reason": "Standard complaint submitted",
+          "reviewerId": null,
+          "delta": 0,
+          "timestamp": "2026-10-12T20:36:31.394Z"
+        },
+        {
+          "eventId": "EVT-1791837391402-z6ad",
+          "sourceEventId": null,
+          "eventType": "SUBMISSION_LOGGED",
+          "complaintId": "CS-2026-0028",
+          "reason": "Standard complaint submitted",
+          "reviewerId": null,
+          "delta": 0,
+          "timestamp": "2026-10-12T20:36:31.402Z"
+        },
+        {
+          "eventId": "EVT-1791837391408-0yz3",
+          "sourceEventId": null,
+          "eventType": "SUBMISSION_LOGGED",
+          "complaintId": "CS-2026-0029",
+          "reason": "Standard complaint submitted",
+          "reviewerId": null,
+          "delta": 0,
+          "timestamp": "2026-10-12T20:36:31.408Z"
+        }
+      ],
+      "createdAt": "2026-10-12T20:36:31.266Z",
+      "updatedAt": "2026-10-12T20:36:31.408Z"
+    },
+    {
+      "id": "REP-USR-MV5PPVFG-YRYP",
+      "citizenId": "USR-MV5PPVFG-YRYP",
+      "standing": "GOOD_STANDING",
+      "score": 100,
+      "totalSubmissions": 4,
+      "flaggedCount": 0,
+      "confirmedAbuseCount": 0,
+      "clearedLegitimateCount": 0,
+      "events": [
+        {
+          "eventId": "EVT-1791837391410-2s0z",
+          "sourceEventId": null,
+          "eventType": "SUBMISSION_LOGGED",
+          "complaintId": "CS-2026-0001",
+          "reason": "Standard complaint submitted",
+          "reviewerId": null,
+          "delta": 0,
+          "timestamp": "2026-10-12T20:36:31.410Z"
+        },
+        {
+          "eventId": "EVT-1791837391523-j4df",
+          "sourceEventId": null,
+          "eventType": "SUBMISSION_LOGGED",
+          "complaintId": "CS-2026-0002",
+          "reason": "Standard complaint submitted",
+          "reviewerId": null,
+          "delta": 0,
+          "timestamp": "2026-10-12T20:36:31.523Z"
+        },
+        {
+          "eventId": "EVT-1791837391545-a5ps",
+          "sourceEventId": null,
+          "eventType": "SUBMISSION_LOGGED",
+          "complaintId": "CS-2026-0003",
+          "reason": "Standard complaint submitted",
+          "reviewerId": null,
+          "delta": 0,
+          "timestamp": "2026-10-12T20:36:31.545Z"
+        },
+        {
+          "eventId": "EVT-1791837391689-i7s5",
+          "sourceEventId": null,
+          "eventType": "SUBMISSION_LOGGED",
+          "complaintId": "CS-2026-0004",
+          "reason": "Standard complaint submitted",
+          "reviewerId": null,
+          "delta": 0,
+          "timestamp": "2026-10-12T20:36:31.689Z"
+        }
+      ],
+      "createdAt": "2026-10-12T20:36:31.409Z",
+      "updatedAt": "2026-10-12T20:36:31.689Z"
+    },
+    {
+      "id": "REP-USR-MV5PPVFV-2305",
+      "citizenId": "USR-MV5PPVFV-2305",
+      "standing": "GOOD_STANDING",
+      "score": 100,
+      "totalSubmissions": 1,
+      "flaggedCount": 0,
+      "confirmedAbuseCount": 0,
+      "clearedLegitimateCount": 0,
+      "events": [
+        {
+          "eventId": "EVT-1791837391656-1q16",
+          "sourceEventId": null,
+          "eventType": "SUBMISSION_LOGGED",
+          "complaintId": "CS-2026-0019",
+          "reason": "Standard complaint submitted",
+          "reviewerId": null,
+          "delta": 0,
+          "timestamp": "2026-10-12T20:36:31.656Z"
+        }
+      ],
+      "createdAt": "2026-10-12T20:36:31.656Z",
+      "updatedAt": "2026-10-12T20:36:31.656Z"
+    },
+    {
+      "id": "REP-USR-MV5PPVJK-R6LN",
+      "citizenId": "USR-MV5PPVJK-R6LN",
+      "standing": "GOOD_STANDING",
+      "score": 100,
+      "totalSubmissions": 1,
+      "flaggedCount": 0,
+      "confirmedAbuseCount": 0,
+      "clearedLegitimateCount": 0,
+      "events": [
+        {
+          "eventId": "EVT-1791837391685-kvdb",
+          "sourceEventId": null,
+          "eventType": "SUBMISSION_LOGGED",
+          "complaintId": "CS-2026-0020",
+          "reason": "Standard complaint submitted",
+          "reviewerId": null,
+          "delta": 0,
+          "timestamp": "2026-10-12T20:36:31.685Z"
+        }
+      ],
+      "createdAt": "2026-10-12T20:36:31.685Z",
+      "updatedAt": "2026-10-12T20:36:31.685Z"
+    },
+    {
+      "id": "REP-USR-MV5PPVR9-1O72",
+      "citizenId": "USR-MV5PPVR9-1O72",
+      "standing": "GOOD_STANDING",
+      "score": 100,
+      "totalSubmissions": 3,
+      "flaggedCount": 0,
+      "confirmedAbuseCount": 0,
+      "clearedLegitimateCount": 0,
+      "events": [
+        {
+          "eventId": "EVT-1791837392128-k70s",
+          "sourceEventId": null,
+          "eventType": "SUBMISSION_LOGGED",
+          "complaintId": "CS-2026-0001",
+          "reason": "Standard complaint submitted",
+          "reviewerId": null,
+          "delta": 0,
+          "timestamp": "2026-10-12T20:36:32.128Z"
+        },
+        {
+          "eventId": "EVT-1791837392367-rmxb",
+          "sourceEventId": null,
+          "eventType": "SUBMISSION_LOGGED",
+          "complaintId": "CS-2026-0003",
+          "reason": "Standard complaint submitted",
+          "reviewerId": null,
+          "delta": 0,
+          "timestamp": "2026-10-12T20:36:32.366Z"
+        },
+        {
+          "eventId": "EVT-1791837392408-fy1b",
+          "sourceEventId": null,
+          "eventType": "SUBMISSION_LOGGED",
+          "complaintId": "CS-2026-0004",
+          "reason": "Standard complaint submitted",
+          "reviewerId": null,
+          "delta": 0,
+          "timestamp": "2026-10-12T20:36:32.408Z"
+        }
+      ],
+      "createdAt": "2026-10-12T20:36:32.128Z",
+      "updatedAt": "2026-10-12T20:36:32.408Z"
+    },
+    {
+      "id": "REP-USR-MV5PPWBW-YDZX",
+      "citizenId": "USR-MV5PPWBW-YDZX",
+      "standing": "GOOD_STANDING",
+      "score": 100,
+      "totalSubmissions": 1,
+      "flaggedCount": 0,
+      "confirmedAbuseCount": 0,
+      "clearedLegitimateCount": 0,
+      "events": [
+        {
+          "eventId": "EVT-1791837392147-lw9g",
+          "sourceEventId": null,
+          "eventType": "SUBMISSION_LOGGED",
+          "complaintId": "CS-2026-0002",
+          "reason": "Standard complaint submitted",
+          "reviewerId": null,
+          "delta": 0,
+          "timestamp": "2026-10-12T20:36:32.147Z"
+        }
+      ],
+      "createdAt": "2026-10-12T20:36:32.146Z",
+      "updatedAt": "2026-10-12T20:36:32.147Z"
+    }
+  ]
+}

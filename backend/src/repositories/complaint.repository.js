@@ -72,6 +72,10 @@ export class ComplaintRepository {
     return this._getActiveAdapter().create(complaintData, overrideYear);
   }
 
+  async update(idOrRef, updates) {
+    return this._getActiveAdapter().update(idOrRef, updates);
+  }
+
   async updateStatus(idOrRef, { status, remarks, actorType, resolutionDetails }) {
     return this._getActiveAdapter().updateStatus(idOrRef, { status, remarks, actorType, resolutionDetails });
   }

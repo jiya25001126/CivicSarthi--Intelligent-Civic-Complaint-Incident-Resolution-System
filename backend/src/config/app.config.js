@@ -56,7 +56,9 @@ export const config = {
     auditLogs: path.resolve(__dirname, '../../../data/audit_logs.json'),
     feedback: path.resolve(__dirname, '../../../data/feedback.json'),
     appeals: path.resolve(__dirname, '../../../data/appeals.json'),
-    reopeningRequests: path.resolve(__dirname, '../../../data/reopening_requests.json')
+    reopeningRequests: path.resolve(__dirname, '../../../data/reopening_requests.json'),
+    spamReviews: path.resolve(__dirname, '../../../data/spam_reviews.json'),
+    citizenReputations: path.resolve(__dirname, '../../../data/citizen_reputations.json')
   }
 };
 

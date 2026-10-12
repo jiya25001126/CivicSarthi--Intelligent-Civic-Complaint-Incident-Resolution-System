@@ -576,6 +576,22 @@ export class MongoComplaintRepository {
   }
 
   /**
+   * General purpose update method for complaint fields
+   */
+  async update(idOrRef, updates = {}) {
+    const target = String(idOrRef).trim();
+    const targetRegex = new RegExp(`^${target}$`, 'i');
+
+    const doc = await ComplaintModel.findOneAndUpdate(
+      { $or: [{ id: targetRegex }, { referenceNumber: targetRegex }] },
+      { $set: { ...updates, updatedAt: new Date(), lastUpdated: new Date() } },
+      { new: true }
+    );
+
+    return doc ? this._formatComplaint(doc.toObject()) : null;
+  }
+
+  /**
    * Retrieve status progression history
    */
   async getStatusHistory(idOrRef) {

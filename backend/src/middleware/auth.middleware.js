@@ -89,6 +89,7 @@ export const optionalAuthenticate = async (req, res, next) => {
  * Strictly ignores any client-supplied headers like 'x-portal-role'.
  */
 export const requireRole = (...allowedRoles) => {
+  const roles = allowedRoles.flat();
   return (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({
@@ -97,7 +98,7 @@ export const requireRole = (...allowedRoles) => {
       });
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    if (!roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
         error: `Access denied: role '${req.user.role}' is not authorized for this action`
