@@ -237,8 +237,8 @@ export class JsonComplaintRepository {
         language: complaintData.preferredLanguage || complaintData.language || 'en',
         departmentId: complaintData.departmentId || complaintData.department || 'DEPT_ROADS',
         department: complaintData.departmentId || complaintData.department || 'DEPT_ROADS',
-        status: COMPLAINT_STATUS.SUBMITTED,
-        officialStatus: 'RECEIVED',
+        status: complaintData.status || COMPLAINT_STATUS.SUBMITTED,
+        officialStatus: complaintData.officialStatus || complaintData.status || 'RECEIVED',
         priority: complaintData.priority || COMPLAINT_PRIORITY.MEDIUM,
         intelligence: complaintData.intelligence || null,
         duplicateOf: complaintData.duplicateOf || null,
@@ -259,7 +259,7 @@ export class JsonComplaintRepository {
         statusHistory: [
           {
             timestamp,
-            status: COMPLAINT_STATUS.SUBMITTED,
+            status: complaintData.status || COMPLAINT_STATUS.SUBMITTED,
             actorType: 'CITIZEN',
             remarks: 'Grievance submitted by citizen'
           }

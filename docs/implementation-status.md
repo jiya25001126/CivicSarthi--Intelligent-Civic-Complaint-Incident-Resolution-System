@@ -24,8 +24,8 @@
 | **8** | Neglect Radar & Supervisory Alerts | **VERIFIED** | `main` | `9c0b7fc` | [phase8-report.md](file:///docs/phase8-report.md) |
 | **9** | Resolution Quality Checker | **VERIFIED** | `main` | `06f22de` | [phase9-report.md](file:///docs/phase9-report.md) |
 | **10** | Citizen Resolution Feedback & Appeals | **VERIFIED** | `phase-10-citizen-feedback-appeals-ratings` | `d579aed` | [phase10-report.md](file:///docs/phase10-report.md) |
-| **11** | Spam/Fake Complaint Detection & Review | **VERIFIED** | `phase-11-spam-fake-complaint-detection` | `89d0024` | [phase11-report.md](file:///docs/phase11-report.md) |
-| **12** | Citizen Clarifications & Status Translator | *PLANNED* | &mdash; | &mdash; | Scope defined in Roadmap |
+| **11** | Spam/Fake Complaint Detection & Review | **VERIFIED** | `phase-11-spam-fake-complaint-detection` | `18ef1e6` | [phase11-report.md](file:///docs/phase11-report.md) |
+| **12** | Citizen Clarifications, Reminders & Status Translator | **VERIFIED** | `phase-12-clarification-reminders-status-translator` | pending commit | [phase12-report.md](file:///docs/phase12-report.md) |
 | **13** | Aggregate Analytics & Reporting | *PLANNED* | &mdash; | &mdash; | Scope defined in Roadmap |
 | **14** | Security, A11y & Deployment Readiness | *PLANNED* | &mdash; | &mdash; | Scope defined in Roadmap |
 | **15** | Voice, Vision & External Integrations | *PLANNED* | &mdash; | &mdash; | Scope defined in Roadmap |
@@ -113,7 +113,26 @@
   4. Scoped departmental feedback summaries and officer review desks.
 - **Backend Files:** `constants/feedback.constants.js`, `models/feedback.model.js`, `models/appeal.model.js`, `models/reopeningRequest.model.js`, `repositories/feedback.*`, `repositories/appeal.*`, `repositories/reopeningRequest.*`, `services/feedback.service.js`, `services/appeal.service.js`, `services/reopening.service.js`, `controllers/*`, `routes/*`.
 - **Frontend Pages:** `ComplaintDetailPage.jsx` (reopening notice banner, 1-5 star card, appeal card, reopening petition card), `AppealManagementPage.jsx`, `ReopeningManagementPage.jsx`.
+- **Frontend Pages:** `ComplaintDetailPage.jsx` (reopening notice banner, 1-5 star card, appeal card, reopening petition card), `AppealManagementPage.jsx`, `ReopeningManagementPage.jsx`.
 - **Verification:** Verified via `backend/tests/feedback.test.js` (28 passing tests). Full regression suite: 337 tests passing (0 failures).
+
+### Phase 11: Spam/Fake Complaint Detection with Human Review
+- **Status:** **VERIFIED**
+- **Branch:** `phase-11-spam-fake-complaint-detection`
+- **Scope:**
+  1. Explainable deterministic heuristic screening engine (`SpamScreeningService`) checking burst rate, identical text, mash/entropy, category cycling, and duplicate candidates. Explicit fairness guarantees protect political criticism, Devanagari Hindi, and collective reporting.
+  2. Privacy-conscious citizen reputation tracking ledger (`CitizenReputationService`) with `GOOD_STANDING`, `UNDER_OBSERVATION`, and `RESTRICTED_REVIEW_PRIORITY`. Unconfirmed flags never penalize citizens.
+  3. Department-scoped human review cockpit (`SpamReviewService` & `SpamReviewPage.jsx`) with adjudications `LEGITIMATE`, `NEEDS_MORE_INFORMATION`, `CONFIRMED_ABUSE`, and `ESCALATED`.
+- **Verification:** Verified via `backend/tests/spam.test.js` (27 passing tests).
+
+### Phase 12: Citizen-Initiated Clarification, Reminders & Status Translator
+- **Status:** **VERIFIED**
+- **Branch:** `phase-12-clarification-reminders-status-translator`
+- **Scope:**
+  1. Citizen-initiated clarification threads (`ClarificationService`) with `OPEN` &rarr; `RESPONDED` &rarr; `CLOSED` lifecycles, department-scoped officer response desk, internal note isolation, anti-spam throttling, and status immutability.
+  2. Citizen follow-up reminders (`ReminderService`) with grievance eligibility checks (rejecting `RESOLVED`/`CLOSED`), server-side 24h cooldown throttling with 429 errors, transparent `IN_APP` delivery records without false claims, and status immutability.
+  3. Citizen-friendly vernacular status translator (`StatusTranslatorService`) explaining all official statuses across Meaning, What Happened, Next Steps, and SLA in plain English and Hindi, with deterministic fallback, zero private note leakage, and interactive frontend widget.
+- **Verification:** Verified via `backend/tests/clarification.test.js` (24 passing tests). Full regression: 388 tests passing across 76 suites (0 failures).
 
 ---
 
@@ -128,19 +147,19 @@ Test Runner: Native Node.js Test Runner (node --test)
 Execution Command: npm.cmd test (in /backend)
 Exit Code: 0 (SUCCESS)
 
-Total Test Suites: 72
-Total Tests Executed: 364
-Passed: 364 (100%)
+Total Test Suites: 76
+Total Tests Executed: 388
+Passed: 388 (100%)
 Failed: 0
 Skipped: 0
 Cancelled: 0
-Duration: 5.99 seconds
+Duration: 6.44 seconds
 
 Frontend Build: npm.cmd --prefix frontend run build
 Vite Version: Vite v6.4.4
 Modules Transformed: 1,659
 Build Exit Code: 0 (SUCCESS)
-Build Duration: 3.13 seconds
+Build Duration: 3.09 seconds
 ======================================================================
 ```
 

@@ -58,7 +58,12 @@ export const config = {
     appeals: path.resolve(__dirname, '../../../data/appeals.json'),
     reopeningRequests: path.resolve(__dirname, '../../../data/reopening_requests.json'),
     spamReviews: path.resolve(__dirname, '../../../data/spam_reviews.json'),
-    citizenReputations: path.resolve(__dirname, '../../../data/citizen_reputations.json')
+    citizenReputations: path.resolve(__dirname, '../../../data/citizen_reputations.json'),
+    clarifications: path.resolve(__dirname, '../../../data/clarifications.json'),
+    reminders: path.resolve(__dirname, '../../../data/reminders.json')
+  },
+  reminders: {
+    cooldownHours: Number(process.env.REMINDER_COOLDOWN_HOURS || 24)
   }
 };
 

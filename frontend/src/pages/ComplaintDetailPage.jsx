@@ -19,7 +19,15 @@ import {
   recordAppealDecision,
   submitReopeningRequest,
   fetchComplaintReopenings,
-  recordReopeningDecision
+  recordReopeningDecision,
+  submitComplaintClarification,
+  fetchComplaintClarifications,
+  respondToClarification,
+  closeClarification,
+  requestComplaintReminder,
+  fetchComplaintReminderStatus,
+  fetchComplaintReminders,
+  fetchComplaintStatusExplanation
 } from '../api/client';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
 import {
@@ -51,7 +59,10 @@ import {
   ShieldAlert,
   ThumbsUp,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Languages,
+  Bell,
+  Info
 } from 'lucide-react';
 import {
   RESOLUTION_OUTCOME_OPTIONS,
@@ -130,6 +141,35 @@ export default function ComplaintDetailPage() {
   const [submittingReopening, setSubmittingReopening] = useState(false);
   const [reopeningMessage, setReopeningMessage] = useState(null);
 
+  // Phase 12: Clarifications, Reminders & Status Translator State
+  const [clarificationsList, setClarificationsList] = useState([]);
+  const [showClarificationForm, setShowClarificationForm] = useState(false);
+  const [clarificationType, setClarificationType] = useState('CLARIFICATION');
+  const [clarificationContent, setClarificationContent] = useState('');
+  const [submittingClarification, setSubmittingClarification] = useState(false);
+  const [clarificationMessage, setClarificationMessage] = useState(null);
+  const [officerResponses, setOfficerResponses] = useState({});
+  const [respondingClarificationId, setRespondingClarificationId] = useState(null);
+
+  const [reminderEligibility, setReminderEligibility] = useState(null);
+  const [remindersList, setRemindersList] = useState([]);
+  const [requestingReminder, setRequestingReminder] = useState(false);
+  const [reminderMessage, setReminderMessage] = useState(null);
+
+  const [statusExplanation, setStatusExplanation] = useState(null);
+  const [translatorLang, setTranslatorLang] = useState('en');
+
+  const loadExplanation = async (targetId, lang = translatorLang) => {
+    try {
+      const res = await fetchComplaintStatusExplanation(targetId, { lang });
+      if (res?.data) {
+        setStatusExplanation(res.data);
+      }
+    } catch (expErr) {
+      console.info('Status explanation load notice:', expErr.message);
+    }
+  };
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -179,6 +219,27 @@ export default function ComplaintDetailPage() {
         }
       } catch (p10Err) {
         console.warn('Phase 10 data load notice:', p10Err.message);
+      }
+
+      // Phase 12: Fetch clarifications, reminder eligibility & status explanation
+      try {
+        const [clrRes, remEligRes, remListRes] = await Promise.allSettled([
+          fetchComplaintClarifications(id),
+          fetchComplaintReminderStatus(id),
+          fetchComplaintReminders(id)
+        ]);
+        if (clrRes.status === 'fulfilled' && clrRes.value?.data) {
+          setClarificationsList(clrRes.value.data);
+        }
+        if (remEligRes.status === 'fulfilled' && remEligRes.value?.data) {
+          setReminderEligibility(remEligRes.value.data);
+        }
+        if (remListRes.status === 'fulfilled' && remListRes.value?.data) {
+          setRemindersList(remListRes.value.data);
+        }
+        await loadExplanation(id, translatorLang);
+      } catch (p12Err) {
+        console.warn('Phase 12 data load notice:', p12Err.message);
       }
     } catch (err) {
       setError(err.message);
@@ -245,6 +306,87 @@ export default function ComplaintDetailPage() {
     } finally {
       setSubmittingReopening(false);
     }
+  };
+
+  // Phase 12: Action Handlers for Clarifications, Reminders & Vernacular Translation
+  const handleClarificationSubmit = async (e) => {
+    e.preventDefault();
+    if (!clarificationContent.trim() || clarificationContent.trim().length < 5) return;
+    try {
+      setSubmittingClarification(true);
+      setClarificationMessage(null);
+      const res = await submitComplaintClarification(complaint.id, {
+        requestType: clarificationType,
+        content: clarificationContent.trim()
+      });
+      setClarificationMessage({ type: 'success', text: 'Clarification query submitted and routed to the assigned department.' });
+      setClarificationsList(prev => [res.data, ...prev]);
+      setClarificationContent('');
+      setShowClarificationForm(false);
+    } catch (err) {
+      setClarificationMessage({ type: 'error', text: err.message });
+    } finally {
+      setSubmittingClarification(false);
+    }
+  };
+
+  const handleOfficerClarificationRespond = async (clarificationId) => {
+    const responseText = (officerResponses[clarificationId] || '').trim();
+    if (!responseText || responseText.length < 5) return;
+    try {
+      setRespondingClarificationId(clarificationId);
+      const res = await respondToClarification(clarificationId, { response: responseText });
+      setClarificationsList(prev =>
+        prev.map(c => (c.id === clarificationId ? res.data : c))
+      );
+      setOfficerResponses(prev => ({ ...prev, [clarificationId]: '' }));
+    } catch (err) {
+      alert(`Could not submit response: ${err.message}`);
+    } finally {
+      setRespondingClarificationId(null);
+    }
+  };
+
+  const handleClarificationClose = async (clarificationId) => {
+    try {
+      const res = await closeClarification(clarificationId, { reason: 'Resolved by user' });
+      setClarificationsList(prev =>
+        prev.map(c => (c.id === clarificationId ? res.data : c))
+      );
+    } catch (err) {
+      alert(`Could not close clarification: ${err.message}`);
+    }
+  };
+
+  const handleReminderRequest = async () => {
+    try {
+      setRequestingReminder(true);
+      setReminderMessage(null);
+      const res = await requestComplaintReminder(complaint.id);
+      setReminderMessage({
+        type: 'success',
+        text: res.message || 'Follow-up reminder recorded in-app for department inspection.'
+      });
+      if (res.data?.reminder) {
+        setRemindersList(prev => [res.data.reminder, ...prev]);
+      }
+      try {
+        const eligRes = await fetchComplaintReminderStatus(complaint.id);
+        if (eligRes?.data) setReminderEligibility(eligRes.data);
+      } catch {}
+    } catch (err) {
+      setReminderMessage({ type: 'error', text: err.message });
+      if (err.response?.data?.details) {
+        setReminderEligibility(err.response.data.details);
+      }
+    } finally {
+      setRequestingReminder(false);
+    }
+  };
+
+  const handleTranslatorLanguageChange = async (newLang) => {
+    setTranslatorLang(newLang);
+    await loadExplanation(complaint?.referenceNumber || complaint?.id, newLang);
   };
 
   // Handle priority update / override
@@ -845,6 +987,385 @@ export default function ComplaintDetailPage() {
           )}
         </div>
       )}
+
+      {/* PHASE 12: CITIZEN STATUS TRANSLATOR */}
+      {statusExplanation && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-emerald-100 text-emerald-700 rounded-lg">
+                <Languages size={18} />
+              </div>
+              <div>
+                <h2 className="font-bold text-base text-slate-900">
+                  Citizen-Friendly Status Breakdown
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Plain-language translation of official administrative progress
+                </p>
+              </div>
+            </div>
+
+            {/* Language Toggle */}
+            <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+              <button
+                type="button"
+                onClick={() => handleTranslatorLanguageChange('en')}
+                className={`px-3 py-1 text-xs font-bold rounded-md transition ${
+                  translatorLang === 'en'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                English
+              </button>
+              <button
+                type="button"
+                onClick={() => handleTranslatorLanguageChange('hi')}
+                className={`px-3 py-1 text-xs font-bold rounded-md transition ${
+                  translatorLang === 'hi'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                हिंदी (Hindi)
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+              <span className="font-bold text-slate-700 block flex items-center gap-1.5">
+                <Info size={14} className="text-blue-600" />
+                {translatorLang === 'hi' ? 'इस स्थिति का क्या अर्थ है?' : 'What this status means'}
+              </span>
+              <p className="text-slate-800 leading-relaxed font-medium">
+                {statusExplanation.meaning}
+              </p>
+            </div>
+
+            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+              <span className="font-bold text-slate-700 block flex items-center gap-1.5">
+                <CheckCircle2 size={14} className="text-emerald-600" />
+                {translatorLang === 'hi' ? 'अब तक क्या हुआ है?' : 'What has actually happened'}
+              </span>
+              <p className="text-slate-800 leading-relaxed font-medium">
+                {statusExplanation.whatHappened}
+              </p>
+            </div>
+
+            <div className="p-3.5 bg-amber-50/70 rounded-xl border border-amber-200 space-y-1">
+              <span className="font-bold text-amber-900 block flex items-center gap-1.5">
+                <ArrowRight size={14} className="text-amber-600" />
+                {translatorLang === 'hi' ? 'आप आगे क्या कर सकते हैं?' : 'What you can do next'}
+              </span>
+              <p className="text-amber-950 leading-relaxed font-medium">
+                {statusExplanation.nextSteps}
+              </p>
+            </div>
+
+            <div className="p-3.5 bg-blue-50/70 rounded-xl border border-blue-200 space-y-1">
+              <span className="font-bold text-blue-900 block flex items-center gap-1.5">
+                <Clock size={14} className="text-blue-600" />
+                {translatorLang === 'hi' ? 'समय-सीमा व प्रगति' : 'SLA & Expected Timelines'}
+              </span>
+              <p className="text-blue-950 leading-relaxed font-medium">
+                {statusExplanation.slaGuidance}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PHASE 12: CITIZEN FOLLOW-UP REMINDERS */}
+      {(!isOfficerMode || (user && user.id === complaint.citizenId)) && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-blue-100 text-blue-700 rounded-lg">
+                <Bell size={18} />
+              </div>
+              <div>
+                <h2 className="font-bold text-base text-slate-900">
+                  Citizen Follow-Up Reminder
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Request an in-app follow-up for departmental review when progress has stalled
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleReminderRequest}
+              disabled={
+                requestingReminder ||
+                complaint.status === 'RESOLVED' ||
+                complaint.status === 'CLOSED' ||
+                reminderEligibility?.throttled
+              }
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-sm disabled:opacity-50 flex items-center gap-2 self-start sm:self-auto"
+            >
+              {requestingReminder ? (
+                <>
+                  <RefreshCw size={14} className="animate-spin" />
+                  <span>Submitting Reminder...</span>
+                </>
+              ) : reminderEligibility?.throttled ? (
+                <>
+                  <Clock size={14} />
+                  <span>Throttled ({reminderEligibility.timeRemainingMinutes || 0}m left)</span>
+                </>
+              ) : (
+                <>
+                  <Bell size={14} />
+                  <span>Send Follow-Up Reminder</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {reminderMessage && (
+            <div className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
+              reminderMessage.type === 'success'
+                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                : 'bg-amber-50 text-amber-800 border border-amber-200'
+            }`}>
+              <Info size={16} className="shrink-0" />
+              <span>{reminderMessage.text}</span>
+            </div>
+          )}
+
+          {/* Transparent delivery disclaimer */}
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 flex items-center justify-between flex-wrap gap-2">
+            <span>
+              <strong>Delivery Mode:</strong> In-app audit log (reminders are permanently logged for inspecting officers; external SMS/Email is unconfigured).
+            </span>
+            <span className="font-mono text-[11px] text-slate-500">
+              Cooldown window: 24 hours
+            </span>
+          </div>
+
+          {/* Past Reminders List */}
+          {remindersList.length > 0 && (
+            <div className="space-y-2 pt-2 border-t border-slate-100">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">
+                Reminder Audit Trail ({remindersList.length})
+              </span>
+              <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                {remindersList.map((rem) => (
+                  <div key={rem.id} className="p-2.5 bg-slate-50 rounded-lg border border-slate-200/80 text-xs flex items-center justify-between">
+                    <div>
+                      <span className="font-mono font-bold text-blue-700">#{rem.id}</span>
+                      <span className="text-slate-600 ml-2">{rem.message}</span>
+                    </div>
+                    <span className="text-[11px] text-slate-400">
+                      {new Date(rem.requestedAt || rem.createdAt).toLocaleString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* PHASE 12: CITIZEN CLARIFICATIONS & ADDITIONAL INFORMATION */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-indigo-100 text-indigo-700 rounded-lg">
+              <MessageSquare size={18} />
+            </div>
+            <div>
+              <h2 className="font-bold text-base text-slate-900">
+                Citizen Clarification & Information Threads
+              </h2>
+              <p className="text-xs text-slate-500">
+                Ask clarifying questions or supply additional details without altering official complaint status
+              </p>
+            </div>
+          </div>
+
+          {(!isOfficerMode || (user && user.id === complaint.citizenId)) && (
+            <button
+              type="button"
+              onClick={() => setShowClarificationForm(!showClarificationForm)}
+              className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5 self-start sm:self-auto"
+            >
+              <Plus size={14} />
+              <span>{showClarificationForm ? 'Cancel' : 'New Clarification Query'}</span>
+            </button>
+          )}
+        </div>
+
+        {clarificationMessage && (
+          <div className={`p-3 rounded-xl text-xs ${
+            clarificationMessage.type === 'success'
+              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+              : 'bg-rose-50 text-rose-800 border border-rose-200'
+          }`}>
+            {clarificationMessage.text}
+          </div>
+        )}
+
+        {/* Submit Form */}
+        {showClarificationForm && (
+          <form onSubmit={handleClarificationSubmit} className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+            <div className="flex gap-4">
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                <input
+                  type="radio"
+                  name="clrType"
+                  value="CLARIFICATION"
+                  checked={clarificationType === 'CLARIFICATION'}
+                  onChange={() => setClarificationType('CLARIFICATION')}
+                />
+                <span>Clarification Question</span>
+              </label>
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                <input
+                  type="radio"
+                  name="clrType"
+                  value="ADDITIONAL_INFO"
+                  checked={clarificationType === 'ADDITIONAL_INFO'}
+                  onChange={() => setClarificationType('ADDITIONAL_INFO')}
+                />
+                <span>Additional Information / Landmark Details</span>
+              </label>
+            </div>
+
+            <div>
+              <textarea
+                required
+                rows={3}
+                value={clarificationContent}
+                onChange={(e) => setClarificationContent(e.target.value)}
+                placeholder="Type your clarification question or supplementary info (min 5 characters, max 2000)..."
+                className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              />
+              <div className="flex justify-between text-[11px] text-slate-400 mt-1">
+                <span>Min 5 chars</span>
+                <span>{clarificationContent.length} / 2000</span>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowClarificationForm(false)}
+                className="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submittingClarification || clarificationContent.trim().length < 5}
+                className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {submittingClarification && <RefreshCw size={12} className="animate-spin" />}
+                <span>Submit to Department</span>
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Existing Clarifications List */}
+        {clarificationsList.length > 0 ? (
+          <div className="space-y-4">
+            {clarificationsList.map((clr) => (
+              <div key={clr.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3 text-xs">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-indigo-700">#{clr.id}</span>
+                    <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 text-[10px] font-bold">
+                      {clr.requestType === 'ADDITIONAL_INFO' ? 'Additional Information' : 'Clarification Request'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                      clr.status === 'RESPONDED'
+                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                        : clr.status === 'CLOSED'
+                        ? 'bg-slate-200 text-slate-700 border-slate-300'
+                        : 'bg-amber-100 text-amber-800 border-amber-300'
+                    }`}>
+                      {clr.status}
+                    </span>
+                    {clr.status !== 'CLOSED' && (
+                      <button
+                        type="button"
+                        onClick={() => handleClarificationClose(clr.id)}
+                        className="px-2 py-0.5 text-[10px] text-slate-600 hover:text-slate-900 border border-slate-300 rounded hover:bg-slate-100 transition"
+                      >
+                        Close Thread
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Citizen Question / Context */}
+                <div className="p-3 bg-white rounded-lg border border-slate-200 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                    Citizen Request ({new Date(clr.createdAt).toLocaleString()}):
+                  </span>
+                  <p className="text-slate-800 font-medium leading-relaxed">
+                    {clr.content}
+                  </p>
+                </div>
+
+                {/* Officer Responses */}
+                {clr.responses && clr.responses.length > 0 && (
+                  <div className="space-y-2 pt-2 border-t border-slate-200">
+                    <span className="text-[10px] uppercase font-bold text-emerald-700 block">
+                      Official Department Responses ({clr.responses.length}):
+                    </span>
+                    {clr.responses.map((resp, rIdx) => (
+                      <div key={rIdx} className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-lg text-xs space-y-1">
+                        <div className="flex items-center justify-between text-[11px] font-semibold text-emerald-900">
+                          <span>{resp.responderName} ({resp.responderRole})</span>
+                          <span>{new Date(resp.respondedAt).toLocaleString()}</span>
+                        </div>
+                        <p className="text-slate-800 leading-relaxed font-medium">
+                          {resp.response}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Officer Reply Form (only in officer mode and if open) */}
+                {isOfficerMode && clr.status !== 'CLOSED' && (
+                  <div className="pt-2 border-t border-slate-200 space-y-2">
+                    <span className="text-[11px] font-bold text-slate-700 block">
+                      Post Citizen-Visible Department Response:
+                    </span>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Type citizen-visible response (min 5 characters)..."
+                        value={officerResponses[clr.id] || ''}
+                        onChange={(e) => setOfficerResponses({ ...officerResponses, [clr.id]: e.target.value })}
+                        className="flex-1 px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleOfficerClarificationRespond(clr.id)}
+                        disabled={respondingClarificationId === clr.id || !officerResponses[clr.id] || officerResponses[clr.id].trim().length < 5}
+                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition disabled:opacity-50"
+                      >
+                        {respondingClarificationId === clr.id ? 'Sending...' : 'Send Response'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-slate-500 italic">No clarification requests initiated for this grievance.</p>
+        )}
+      </div>
 
       {/* PHASE 10: CITIZEN RESOLUTION FEEDBACK & RATINGS */}
       {(complaint.status === 'RESOLVED' || complaint.status === 'CLOSED' || feedbackList.length > 0) && (

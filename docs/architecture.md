@@ -223,12 +223,12 @@ These thresholds are evaluated dynamically on fetch and are never hardcoded.
 | **9** | Resolution Quality Checker | **VERIFIED** | [phase9-report.md](file:///docs/phase9-report.md) | 57 quality tests pass; resolution gate live |
 | **10** | Citizen Feedback & Appeals | **VERIFIED** | [phase10-report.md](file:///docs/phase10-report.md) | 28 feedback/appeal/reopening tests pass; full suite 337 tests pass; review desks live |
 | **11** | Spam/Fake Detection & Review | **VERIFIED** | [phase11-report.md](file:///docs/phase11-report.md) | 27 spam/reputation/review tests pass; full suite 364 tests pass; review cockpit live |
-| **12** | Reminders & Status Translator | *PLANNED* | &mdash; | Roadmap scope defined; not yet implemented |
+| **12** | Reminders & Status Translator | **VERIFIED** | [phase12-report.md](file:///docs/phase12-report.md) | 24 clarification/reminder/translator tests pass; full suite 388 tests pass; translator live |
 | **13** | Aggregate Analytics & Reporting | *PLANNED* | &mdash; | Roadmap scope defined; not yet implemented |
 | **14** | Security, A11y & Deployment | *PLANNED* | &mdash; | Roadmap scope defined; not yet implemented |
 | **15** | Voice, Vision & Integrations | *PLANNED* | &mdash; | Roadmap scope defined; not yet implemented |
 
-> **Summary Test Metrics:** Across Phases 1 through 11, **364 automated backend tests across 72 suites pass with 0 failures**. Frontend production build compiles cleanly in Vite (1,659 modules transformed, 0 errors).
+> **Summary Test Metrics:** Across Phases 1 through 12, **388 automated backend tests across 76 suites pass with 0 failures**. Frontend production build compiles cleanly in Vite (1,659 modules transformed, 0 errors).
 
 ---
 

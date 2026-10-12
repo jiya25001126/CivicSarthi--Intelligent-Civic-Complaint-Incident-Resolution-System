@@ -29,6 +29,10 @@ import { APPEAL_REASONS, REOPENING_REASONS } from '../constants/feedback.constan
 import { submitFeedback, getComplaintFeedback } from '../controllers/feedback.controller.js';
 import { createAppeal } from '../controllers/appeal.controller.js';
 import { createReopeningRequest } from '../controllers/reopening.controller.js';
+import { createClarification, getComplaintClarifications } from '../controllers/clarification.controller.js';
+import { requestReminder, checkReminderEligibility, getComplaintReminders } from '../controllers/reminder.controller.js';
+import { getStatusExplanation } from '../controllers/statusTranslator.controller.js';
+import { CLARIFICATION_TYPE } from '../constants/clarification.constants.js';
 
 const router = express.Router();
 
@@ -193,11 +197,27 @@ const createReopeningNestedSchema = {
   })
 };
 
+const createClarificationNestedSchema = {
+  params: z.object({
+    id: z.string().min(1, 'Complaint ID is required')
+  }),
+  body: z.object({
+    requestType: z.enum(Object.values(CLARIFICATION_TYPE)).optional(),
+    content: z
+      .string()
+      .trim()
+      .min(5, 'Clarification content must be at least 5 characters')
+      .max(2000, 'Clarification content cannot exceed 2000 characters')
+  })
+};
+
 // ==========================================
 // Public Endpoints (No authentication required)
 // ==========================================
 router.get('/stats', getComplaintStats);
+router.get('/track/:reference/status-explanation', trackingRateLimiter, getStatusExplanation);
 router.get('/track/:reference', trackingRateLimiter, validate(getComplaintByRefSchema), getComplaintTracking);
+router.get('/:id/status-explanation', trackingRateLimiter, getStatusExplanation);
 router.get('/:id/track', trackingRateLimiter, validate(getComplaintSchema), getComplaintTracking);
 router.post('/analyze', submissionRateLimiter, validate(analyzeSchema), analyzeGrievancePreview);
 
@@ -223,5 +243,12 @@ router.post('/:id/feedback', authenticate, validate(submitFeedbackSchema), submi
 router.get('/:id/feedback', authenticate, validate(getComplaintSchema), getComplaintFeedback);
 router.post('/:id/appeals', authenticate, validate(createAppealNestedSchema), createAppeal);
 router.post('/:id/reopening-requests', authenticate, validate(createReopeningNestedSchema), createReopeningRequest);
+
+// Phase 12: Citizen Clarification & Reminder Endpoints
+router.post('/:id/clarifications', authenticate, requireRole('citizen'), validate(createClarificationNestedSchema), createClarification);
+router.get('/:id/clarifications', authenticate, validate(getComplaintSchema), getComplaintClarifications);
+router.post('/:id/reminders', authenticate, requireRole('citizen'), validate(getComplaintSchema), requestReminder);
+router.get('/:id/reminders/eligibility', authenticate, validate(getComplaintSchema), checkReminderEligibility);
+router.get('/:id/reminders', authenticate, validate(getComplaintSchema), getComplaintReminders);
 
 export default router;
