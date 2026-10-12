@@ -58,8 +58,12 @@ export default function LoginPage() {
         {/* Form Body */}
         <div className="p-6">
           {errorMessage && (
-            <div className="mb-5 p-3.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2.5">
-              <AlertCircle size={16} className="text-rose-600 shrink-0 mt-0.5" />
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="mb-5 p-3.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2.5"
+            >
+              <AlertCircle size={16} className="text-rose-600 shrink-0 mt-0.5" aria-hidden="true" />
               <div>
                 <p className="font-semibold">Authentication Notice</p>
                 <p className="mt-0.5">{errorMessage}</p>
@@ -67,17 +71,19 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate={false}>
             <div>
               <label htmlFor="login-email" className="block text-xs font-semibold text-slate-700 mb-1">
-                Email Address
+                Email Address <span className="text-rose-600" aria-hidden="true">*</span>
               </label>
               <div className="relative">
-                <Mail size={16} className="absolute left-3 top-2.5 text-slate-400" />
+                <Mail size={16} className="absolute left-3 top-2.5 text-slate-400" aria-hidden="true" />
                 <input
                   id="login-email"
                   type="email"
                   required
+                  aria-required="true"
+                  aria-invalid={Boolean(errorMessage)}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="citizen@example.com or officer@dept.internal"
@@ -89,14 +95,16 @@ export default function LoginPage() {
 
             <div>
               <label htmlFor="login-password" className="block text-xs font-semibold text-slate-700 mb-1">
-                Password
+                Password <span className="text-rose-600" aria-hidden="true">*</span>
               </label>
               <div className="relative">
-                <Lock size={16} className="absolute left-3 top-2.5 text-slate-400" />
+                <Lock size={16} className="absolute left-3 top-2.5 text-slate-400" aria-hidden="true" />
                 <input
                   id="login-password"
                   type="password"
                   required
+                  aria-required="true"
+                  aria-invalid={Boolean(errorMessage)}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter account password"
@@ -109,6 +117,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={submitting}
+              aria-busy={submitting}
               className={`w-full py-2.5 px-4 rounded-lg font-semibold text-xs tracking-wide text-white flex items-center justify-center gap-2 transition ${
                 submitting
                   ? 'bg-blue-400 cursor-not-allowed'
@@ -119,7 +128,7 @@ export default function LoginPage() {
                 <>Verifying Identity...</>
               ) : (
                 <>
-                  Sign In <ArrowRight size={14} />
+                  Sign In <ArrowRight size={14} aria-hidden="true" />
                 </>
               )}
             </button>

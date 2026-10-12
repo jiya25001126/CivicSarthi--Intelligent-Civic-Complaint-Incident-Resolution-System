@@ -98,6 +98,10 @@ export class ComplaintService {
     if (!complaint) return null;
     const copy = { ...complaint };
     delete copy.officerNotes;
+    delete copy.internalNotes;
+    delete copy.reviewerNotes;
+    delete copy.supervisorNotes;
+    delete copy.auditTrail;
     copy.incidentId = complaint.incidentId || null;
     copy.parentIncident = complaint.parentIncident ? {
       id: complaint.parentIncident.id,

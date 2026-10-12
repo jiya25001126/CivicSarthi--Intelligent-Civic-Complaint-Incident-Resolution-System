@@ -76,9 +76,11 @@ export function IncidentStatusBadge({ status, className = '', short = false }) {
 
   return (
     <span
+      role="status"
+      aria-label={`Incident Status: ${current.label}`}
       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${current.bg} ${className}`}
     >
-      <Icon size={12} className="shrink-0" />
+      <Icon size={12} className="shrink-0" aria-hidden="true" />
       <span>{short ? current.shortLabel : current.label}</span>
     </span>
   );
@@ -95,9 +97,11 @@ export function SubtaskStatusBadge({ status, className = '' }) {
 
   return (
     <span
+      role="status"
+      aria-label={`Subtask Status: ${current.label}`}
       className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${current.bg} ${className}`}
     >
-      <Icon size={11} className="shrink-0" />
+      <Icon size={11} className="shrink-0" aria-hidden="true" />
       <span>{current.label}</span>
     </span>
   );
@@ -163,9 +167,11 @@ export function StatusBadge({ status, className = '' }) {
 
   return (
     <span
+      role="status"
+      aria-label={`Complaint Status: ${current.label}`}
       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${current.bg} ${className}`}
     >
-      <Icon size={12} className="shrink-0" />
+      <Icon size={12} className="shrink-0" aria-hidden="true" />
       <span>{current.label}</span>
     </span>
   );
@@ -205,10 +211,13 @@ export function PriorityBadge({ priority, className = '' }) {
 
   return (
     <span
+      role="status"
+      aria-label={`Priority Level: ${current.label}`}
       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold border uppercase tracking-wider ${current.bg} ${className}`}
     >
-      {Icon && <Icon size={11} className="shrink-0" />}
+      {Icon && <Icon size={11} className="shrink-0" aria-hidden="true" />}
       <span>{current.label}</span>
     </span>
   );
 }
+

@@ -66,8 +66,12 @@ export default function RegisterPage() {
         {/* Body */}
         <div className="p-6">
           {errorMessage && (
-            <div className="mb-5 p-3.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2.5">
-              <AlertCircle size={16} className="text-rose-600 shrink-0 mt-0.5" />
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="mb-5 p-3.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2.5"
+            >
+              <AlertCircle size={16} className="text-rose-600 shrink-0 mt-0.5" aria-hidden="true" />
               <div>
                 <p className="font-semibold">Registration Issue</p>
                 <p className="mt-0.5">{errorMessage}</p>
@@ -78,14 +82,16 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="reg-name" className="block text-xs font-semibold text-slate-700 mb-1">
-                Full Name <span className="text-rose-500">*</span>
+                Full Name <span className="text-rose-500" aria-hidden="true">*</span>
               </label>
               <div className="relative">
-                <User size={16} className="absolute left-3 top-2.5 text-slate-400" />
+                <User size={16} className="absolute left-3 top-2.5 text-slate-400" aria-hidden="true" />
                 <input
                   id="reg-name"
                   type="text"
                   required
+                  aria-required="true"
+                  aria-invalid={Boolean(errorMessage)}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Ramesh Kumar"
@@ -97,14 +103,16 @@ export default function RegisterPage() {
 
             <div>
               <label htmlFor="reg-email" className="block text-xs font-semibold text-slate-700 mb-1">
-                Email Address <span className="text-rose-500">*</span>
+                Email Address <span className="text-rose-500" aria-hidden="true">*</span>
               </label>
               <div className="relative">
-                <Mail size={16} className="absolute left-3 top-2.5 text-slate-400" />
+                <Mail size={16} className="absolute left-3 top-2.5 text-slate-400" aria-hidden="true" />
                 <input
                   id="reg-email"
                   type="email"
                   required
+                  aria-required="true"
+                  aria-invalid={Boolean(errorMessage)}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="ramesh@example.com"
@@ -116,14 +124,16 @@ export default function RegisterPage() {
 
             <div>
               <label htmlFor="reg-password" className="block text-xs font-semibold text-slate-700 mb-1">
-                Password <span className="text-rose-500">*</span>
+                Password <span className="text-rose-500" aria-hidden="true">*</span>
               </label>
               <div className="relative">
-                <Lock size={16} className="absolute left-3 top-2.5 text-slate-400" />
+                <Lock size={16} className="absolute left-3 top-2.5 text-slate-400" aria-hidden="true" />
                 <input
                   id="reg-password"
                   type="password"
                   required
+                  aria-required="true"
+                  aria-invalid={Boolean(errorMessage)}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Minimum 8 characters with letter & number"
@@ -138,14 +148,16 @@ export default function RegisterPage() {
 
             <div>
               <label htmlFor="reg-confirm-password" className="block text-xs font-semibold text-slate-700 mb-1">
-                Confirm Password <span className="text-rose-500">*</span>
+                Confirm Password <span className="text-rose-500" aria-hidden="true">*</span>
               </label>
               <div className="relative">
-                <Lock size={16} className="absolute left-3 top-2.5 text-slate-400" />
+                <Lock size={16} className="absolute left-3 top-2.5 text-slate-400" aria-hidden="true" />
                 <input
                   id="reg-confirm-password"
                   type="password"
                   required
+                  aria-required="true"
+                  aria-invalid={Boolean(errorMessage)}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Re-enter your password"
@@ -158,6 +170,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={submitting}
+              aria-busy={submitting}
               className={`w-full py-2.5 px-4 rounded-lg font-semibold text-xs tracking-wide text-white flex items-center justify-center gap-2 transition ${
                 submitting
                   ? 'bg-blue-400 cursor-not-allowed'
