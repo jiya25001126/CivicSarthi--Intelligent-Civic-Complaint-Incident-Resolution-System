@@ -225,15 +225,19 @@ These thresholds are evaluated dynamically on fetch and are never hardcoded.
 | **11** | Spam/Fake Detection & Review | **VERIFIED** | [phase11-report.md](file:///docs/phase11-report.md) | 27 spam/reputation/review tests pass; full suite 364 tests pass; review cockpit live |
 | **12** | Reminders & Status Translator | **VERIFIED** | [phase12-report.md](file:///docs/phase12-report.md) | 24 clarification/reminder/translator tests pass; full suite 388 tests pass; translator live |
 | **13** | Aggregate Analytics & Reporting | **VERIFIED** | [phase13-report.md](file:///docs/phase13-report.md) | 21 analytics/trends/export tests pass; full suite 409 tests pass; analytics dashboard live |
-| **14** | Security, A11y & Deployment | *PLANNED* | &mdash; | Roadmap scope defined; not yet implemented |
+| **14** | Security, A11y & Deployment | **VERIFIED** | [phase14-report.md](file:///docs/phase14-report.md) | 24 security/RBAC/probe tests pass; full suite 433 tests pass; WCAG 2.2 AA & Docker ready |
 | **15** | Voice, Vision & Integrations | *PLANNED* | &mdash; | Roadmap scope defined; not yet implemented |
 
-> **Summary Test Metrics:** Across Phases 1 through 13, **409 automated backend tests across 85 suites pass with 0 failures**. Frontend production build compiles cleanly in Vite (2,278 modules transformed, 0 errors).
+> **Summary Test Metrics:** Across Phases 1 through 14, **433 automated backend tests across 92 suites pass with 0 failures**. Frontend production build compiles cleanly in Vite (2,278 modules transformed, 0 errors).
 
 ---
 
 ## 7. Security & Privacy Guarantees
 - **Synthetic Data**: All seed data is 100% synthetic (fictitious names, anonymized IDs, mock contact addresses).
 - **Environment Isolation**: `.env` and sensitive configurations are strictly excluded via `.gitignore`.
-- **Input Validation**: All requests are validated against strict Zod schemas before reaching business logic.
+- **Input Validation & Traversal Defenses**: All requests are validated against strict Zod schemas before reaching business logic; evidence filenames reject directory traversal (`../`).
 - **Pre-commit Audit**: Zero API secrets, keys, or internal credentials committed to version control.
+- **HTTP Security & Headers**: Helmet Content Security Policy, X-Frame-Options DENY, X-Content-Type-Options nosniff, and Permissions-Policy enabled on all responses.
+- **Data Scoping & Tenant Isolation**: Citizens cannot view or access other citizens' complaints; officers are strictly restricted to their assigned department. Internal officer notes are excluded from citizen endpoints.
+- **CSV Formula Injection Safeguards (CWE-1236)**: Cells beginning with spreadsheet formula triggers (`=`, `+`, `-`, `@`, `\t`, `\r`) are escaped with a leading single quote.
+
