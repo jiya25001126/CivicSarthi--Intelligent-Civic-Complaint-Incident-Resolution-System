@@ -1,8 +1,10 @@
 import complaintRepository from '../repositories/complaint.repository.js';
 import { incidentRepository as defaultIncidentRepository } from '../repositories/incident.repository.js';
 import config from '../config/app.config.js';
-import { getStatusDescription } from '../constants/status.constants.js';
+import { getStatusDescription, COMPLAINT_STATUS, validateStatusTransition } from '../constants/status.constants.js';
 import aiIntelligenceService, { CATEGORY_DEPARTMENT_MAP } from './aiIntelligence.service.js';
+import { validateResolutionQuality } from './resolutionQuality.validator.js';
+import { RESOLUTION_EXCEPTION_REASONS } from '../constants/resolutionQuality.constants.js';
 
 export class ComplaintService {
   constructor(
@@ -80,6 +82,8 @@ export class ComplaintService {
    * Sanitize complaint for citizen view:
    * Strips confidential internal officer review notes and enriches with citizen-friendly status explanation.
    * Includes sanitized parent incident if linked.
+   * Applies strict allowlist to resolutionDetails to avoid exposing supervisor IDs, private evidence paths,
+   * internal checklists, or exception justifications.
    */
   sanitizeForCitizen(complaint) {
     if (!complaint) return null;
@@ -96,11 +100,35 @@ export class ComplaintService {
       resolutionSummary: complaint.parentIncident.resolutionSummary || null
     } : null;
     copy.statusDescription = this.getStatusDescription(copy.status);
+    copy.resolutionDetails = complaint.resolutionDetails ? {
+      score: complaint.resolutionDetails.score,
+      scoreExplanation: complaint.resolutionDetails.scoreExplanation || null,
+      valid: complaint.resolutionDetails.valid,
+      outcomeType: complaint.resolutionDetails.outcomeType || null,
+      actionCompleted: complaint.resolutionDetails.actionCompleted || false,
+      verificationMethod: complaint.resolutionDetails.verificationMethod || null,
+      closureRemarks: complaint.resolutionDetails.closureRemarks || null,
+      isException: Boolean(complaint.resolutionDetails.isException),
+      exceptionReason: complaint.resolutionDetails.exceptionReason || null,
+      resolvedAt: complaint.resolutionDetails.resolvedAt || null
+    } : null;
     if (Array.isArray(copy.statusHistory)) {
-      copy.statusHistory = copy.statusHistory.map(h => ({
-        ...h,
-        statusDescription: this.getStatusDescription(h.status)
-      }));
+      copy.statusHistory = copy.statusHistory.map(h => {
+        const histCopy = {
+          ...h,
+          statusDescription: this.getStatusDescription(h.status)
+        };
+        if (histCopy.resolutionDetails) {
+          histCopy.resolutionDetails = {
+            score: histCopy.resolutionDetails.score,
+            isException: Boolean(histCopy.resolutionDetails.isException),
+            exceptionReason: histCopy.resolutionDetails.exceptionReason || null,
+            outcomeType: histCopy.resolutionDetails.outcomeType || null,
+            verificationMethod: histCopy.resolutionDetails.verificationMethod || null
+          };
+        }
+        return histCopy;
+      });
     }
     return copy;
   }
@@ -143,6 +171,15 @@ export class ComplaintService {
       lastUpdated: complaint.updatedAt || complaint.lastUpdated || complaint.createdAt,
       reassignments: complaint.reassignments || 0,
       evidence: complaint.evidence || [],
+      resolutionDetails: complaint.resolutionDetails ? {
+        score: complaint.resolutionDetails.score,
+        outcomeType: complaint.resolutionDetails.outcomeType || null,
+        actionCompleted: Boolean(complaint.resolutionDetails.actionCompleted),
+        verificationMethod: complaint.resolutionDetails.verificationMethod || null,
+        closureRemarks: complaint.resolutionDetails.closureRemarks || null,
+        isException: Boolean(complaint.resolutionDetails.isException),
+        resolvedAt: complaint.resolutionDetails.resolvedAt || null
+      } : null,
       statusHistory: (complaint.statusHistory || []).map(h => ({
         timestamp: h.timestamp,
         status: h.status,
@@ -264,8 +301,203 @@ export class ComplaintService {
     return aiIntelligenceService.detectDuplicates(complaint, existingList, options);
   }
 
-  async updateComplaintStatus(idOrRef, { status, remarks, actorType }) {
-    const updated = await this.complaintRepo.updateStatus(idOrRef, { status, remarks, actorType });
+  async updateComplaintStatus(idOrRef, options = {}) {
+    const {
+      status,
+      remarks,
+      actorType,
+      resolutionDetails,
+      resolutionData,
+      actor,
+      user,
+      actionCompleted,
+      outcomeType,
+      verificationMethod,
+      closureRemarks,
+      evidence,
+      isException,
+      exceptionReason,
+      exceptionJustification,
+      justification
+    } = options;
+
+    const complaint = await this.complaintRepo.findById(idOrRef);
+    if (!complaint) return null;
+
+    const actingUser = actor || user || null;
+
+    // Check department authority if acting user is an officer
+    if (actingUser && actingUser.role === 'officer') {
+      const officerDept = actingUser.departmentId;
+      const complaintDept = complaint.departmentId || complaint.department;
+      if (officerDept && complaintDept && officerDept !== complaintDept) {
+        // Narrow exception: officer is lead of the parent incident to which this complaint is linked
+        let leadsParentIncident = false;
+        const parentIncId = complaint.incidentId || options.cascadeContext?.incidentId;
+        if (parentIncId && this.incidentRepo) {
+          const inc = await this.incidentRepo.findById(parentIncId);
+          if (
+            inc &&
+            inc.leadDepartment === officerDept &&
+            (complaint.incidentId === inc.id || (Array.isArray(inc.linkedComplaints) && inc.linkedComplaints.includes(complaint.id)))
+          ) {
+            leadsParentIncident = true;
+          }
+        }
+
+        if (!leadsParentIncident) {
+          const err = new Error(
+            `Access denied: officer is not authorized to update status for department '${complaintDept}'`
+          );
+          err.status = 403;
+          err.code = 'FORBIDDEN_DEPARTMENT_MISMATCH';
+          throw err;
+        }
+      }
+    }
+
+    // Lifecycle status transition check
+    const { valid: transitionValid, allowed: allowedTransitions } = validateStatusTransition(complaint.status, status);
+    if (!transitionValid) {
+      const err = new Error(
+        `Invalid status transition from '${complaint.status}' to '${status}'. Allowed transitions: ${allowedTransitions.join(', ')}`
+      );
+      err.status = 400;
+      err.code = 'INVALID_TRANSITION';
+      throw err;
+    }
+
+    const isResolution = (status === COMPLAINT_STATUS.RESOLVED || status === COMPLAINT_STATUS.CLOSED);
+    let persistedResolutionDetails = null;
+
+    if (isResolution) {
+      const rawRes = (resolutionDetails && typeof resolutionDetails === 'object')
+        ? resolutionDetails
+        : (resolutionData && typeof resolutionData === 'object')
+          ? resolutionData
+          : {};
+
+      const isExceptionRequested = Boolean(
+        isException === true ||
+        rawRes.isException === true
+      );
+
+      // Rule: Supervisory exception authorization.
+      // Administrators can approve any valid exception.
+      // Officers are only authorized for DUPLICATE_REFERRED exceptions on complaints
+      // linked to a verified parent incident led by their department.
+      if (isExceptionRequested) {
+        let isAuthorizedException = false;
+        if (actingUser && actingUser.role === 'admin') {
+          isAuthorizedException = true;
+        } else if (actingUser && actingUser.role === 'officer') {
+          const requestedReason = exceptionReason || rawRes.exceptionReason;
+          if (requestedReason === RESOLUTION_EXCEPTION_REASONS.DUPLICATE_REFERRED.code) {
+            const parentIncId = complaint.incidentId || options.cascadeContext?.incidentId;
+            if (parentIncId && this.incidentRepo) {
+              const inc = await this.incidentRepo.findById(parentIncId);
+              if (
+                inc &&
+                inc.leadDepartment === actingUser.departmentId &&
+                (complaint.incidentId === inc.id || (Array.isArray(inc.linkedComplaints) && inc.linkedComplaints.includes(complaint.id)))
+              ) {
+                isAuthorizedException = true;
+              }
+            }
+          }
+        }
+
+        if (!isAuthorizedException) {
+          const err = new Error(
+            'Access denied: supervisory administrative authorization is required to approve a resolution exception'
+          );
+          err.status = 403;
+          err.code = 'FORBIDDEN_EXCEPTION_APPROVAL';
+          throw err;
+        }
+      }
+
+      const candidateResolutionData = {
+        actionCompleted: actionCompleted !== undefined
+          ? actionCompleted
+          : rawRes.actionCompleted,
+        outcomeType: outcomeType || rawRes.outcomeType,
+        verificationMethod: verificationMethod || rawRes.verificationMethod,
+        closureRemarks: closureRemarks || rawRes.closureRemarks || rawRes.remarks || remarks,
+        evidence: Array.isArray(evidence)
+          ? evidence
+          : (Array.isArray(rawRes.evidence) ? rawRes.evidence : []),
+        isException: isExceptionRequested,
+        exceptionReason: exceptionReason || rawRes.exceptionReason,
+        justification: exceptionJustification || justification || rawRes.exceptionJustification || rawRes.justification
+      };
+
+      // Authoritatively invoke the pure validator — NEVER trust caller-supplied valid, score, or checklist
+      const qualityResult = validateResolutionQuality(complaint, candidateResolutionData);
+      if (!qualityResult.valid) {
+        const err = new Error('Resolution quality validation failed');
+        err.status = 400;
+        err.code = 'RESOLUTION_QUALITY_FAILED';
+        err.score = qualityResult.score;
+        err.scoreExplanation = qualityResult.scoreExplanation;
+        err.valid = false;
+        err.missingRequirements = qualityResult.missingRequirements;
+        err.checklist = qualityResult.checklist;
+        err.warnings = qualityResult.warnings || [];
+        err.category = qualityResult.category;
+        err.categoryGuidance = qualityResult.categoryGuidance;
+        throw err;
+      }
+
+      // Construct persisted resolution details strictly from validator output and approved inputs
+      persistedResolutionDetails = {
+        valid: true,
+        score: qualityResult.score,
+        scoreExplanation: qualityResult.scoreExplanation,
+        isException: qualityResult.isException,
+        outcomeType: qualityResult.isException ? null : (candidateResolutionData.outcomeType || null),
+        actionCompleted: qualityResult.isException ? null : (candidateResolutionData.actionCompleted === true),
+        verificationMethod: candidateResolutionData.verificationMethod || (qualityResult.isException ? 'SUPERVISORY_AUDIT' : null),
+        closureRemarks: candidateResolutionData.closureRemarks || null,
+        evidence: Array.isArray(candidateResolutionData.evidence) ? candidateResolutionData.evidence : [],
+        exceptionReason: qualityResult.isException ? qualityResult.exceptionReason : null,
+        exceptionJustification: qualityResult.isException ? qualityResult.justification : null,
+        checklist: qualityResult.checklist,
+        warnings: qualityResult.warnings || [],
+        resolvedAt: new Date().toISOString(),
+        resolvedBy: {
+          userId: actingUser?.id || actingUser?.userId || 'SYSTEM',
+          role: actingUser?.role || 'officer',
+          departmentId: actingUser?.departmentId || null
+        }
+      };
+    }
+
+    // Fix 3: Preserve both operational status remarks and resolution closure remarks without duplicate text
+    let finalRemarks = remarks;
+    if (isResolution && persistedResolutionDetails?.closureRemarks) {
+      const closureRem = String(persistedResolutionDetails.closureRemarks).trim();
+      const opRem = remarks ? String(remarks).trim() : '';
+      if (!opRem) {
+        finalRemarks = closureRem;
+      } else if (!closureRem || opRem === closureRem) {
+        finalRemarks = opRem;
+      } else if (opRem.includes(closureRem)) {
+        finalRemarks = opRem;
+      } else if (closureRem.includes(opRem)) {
+        finalRemarks = closureRem;
+      } else {
+        finalRemarks = `${opRem} — ${closureRem}`;
+      }
+    }
+
+    const updated = await this.complaintRepo.updateStatus(idOrRef, {
+      status,
+      remarks: finalRemarks,
+      actorType: actingUser?.role === 'admin' ? (actorType || 'ADMIN') : (actorType || 'OFFICER'),
+      resolutionDetails: persistedResolutionDetails
+    });
+
     if (!updated) return null;
     return this.enrichWithSlaMetrics(updated);
   }

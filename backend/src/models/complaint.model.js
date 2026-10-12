@@ -198,6 +198,10 @@ const complaintSchema = new mongoose.Schema(
       default: null,
       index: true
     },
+    resolutionDetails: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null
+    },
     lastUpdated: {
       type: Date,
       default: Date.now

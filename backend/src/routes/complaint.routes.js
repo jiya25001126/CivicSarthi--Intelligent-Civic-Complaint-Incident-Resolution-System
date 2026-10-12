@@ -86,7 +86,7 @@ const updateStatusSchema = {
     }),
     remarks: z.string().optional(),
     actorType: z.enum(['OFFICER', 'CITIZEN', 'SYSTEM']).optional()
-  })
+  }).passthrough()
 };
 
 const updateDepartmentSchema = {

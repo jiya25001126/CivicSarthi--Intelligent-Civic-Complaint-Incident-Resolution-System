@@ -127,7 +127,9 @@ export const updateIncidentStatus = async (req, res, next) => {
       overrideIncompleteSubtasks,
       overrideJustification,
       propagateToComplaints,
-      complaintResolutionRemarks
+      complaintResolutionRemarks,
+      resolutionData,
+      complaintResolutions
     } = req.body;
 
     const updated = await incidentService.updateIncidentStatus(
@@ -138,7 +140,9 @@ export const updateIncidentStatus = async (req, res, next) => {
         overrideIncompleteSubtasks,
         overrideJustification,
         propagateToComplaints,
-        complaintResolutionRemarks
+        complaintResolutionRemarks,
+        resolutionData,
+        complaintResolutions
       },
       req.user
     );

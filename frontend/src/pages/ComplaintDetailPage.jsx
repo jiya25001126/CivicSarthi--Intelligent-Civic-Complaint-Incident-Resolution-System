@@ -31,8 +31,24 @@ import {
   AlertCircle,
   Sparkles,
   Link as LinkIcon,
-  Copy
+  Copy,
+  X,
+  Plus,
+  Check,
+  HelpCircle
 } from 'lucide-react';
+import {
+  RESOLUTION_OUTCOME_OPTIONS,
+  VERIFICATION_METHOD_OPTIONS,
+  RESOLUTION_EXCEPTION_REASONS,
+  EVIDENCE_TYPE_OPTIONS,
+  RESOLUTION_THRESHOLDS,
+  CATEGORY_RESOLUTION_POLICIES,
+  isSafeEvidenceReference,
+  formatOutcomeType,
+  formatVerificationMethod,
+  formatExceptionReason
+} from '../constants/resolutionQuality.constants';
 
 export default function ComplaintDetailPage() {
   const { id } = useParams();
@@ -159,10 +175,44 @@ export default function ComplaintDetailPage() {
     loadData();
   }, [id]);
 
+  // Phase 9: Resolution Quality Checker states
+  const [showResolutionModal, setShowResolutionModal] = useState(false);
+  const [resolutionTargetStatus, setResolutionTargetStatus] = useState('');
+  const [outcomeType, setOutcomeType] = useState('REPAIR_COMPLETED');
+  const [verificationMethod, setVerificationMethod] = useState('PHYSICAL_INSPECTION');
+  const [closureRemarks, setClosureRemarks] = useState('');
+  const [evidenceList, setEvidenceList] = useState([]);
+  const [newEvidenceRef, setNewEvidenceRef] = useState('');
+  const [isException, setIsException] = useState(false);
+  const [exceptionReason, setExceptionReason] = useState('CITIZEN_UNRESPONSIVE');
+  const [exceptionJustification, setExceptionJustification] = useState('');
+  const [resolutionSubmitting, setResolutionSubmitting] = useState(false);
+  const [resolutionBackendError, setResolutionBackendError] = useState(null);
+  const [resolutionChecklist, setResolutionChecklist] = useState(null);
+  const [resolutionMissingRequirements, setResolutionMissingRequirements] = useState(null);
+  const [resolutionScore, setResolutionScore] = useState(null);
+  const [resolutionScoreExplanation, setResolutionScoreExplanation] = useState(null);
+  const [resolutionWarnings, setResolutionWarnings] = useState([]);
+
   // Handle status update
   const handleStatusUpdate = async (e) => {
     e.preventDefault();
     if (!newStatus) return;
+
+    // Phase 9: Intercept RESOLVED and CLOSED transitions to require Resolution Quality validation
+    if (newStatus === 'RESOLVED' || newStatus === 'CLOSED') {
+      setResolutionTargetStatus(newStatus);
+      setClosureRemarks(statusRemarks || '');
+      setResolutionBackendError(null);
+      setResolutionChecklist(null);
+      setResolutionMissingRequirements(null);
+      setResolutionScore(null);
+      setResolutionScoreExplanation(null);
+      setResolutionWarnings([]);
+      setShowResolutionModal(true);
+      return;
+    }
+
     try {
       setStatusUpdating(true);
       setStatusMessage(null);
@@ -180,6 +230,85 @@ export default function ComplaintDetailPage() {
     } finally {
       setStatusUpdating(false);
     }
+  };
+
+  // Phase 9: Submit resolution through Resolution Quality Checker
+  const handleSubmitResolution = async (e) => {
+    e.preventDefault();
+    try {
+      setResolutionSubmitting(true);
+      setResolutionBackendError(null);
+      setResolutionChecklist(null);
+      setResolutionMissingRequirements(null);
+      setResolutionWarnings([]);
+
+      const payload = {
+        status: resolutionTargetStatus,
+        remarks: closureRemarks.trim() || statusRemarks.trim(),
+        actorType: 'OFFICER',
+        resolution: {
+          actionCompleted: !isException,
+          outcomeType: isException ? null : outcomeType,
+          verificationMethod: isException ? null : verificationMethod,
+          closureRemarks: closureRemarks.trim(),
+          evidence: isException ? [] : evidenceList,
+          isException: Boolean(isException),
+          exceptionReason: isException ? exceptionReason : null,
+          justification: isException ? exceptionJustification.trim() : null
+        }
+      };
+
+      const res = await updateComplaintStatus(complaint.id, payload);
+      setComplaint(res.data);
+      setShowResolutionModal(false);
+      setStatusMessage({
+        type: 'success',
+        text: `Status successfully updated to ${resolutionTargetStatus} (Compliance Score: ${res.data?.resolutionDetails?.score ?? 100}%)`
+      });
+      setNewStatus('');
+      setStatusRemarks('');
+      setClosureRemarks('');
+      setEvidenceList([]);
+      setExceptionJustification('');
+      setIsException(false);
+    } catch (err) {
+      const data = err.response?.data;
+      if (data?.code === 'RESOLUTION_QUALITY_FAILED') {
+        setResolutionBackendError(data.error || 'Resolution quality validation failed.');
+        setResolutionScore(data.score ?? 0);
+        setResolutionScoreExplanation(data.scoreExplanation || null);
+        setResolutionChecklist(data.checklist || []);
+        setResolutionMissingRequirements(data.missingRequirements || []);
+        setResolutionWarnings(data.warnings || []);
+      } else if (data?.code === 'FORBIDDEN_EXCEPTION_APPROVAL') {
+        setResolutionBackendError(data.error || 'Access denied: supervisory administrative authorization is required to approve a resolution exception.');
+        setResolutionChecklist(null);
+        setResolutionMissingRequirements([
+          {
+            id: 'AUTH_FORBIDDEN',
+            message: data.error || 'Supervisory administrative authorization is required to approve an exception.'
+          }
+        ]);
+        setResolutionScore(0);
+        setResolutionScoreExplanation(null);
+      } else {
+        setResolutionBackendError(err.message || 'Failed to submit resolution.');
+      }
+    } finally {
+      setResolutionSubmitting(false);
+    }
+  };
+
+  const handleAddEvidenceRef = () => {
+    const trimmed = newEvidenceRef.trim();
+    if (!trimmed) return;
+    if (evidenceList.includes(trimmed)) return;
+    setEvidenceList([...evidenceList, trimmed]);
+    setNewEvidenceRef('');
+  };
+
+  const handleRemoveEvidenceRef = (index) => {
+    setEvidenceList(evidenceList.filter((_, i) => i !== index));
   };
 
   // Handle department reassignment
@@ -463,6 +592,119 @@ export default function ComplaintDetailPage() {
         </div>
       </div>
 
+      {/* Official Resolution & Quality Verification Record Card */}
+      {complaint.resolutionDetails && (
+        <div className="p-6 bg-gradient-to-br from-slate-50 to-emerald-50/40 rounded-2xl border-2 border-emerald-600 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-100 pb-3">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 size={22} className="text-emerald-600 shrink-0" />
+              <div>
+                <h2 className="font-bold text-base text-slate-900">
+                  Official Resolution & Quality Verification Record
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Validated under CivicSarthi Phase 9 Resolution Standards
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                {complaint.status}
+              </span>
+              {typeof complaint.resolutionDetails.score === 'number' && (
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-300">
+                  Score: {complaint.resolutionDetails.score}/100
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+            <div className="p-3 bg-white rounded-xl border border-slate-200">
+              <span className="text-slate-500 block mb-0.5">Remediation Outcome</span>
+              <span className="font-bold text-slate-900">
+                {formatOutcomeType(complaint.resolutionDetails.outcomeType)}
+              </span>
+            </div>
+
+            <div className="p-3 bg-white rounded-xl border border-slate-200">
+              <span className="text-slate-500 block mb-0.5">Verification Method</span>
+              <span className="font-bold text-slate-900">
+                {formatVerificationMethod(complaint.resolutionDetails.verificationMethod)}
+              </span>
+            </div>
+
+            <div className="p-3 bg-white rounded-xl border border-slate-200">
+              <span className="text-slate-500 block mb-0.5">Resolution Timestamp</span>
+              <span className="font-bold text-slate-900">
+                {complaint.resolutionDetails.resolvedAt
+                  ? new Date(complaint.resolutionDetails.resolvedAt).toLocaleString('en-IN', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })
+                  : 'Recorded'}
+              </span>
+            </div>
+          </div>
+
+          {complaint.resolutionDetails.closureRemarks && (
+            <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-1">
+              <span className="text-xs font-bold text-slate-700 uppercase tracking-wide block">
+                Official Closure Remarks
+              </span>
+              <p className="text-xs text-slate-800 leading-relaxed font-normal">
+                {complaint.resolutionDetails.closureRemarks}
+              </p>
+            </div>
+          )}
+
+          {/* Supervisory Exception Indicator */}
+          {complaint.resolutionDetails.isException && (
+            <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 space-y-1">
+              <div className="flex items-center gap-1.5 font-bold">
+                <Shield size={14} className="text-amber-700 shrink-0" />
+                <span>Supervisory Procedural Exception Granted: {formatExceptionReason(complaint.resolutionDetails.exceptionReason)}</span>
+              </div>
+              {/* Only exposed in officer mode; never in citizen mode */}
+              {isOfficerMode && complaint.resolutionDetails.exceptionJustification && (
+                <p className="text-[11px] text-amber-800 italic pt-1 border-t border-amber-200">
+                  Justification: {complaint.resolutionDetails.exceptionJustification}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Evidence references: only in officer mode */}
+          {isOfficerMode && Array.isArray(complaint.resolutionDetails.evidence) && complaint.resolutionDetails.evidence.length > 0 && (
+            <div className="space-y-1.5">
+              <span className="text-xs font-bold text-slate-700 uppercase tracking-wide block">
+                Referenced Supporting Evidence
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {complaint.resolutionDetails.evidence.map((ev, idx) => (
+                  <span key={idx} className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 text-xs text-slate-800 font-mono">
+                    {typeof ev === 'object' ? (ev.referenceId || ev.ref || JSON.stringify(ev)) : String(ev)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Resolved by: only in officer mode */}
+          {isOfficerMode && complaint.resolutionDetails.resolvedBy && (
+            <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-200 flex justify-between">
+              <span>Verified by Officer Role: <strong className="text-slate-700 capitalize">{complaint.resolutionDetails.resolvedBy.role || 'Officer'}</strong></span>
+              {complaint.resolutionDetails.resolvedBy.userId && (
+                <span>Officer ID: <strong className="text-slate-700">{complaint.resolutionDetails.resolvedBy.userId}</strong></span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* OFFICER ACTION & REVIEW COCKPIT (Only rendered in Officer Mode or when reviewing) */}
       {isOfficerMode && (
         <div className="bg-white rounded-2xl border-2 border-blue-600 shadow-md p-6 space-y-6">
@@ -688,6 +930,18 @@ export default function ComplaintDetailPage() {
                 </select>
               </div>
 
+              {(newStatus === 'RESOLVED' || newStatus === 'CLOSED') && (
+                <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-lg text-blue-900 text-xs space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <ShieldCheck size={14} className="text-blue-700" />
+                    <span>Phase 9 Resolution Quality Verification Required</span>
+                  </div>
+                  <p className="text-[11px] text-blue-800 leading-snug">
+                    Transitioning to <strong>{newStatus}</strong> enforces verifiable checklist criteria: verified outcome type, inspection method, remediation remarks (&ge;25 chars), and supporting evidence or supervisory exception.
+                  </p>
+                </div>
+              )}
+
               <div>
                 <label className="block text-[11px] font-semibold text-slate-600 mb-1">Action Remarks</label>
                 <input
@@ -702,9 +956,17 @@ export default function ComplaintDetailPage() {
               <button
                 type="submit"
                 disabled={statusUpdating || !newStatus}
-                className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow transition disabled:opacity-50"
+                className={`w-full py-2 text-white rounded-lg text-xs font-semibold shadow transition disabled:opacity-50 ${
+                  newStatus === 'RESOLVED' || newStatus === 'CLOSED'
+                    ? 'bg-emerald-600 hover:bg-emerald-700'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
               >
-                {statusUpdating ? 'Updating Status...' : 'Apply Status Transition'}
+                {statusUpdating
+                  ? 'Updating Status...'
+                  : newStatus === 'RESOLVED' || newStatus === 'CLOSED'
+                  ? `Verify & Resolve Grievance (${newStatus}) →`
+                  : 'Apply Status Transition'}
               </button>
             </form>
 
@@ -803,6 +1065,446 @@ export default function ComplaintDetailPage() {
             ) : (
               <p className="text-xs text-slate-400 italic">No internal notes added yet.</p>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Resolution Quality Modal (Phase 9) */}
+      {showResolutionModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[92vh] overflow-y-auto border border-slate-200 p-6 space-y-5 my-auto animate-in fade-in zoom-in duration-150">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-slate-200 pb-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <ShieldCheck size={20} className="text-blue-600" />
+                  <h2 className="font-bold text-base text-slate-900">
+                    Resolution Quality Verification Desk
+                  </h2>
+                  <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-800">
+                    Target: {resolutionTargetStatus}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Objective, verifiable resolution standards required before grievance closure (Phase 9)
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowResolutionModal(false)}
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Case Context Strip */}
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+              <div>
+                <span className="text-slate-500 block text-[10px]">Case ID</span>
+                <span className="font-mono font-bold text-slate-800">#{complaint.referenceNumber || complaint.id}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[10px]">Category</span>
+                <span className="font-bold text-slate-800 capitalize">{complaint.category}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[10px]">Department</span>
+                <span className="font-bold text-slate-800">{complaint.departmentId || complaint.department}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[10px]">Role Authorized</span>
+                <span className="font-bold text-slate-800 capitalize">{user?.role || 'Officer'}</span>
+              </div>
+            </div>
+
+            {/* Category Policy Guidance Notice */}
+            {(() => {
+              const catPolicy = CATEGORY_RESOLUTION_POLICIES[String(complaint.category || '').toLowerCase()] || {
+                requiresEvidence: false,
+                guidance: 'Standard procedural resolution verification applies.'
+              };
+              return (
+                <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-xl text-xs space-y-1">
+                  <div className="flex items-center justify-between text-blue-900 font-bold">
+                    <span>Department Resolution Policy: {complaint.category}</span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] ${catPolicy.requiresEvidence ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-slate-200 text-slate-700'}`}>
+                      {catPolicy.requiresEvidence ? 'Evidence Mandatory for Repair' : 'Evidence Optional'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-blue-800 leading-relaxed">
+                    {catPolicy.guidance}
+                  </p>
+                </div>
+              );
+            })()}
+
+            {/* Workflow Tabs: Standard Resolution vs Supervisory Exception */}
+            <div className="flex border-b border-slate-200 gap-2">
+              <button
+                type="button"
+                onClick={() => setIsException(false)}
+                className={`pb-2.5 px-3 text-xs font-bold border-b-2 transition flex items-center gap-1.5 ${
+                  !isException
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <CheckCircle2 size={14} />
+                <span>Standard Verified Resolution</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsException(true)}
+                className={`pb-2.5 px-3 text-xs font-bold border-b-2 transition flex items-center gap-1.5 ${
+                  isException
+                    ? 'border-amber-600 text-amber-700'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Shield size={14} />
+                <span>Supervisory Procedural Exception</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitResolution} className="space-y-4">
+              {!isException ? (
+                <>
+                  {/* Field 1: Outcome Type */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Remediation Outcome Type *
+                    </label>
+                    <select
+                      value={outcomeType}
+                      onChange={(e) => setOutcomeType(e.target.value)}
+                      className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    >
+                      {RESOLUTION_OUTCOME_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-slate-500 mt-1 italic">
+                      {RESOLUTION_OUTCOME_OPTIONS.find((o) => o.value === outcomeType)?.description}
+                    </p>
+                    {(outcomeType === 'NO_DEFECT_FOUND' || outcomeType === 'REFERRED_EXTERNAL') && (
+                      <p className="text-[11px] text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-200 mt-1.5 font-medium">
+                        ✓ Supporting physical evidence is waived for this non-repair outcome ({outcomeType}).
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Field 2: Verification Method */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Outcome Verification Method *
+                    </label>
+                    <select
+                      value={verificationMethod}
+                      onChange={(e) => setVerificationMethod(e.target.value)}
+                      className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    >
+                      {VERIFICATION_METHOD_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-slate-500 mt-1 italic">
+                      {VERIFICATION_METHOD_OPTIONS.find((m) => m.value === verificationMethod)?.description}
+                    </p>
+                  </div>
+
+                  {/* Field 3: Closure Remarks */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-slate-700">
+                        Meaningful Closure Remarks * (Min 25 chars)
+                      </label>
+                      <span className={`text-[11px] font-mono font-semibold ${closureRemarks.trim().length >= 25 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                        {closureRemarks.trim().length} / 25 min
+                      </span>
+                    </div>
+                    <textarea
+                      rows={3}
+                      required
+                      value={closureRemarks}
+                      onChange={(e) => setClosureRemarks(e.target.value)}
+                      placeholder="Explain specific remediation steps executed, repairs completed, or inspection findings (minimum 25 characters)..."
+                      className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    />
+                    <div className="flex items-center justify-between text-[11px] mt-1">
+                      <span className={closureRemarks.trim().length >= 25 ? 'text-emerald-700 font-semibold' : 'text-slate-500'}>
+                        {closureRemarks.trim().length >= 25
+                          ? '✓ Minimum character requirement met'
+                          : `⚠️ Need at least ${Math.max(0, 25 - closureRemarks.trim().length)} more characters`}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Field 4: Evidence References */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold text-slate-700">
+                        Supporting Evidence References
+                      </label>
+                      <span className="text-[11px] text-slate-500">
+                        {evidenceList.length} attached
+                      </span>
+                    </div>
+
+                    {/* Added evidence list */}
+                    {evidenceList.length > 0 ? (
+                      <div className="flex flex-wrap gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                        {evidenceList.map((ev, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white text-slate-800 rounded-lg border border-slate-300 text-xs font-mono"
+                          >
+                            <Paperclip size={12} className="text-blue-600" />
+                            <span>{ev}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveEvidenceRef(idx)}
+                              className="text-slate-400 hover:text-rose-600 ml-1"
+                            >
+                              <X size={12} />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-slate-400 italic">No evidence references added yet.</p>
+                    )}
+
+                    {/* Add reference input */}
+                    <div className="space-y-1.5">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newEvidenceRef}
+                          onChange={(e) => setNewEvidenceRef(e.target.value)}
+                          placeholder="Reference tracking string (e.g. PHOTO-2026-001, WO-98214)..."
+                          className="flex-1 px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 font-mono"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddEvidenceRef}
+                          disabled={!newEvidenceRef.trim()}
+                          className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold disabled:opacity-50 flex items-center gap-1"
+                        >
+                          <Plus size={13} />
+                          <span>Attach</span>
+                        </button>
+                      </div>
+
+                      {/* Quick suggestions */}
+                      <div className="flex flex-wrap gap-1.5 text-[10px]">
+                        <span className="text-slate-500 self-center">Prefix presets:</span>
+                        <button
+                          type="button"
+                          onClick={() => setNewEvidenceRef('PHOTO-SITE-CLEARED-')}
+                          className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded border border-slate-200 text-slate-700"
+                        >
+                          + Photo Ref
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNewEvidenceRef('WO-REPAIR-')}
+                          className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded border border-slate-200 text-slate-700"
+                        >
+                          + Work Order
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNewEvidenceRef('INSP-REP-')}
+                          className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded border border-slate-200 text-slate-700"
+                        >
+                          + Inspection Report
+                        </button>
+                      </div>
+
+                      {/* Unsafe path alert */}
+                      {newEvidenceRef.trim().length > 0 && !isSafeEvidenceReference(newEvidenceRef.trim()) && (
+                        <p className="text-[11px] text-rose-600 font-semibold flex items-center gap-1">
+                          <AlertCircle size={12} />
+                          <span>Unsafe reference syntax detected! Local filesystem paths and traversals are strictly prohibited.</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* Supervisory Procedural Exception flow */
+                <div className="space-y-4">
+                  {/* Role Warning / Authorization indicator */}
+                  {isAdmin ? (
+                    <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl text-emerald-900 text-xs flex items-start gap-2">
+                      <ShieldCheck size={16} className="text-emerald-600 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold">Supervisory Administrator Privilege Active: </span>
+                        <span>You have administrative credentials to evaluate and approve supervisory procedural exceptions.</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-amber-900 text-xs flex items-start gap-2">
+                      <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold">Role-Based Authorization Notice: </span>
+                        <span>
+                          You are logged in as Officer (non-admin). General procedural exceptions require Administrator authorization.
+                          The backend will reject unauthorized exceptions with <strong>403 Forbidden</strong> unless this complaint is an incident duplicate cascade.
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Exception Reason */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Exception Reason Code *
+                    </label>
+                    <select
+                      value={exceptionReason}
+                      onChange={(e) => setExceptionReason(e.target.value)}
+                      className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-600"
+                    >
+                      {Object.values(RESOLUTION_EXCEPTION_REASONS).map((r) => (
+                        <option key={r.code} value={r.code}>
+                          {r.label} ({r.code})
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-slate-600 mt-1 italic">
+                      {RESOLUTION_EXCEPTION_REASONS[exceptionReason]?.description}
+                    </p>
+                  </div>
+
+                  {/* Exception Justification */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-slate-700">
+                        Exception Justification * (Min 25 chars)
+                      </label>
+                      <span className={`text-[11px] font-mono font-semibold ${exceptionJustification.trim().length >= 25 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                        {exceptionJustification.trim().length} / 25 min
+                      </span>
+                    </div>
+                    <textarea
+                      rows={3}
+                      required
+                      value={exceptionJustification}
+                      onChange={(e) => setExceptionJustification(e.target.value)}
+                      placeholder="Explain why standard remediation could not be completed and why an administrative exception is legally or operationally justified..."
+                      className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-600"
+                    />
+                    <div className="flex items-center justify-between text-[11px] mt-1">
+                      <span className={exceptionJustification.trim().length >= 25 ? 'text-emerald-700 font-semibold' : 'text-slate-500'}>
+                        {exceptionJustification.trim().length >= 25
+                          ? '✓ Minimum character requirement met'
+                          : `⚠️ Need at least ${Math.max(0, 25 - exceptionJustification.trim().length)} more characters`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Backend Validation Feedback Area */}
+              {resolutionBackendError && (
+                <div className="p-4 bg-rose-50 border border-rose-300 rounded-xl text-xs space-y-3">
+                  <div className="flex items-center justify-between text-rose-800 font-bold">
+                    <div className="flex items-center gap-1.5">
+                      <AlertCircle size={16} className="text-rose-600 shrink-0" />
+                      <span>{resolutionBackendError}</span>
+                    </div>
+                    {typeof resolutionScore === 'number' && (
+                      <span className="px-2 py-0.5 rounded bg-rose-200 text-rose-900 font-mono text-[11px]">
+                        Score: {resolutionScore}/100
+                      </span>
+                    )}
+                  </div>
+
+                  {resolutionScoreExplanation && (
+                    <p className="text-slate-600 text-[11px] italic">
+                      {resolutionScoreExplanation}
+                    </p>
+                  )}
+
+                  {resolutionMissingRequirements && resolutionMissingRequirements.length > 0 && (
+                    <div className="space-y-1 pt-1 border-t border-rose-200">
+                      <span className="font-bold text-rose-900 uppercase text-[10px] tracking-wider block">
+                        Missing Requirements Identified:
+                      </span>
+                      <ul className="list-disc pl-4 space-y-1 text-rose-800">
+                        {resolutionMissingRequirements.map((req, idx) => (
+                          <li key={idx}>{req.message || req.id}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {resolutionChecklist && resolutionChecklist.length > 0 && (
+                    <div className="space-y-1.5 pt-2 border-t border-rose-200">
+                      <span className="font-bold text-slate-800 uppercase text-[10px] tracking-wider block">
+                        Procedural Checklist Breakdown:
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {resolutionChecklist.map((item, idx) => (
+                          <div
+                            key={idx}
+                            className={`p-2 rounded-lg border text-[11px] ${
+                              item.status === 'PASSED'
+                                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                                : 'bg-rose-50/80 border-rose-200 text-rose-900'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between font-bold">
+                              <span>{item.label}</span>
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] ${
+                                item.status === 'PASSED' ? 'bg-emerald-200 text-emerald-800' : 'bg-rose-200 text-rose-800'
+                              }`}>
+                                {item.status} ({item.points}/{item.maxPoints})
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-slate-600 mt-1">{item.details}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {resolutionWarnings && resolutionWarnings.length > 0 && (
+                    <div className="p-2 bg-amber-50 rounded border border-amber-200 text-amber-800 text-[11px]">
+                      {resolutionWarnings.map((w, idx) => (
+                        <p key={idx}>⚠️ {w}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Modal Actions */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setShowResolutionModal(false)}
+                  disabled={resolutionSubmitting}
+                  className="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={resolutionSubmitting}
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow transition disabled:opacity-50 flex items-center gap-2"
+                >
+                  {resolutionSubmitting && <RefreshCw size={13} className="animate-spin" />}
+                  <span>{resolutionSubmitting ? 'Validating Resolution...' : `Validate & Confirm ${resolutionTargetStatus}`}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

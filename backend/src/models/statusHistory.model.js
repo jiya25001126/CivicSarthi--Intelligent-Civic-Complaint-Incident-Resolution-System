@@ -39,6 +39,10 @@ const statusHistorySchema = new mongoose.Schema(
       type: String,
       default: '',
       trim: true
+    },
+    resolutionDetails: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null
     }
   },
   {

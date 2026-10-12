@@ -755,7 +755,14 @@ describe('CivicSarthi Phase 7 Step 2A.1: Incident & Subtask Security & Consisten
           status: INCIDENT_STATUS.RESOLVED,
           resolutionSummary: 'Main feeder valve replaced successfully.',
           propagateToComplaints: true,
-          complaintResolutionRemarks: 'Resolved as part of city valve overhaul.'
+          complaintResolutionRemarks: 'Resolved as part of city valve overhaul.',
+          resolutionData: {
+            actionCompleted: true,
+            outcomeType: 'SERVICE_RESTORED',
+            verificationMethod: 'PHYSICAL_INSPECTION',
+            closureRemarks: 'Main feeder valve replaced and pressure verified on site.',
+            evidence: ['VALVE_OVERHAUL_REPORT_01.PDF']
+          }
         },
         waterOfficer
       );
@@ -774,8 +781,12 @@ describe('CivicSarthi Phase 7 Step 2A.1: Incident & Subtask Security & Consisten
       const updatedComplaint = await testComplaintRepo.findById('CMP-2026-0001');
       assert.strictEqual(updatedComplaint.status, 'RESOLVED');
       const latestHistory = updatedComplaint.statusHistory[updatedComplaint.statusHistory.length - 1];
-      assert.strictEqual(latestHistory.status, 'RESOLVED');
       assert.ok(latestHistory.remarks.includes('Resolved as part of city valve overhaul.'));
+      assert.ok(latestHistory.remarks.includes('Main feeder valve replaced and pressure verified on site.'));
+      assert.strictEqual(updatedComplaint.resolutionDetails.valid, true);
+      assert.strictEqual(updatedComplaint.resolutionDetails.outcomeType, 'SERVICE_RESTORED');
+      assert.strictEqual(updatedComplaint.resolutionDetails.verificationMethod, 'PHYSICAL_INSPECTION');
+      assert.strictEqual(updatedComplaint.resolutionDetails.closureRemarks, 'Main feeder valve replaced and pressure verified on site.');
 
       // Verify audit trail logged with parent incident details
       const auditLogs = await testAuditRepo.findAll({ action: 'COMPLAINT_STATUS_UPDATED' });

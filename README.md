@@ -153,7 +153,7 @@ npm test
 - [ ] **Phase 6: AI complaint intelligence, classification, explainable priority recommendations and duplicate detection** &mdash; Triage recommendations, explainable priority, and deterministic fallbacks.
 - [ ] **Phase 7: Parent incidents and department subtasks** &mdash; Composite crisis clustering (e.g. floods) with parallel cross-department subtask orchestration.
 - [ ] **Phase 8: Neglect Radar and supervisory alerts** &mdash; Loop detection (&ge; 2 reassignments), stall warnings (> 7 days), and proactive supervisor escalation.
-- [ ] **Phase 9: Resolution Quality Checker** &mdash; Resolution checklist validation, evidence requirements, and human-in-the-loop exception handling.
+- [x] **Phase 9: Resolution Quality Checker** &mdash; Resolution checklist validation, evidence requirements, and human-in-the-loop exception handling.
 - [ ] **Phase 10: Citizen resolution feedback, appeals and grievance ratings** &mdash; 1&ndash;5 experience ratings, formal appeal workflows, and audit history preservation.
 - [ ] **Phase 11: Spam/fake complaint detection with human review** &mdash; Deterministic anomaly detection, repetition flags, and human review desk.
 - [ ] **Phase 12: Citizen-initiated clarification requests, reminders and Status Translator** &mdash; Status clarification requests, rate-limited nudges, and plain-language status explanations.

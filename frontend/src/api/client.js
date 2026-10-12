@@ -139,12 +139,8 @@ export async function createComplaint(payload, idempotencyKey = null) {
   return res.data;
 }
 
-export async function updateComplaintStatus(id, { status, remarks, actorType }) {
-  const res = await api.patch(`/complaints/${encodeURIComponent(id)}/status`, {
-    status,
-    remarks,
-    actorType
-  });
+export async function updateComplaintStatus(id, payload) {
+  const res = await api.patch(`/complaints/${encodeURIComponent(id)}/status`, payload);
   return res.data;
 }
 
@@ -308,6 +304,20 @@ export async function provisionAdminUser(payload) {
 
 export async function fetchAdminAuditLogs(params = {}) {
   const res = await api.get('/admin/audit-logs', { params });
+  return res.data;
+}
+
+// ==========================================
+// Neglect Radar & Supervisory Monitoring (Phase 8)
+// ==========================================
+
+export async function fetchNeglectRadar(params = {}) {
+  const res = await api.get('/neglect-radar', { params });
+  return res.data;
+}
+
+export async function fetchNeglectRadarItem(entityType, id) {
+  const res = await api.get(`/neglect-radar/${encodeURIComponent(entityType)}/${encodeURIComponent(id)}`);
   return res.data;
 }
 
