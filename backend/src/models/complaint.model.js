@@ -258,9 +258,11 @@ complaintSchema.pre('validate', function (next) {
   next();
 });
 
-// Compound indexes for optimal search and queue performance
+// Compound indexes for optimal search, queue and analytics reporting performance
 complaintSchema.index({ citizenId: 1, createdAt: -1 });
 complaintSchema.index({ departmentId: 1, status: 1 });
+complaintSchema.index({ departmentId: 1, createdAt: -1 });
+complaintSchema.index({ status: 1, createdAt: -1 });
 complaintSchema.index({ category: 1, createdAt: -1 });
 complaintSchema.index({ createdAt: -1 });
 

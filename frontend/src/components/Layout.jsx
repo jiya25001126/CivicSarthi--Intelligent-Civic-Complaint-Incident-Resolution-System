@@ -17,7 +17,8 @@ import {
   LogOut,
   LogIn,
   UserPlus,
-  RotateCcw
+  RotateCcw,
+  BarChart3
 } from 'lucide-react';
 
 export default function Layout() {
@@ -40,6 +41,7 @@ export default function Layout() {
   const officerNav = [
     { name: 'Officer Cockpit', path: '/officer', icon: LayoutDashboard },
     { name: 'Complaint Triage', path: '/officer/complaints', icon: ListFilter },
+    { name: 'Analytics & Reports', path: '/officer/analytics', icon: BarChart3 },
     { name: 'Spam Review Desk', path: '/officer/spam-review', icon: ShieldCheck },
     { name: 'Appeals Desk', path: '/officer/appeals', icon: ShieldAlert },
     { name: 'Reopening Desk', path: '/officer/reopening-requests', icon: RotateCcw },

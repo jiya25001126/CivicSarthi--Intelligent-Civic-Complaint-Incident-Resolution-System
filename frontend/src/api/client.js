@@ -499,5 +499,42 @@ export async function fetchComplaintStatusExplanation(complaintIdOrRef, params =
   return res.data;
 }
 
+// ==========================================
+// Phase 13: Aggregate Analytics & Reporting Endpoints
+// ==========================================
+
+export async function fetchAnalyticsOverview(params = {}) {
+  const res = await api.get('/analytics/overview', { params });
+  return res.data;
+}
+
+export async function fetchAnalyticsTrends(params = {}) {
+  const res = await api.get('/analytics/trends', { params });
+  return res.data;
+}
+
+export async function fetchAnalyticsDepartments(params = {}) {
+  const res = await api.get('/analytics/departments', { params });
+  return res.data;
+}
+
+export async function fetchAnalyticsCategories(params = {}) {
+  const res = await api.get('/analytics/categories', { params });
+  return res.data;
+}
+
+export async function fetchAnalyticsWorkflow(params = {}) {
+  const res = await api.get('/analytics/workflow', { params });
+  return res.data;
+}
+
+export async function exportAnalyticsReport(params = {}) {
+  const res = await api.get('/analytics/export', {
+    params,
+    responseType: 'blob'
+  });
+  return res;
+}
+
 export { API_BASE_URL };
 export default api;
