@@ -27,8 +27,9 @@
 | **11** | Spam/Fake Complaint Detection & Review | **VERIFIED** | `phase-11-spam-fake-complaint-detection` | `18ef1e6` | [phase11-report.md](file:///docs/phase11-report.md) |
 | **12** | Citizen Clarifications, Reminders & Status Translator | **VERIFIED** | `phase-12-clarification-reminders-status-translator` | `656e503` | [phase12-report.md](file:///docs/phase12-report.md) |
 | **13** | Aggregate Analytics & Reporting | **VERIFIED** | `phase-13-analytics-reporting` | `b9f43ac` | [phase13-report.md](file:///docs/phase13-report.md) |
-| **14** | Security, A11y & Deployment Readiness | *PLANNED* | &mdash; | &mdash; | Scope defined in Roadmap |
+| **14** | Security, A11y & Deployment Readiness | **VERIFIED** | `phase-14-security-accessibility-deployment` | `e518276` | [phase14-report.md](file:///docs/phase14-report.md) |
 | **15** | Voice, Vision & External Integrations | *PLANNED* | &mdash; | &mdash; | Scope defined in Roadmap |
+
 
 ---
 
@@ -146,6 +147,19 @@
   6. Executive frontend analytics dashboard (`AnalyticsDashboardPage.jsx`) with interactive Recharts trends, status and priority charts, and CSV report downloads.
 - **Verification:** Verified via `backend/tests/analytics.test.js` (21 passing tests). Full regression: 409 tests passing across 85 suites (0 failures).
 
+### Phase 14: Security, Accessibility, Testing & Deployment Readiness
+- **Status:** **VERIFIED**
+- **Branch:** `phase-14-security-accessibility-deployment`
+- **Scope:**
+  1. Comprehensive security hardening: Helmet Content Security Policy (`default-src 'self'`), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Permissions-Policy`, Express `x-powered-by` suppression, and configurable `TRUST_PROXY` support.
+  2. Safe multi-origin CORS handling for production domains with graceful rejection of unallowed origins.
+  3. Strict server-side RBAC boundaries and tenant data isolation: cross-citizen inspection denial (`403`), department-scoped mutations and note additions (`403`), and sensitive internal notes / supervisor trails stripping (`sanitizeForCitizen`).
+  4. Public tracking PII protection: strict exclusion of citizen phone, email, name, citizen ID, and internal notes from unauthenticated tracking endpoints.
+  5. WCAG 2.2 AA accessibility overhaul: bypass blocks via `.skip-link`, semantic landmarks (`<main id="main-content">`, `<nav aria-label="...">`), high-contrast `:focus-visible` styling, screen reader status announcements (`role="alert"`, `role="status"`, `aria-label` on all badges), and bilingual English / Hindi (`हिन्दी`) interface toggle.
+  6. Production health checks: dedicated liveness probe (`GET /health/live`, `GET /api/v1/health/live`) and storage readiness probe (`GET /health/ready`, `GET /api/v1/health/ready`).
+  7. Production containerization assets: `backend/Dockerfile` (unprivileged `node` user), `frontend/Dockerfile` (Nginx multi-stage routing), and `docker-compose.yml`.
+- **Verification:** Verified via `backend/tests/securityHardening.test.js` (24 passing tests). Full regression: **433 tests passing across 92 suites (0 failures)**.
+
 ---
 
 ## 3. Global Automated Verification Summary
@@ -159,19 +173,19 @@ Test Runner: Native Node.js Test Runner (node --test)
 Execution Command: npm.cmd test (in /backend)
 Exit Code: 0 (SUCCESS)
 
-Total Test Suites: 85
-Total Tests Executed: 409
-Passed: 409 (100%)
+Total Test Suites: 92
+Total Tests Executed: 433
+Passed: 433 (100%)
 Failed: 0
 Skipped: 0
 Cancelled: 0
-Duration: 7.65 seconds
+Duration: 7.58 seconds
 
 Frontend Build: npm.cmd --prefix frontend run build
 Vite Version: Vite v6.4.4
 Modules Transformed: 2,278
 Build Exit Code: 0 (SUCCESS)
-Build Duration: 7.90 seconds
+Build Duration: 7.76 seconds
 ======================================================================
 ```
 
@@ -184,6 +198,7 @@ Build Duration: 7.90 seconds
    - Live socket connectivity to a running MongoDB instance was not tested because no MongoDB daemon was listening on `localhost:27017` in the local development environment.
 2. **Automated Playwright Browser Driver (UNVERIFIED Automated / 100% Manual Passed):**
    - Playwright automated browser driver download failed due to network CDN restrictions (AzureEdge 404).
-   - Manual browser testing across all portals (Citizen, Officer, Incident Desk, Neglect Radar, Resolution Quality, Appeals Desk, Reopening Desk, Analytics Dashboard) passed 100%.
-3. **Phases 14–15:**
+   - Manual browser testing across all portals (Citizen, Officer, Incident Desk, Neglect Radar, Resolution Quality, Appeals Desk, Reopening Desk, Analytics Dashboard, Accessibility Controls) passed 100%.
+3. **Phase 15:**
    - Clearly documented as *PLANNED* in accordance with the revised 16-phase roadmap.
+

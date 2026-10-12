@@ -32,7 +32,7 @@ export const errorHandler = (err, req, res, next) => {
   if (err.allowed) {
     responseBody.allowed = err.allowed;
   }
-  if (err.details) {
+  if (err.details && (!isProduction || statusCode < 500)) {
     responseBody.details = err.details;
   }
   if (err.code) {
@@ -41,6 +41,7 @@ export const errorHandler = (err, req, res, next) => {
 
   res.status(statusCode).json(responseBody);
 };
+
 
 /**
  * 404 Route Not Found Middleware

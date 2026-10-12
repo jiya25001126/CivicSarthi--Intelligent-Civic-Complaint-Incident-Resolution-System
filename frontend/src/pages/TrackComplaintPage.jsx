@@ -100,11 +100,13 @@ export default function TrackComplaintPage() {
         <form onSubmit={handleFormSubmit} className="flex gap-2">
           <div className="relative flex-1">
             <label htmlFor="track-search-input" className="sr-only">Reference Number</label>
-            <Search size={18} className="absolute left-3.5 top-3.5 text-slate-400" />
+            <Search size={18} className="absolute left-3.5 top-3.5 text-slate-400" aria-hidden="true" />
             <input
               id="track-search-input"
               type="text"
               required
+              aria-required="true"
+              aria-invalid={Boolean(error)}
               placeholder="Enter reference number (e.g. CS-2026-0001)..."
               value={inputQuery}
               onChange={(e) => setInputQuery(e.target.value)}
@@ -114,6 +116,7 @@ export default function TrackComplaintPage() {
           <button
             type="submit"
             disabled={loading}
+            aria-busy={loading}
             className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-sm transition disabled:opacity-50"
           >
             {loading ? 'Searching...' : 'Track Status'}
@@ -123,8 +126,12 @@ export default function TrackComplaintPage() {
 
       {/* Error state */}
       {error && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-xl flex items-center gap-3 text-sm">
-          <AlertCircle size={20} className="shrink-0" />
+        <div
+          role="alert"
+          aria-live="polite"
+          className="bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-xl flex items-center gap-3 text-sm"
+        >
+          <AlertCircle size={20} className="shrink-0" aria-hidden="true" />
           <span>{error}</span>
         </div>
       )}

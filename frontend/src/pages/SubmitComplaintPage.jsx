@@ -287,8 +287,12 @@ export default function SubmitComplaintPage() {
 
       {/* Error state */}
       {error && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-xl flex items-center gap-3 text-sm">
-          <AlertCircle size={20} className="shrink-0" />
+        <div
+          role="alert"
+          aria-live="polite"
+          className="bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-xl flex items-center gap-3 text-sm"
+        >
+          <AlertCircle size={20} className="shrink-0" aria-hidden="true" />
           <span>{error}</span>
         </div>
       )}
