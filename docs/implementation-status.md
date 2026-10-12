@@ -25,7 +25,7 @@
 | **9** | Resolution Quality Checker | **VERIFIED** | `main` | `06f22de` | [phase9-report.md](file:///docs/phase9-report.md) |
 | **10** | Citizen Resolution Feedback & Appeals | **VERIFIED** | `phase-10-citizen-feedback-appeals-ratings` | `d579aed` | [phase10-report.md](file:///docs/phase10-report.md) |
 | **11** | Spam/Fake Complaint Detection & Review | **VERIFIED** | `phase-11-spam-fake-complaint-detection` | `18ef1e6` | [phase11-report.md](file:///docs/phase11-report.md) |
-| **12** | Citizen Clarifications, Reminders & Status Translator | **VERIFIED** | `phase-12-clarification-reminders-status-translator` | pending commit | [phase12-report.md](file:///docs/phase12-report.md) |
+| **12** | Citizen Clarifications, Reminders & Status Translator | **VERIFIED** | `phase-12-clarification-reminders-status-translator` | `c89ccf4` | [phase12-report.md](file:///docs/phase12-report.md) |
 | **13** | Aggregate Analytics & Reporting | *PLANNED* | &mdash; | &mdash; | Scope defined in Roadmap |
 | **14** | Security, A11y & Deployment Readiness | *PLANNED* | &mdash; | &mdash; | Scope defined in Roadmap |
 | **15** | Voice, Vision & External Integrations | *PLANNED* | &mdash; | &mdash; | Scope defined in Roadmap |
@@ -173,5 +173,5 @@ Build Duration: 3.09 seconds
 2. **Automated Playwright Browser Driver (UNVERIFIED Automated / 100% Manual Passed):**
    - Playwright automated browser driver download failed due to network CDN restrictions (AzureEdge 404).
    - Manual browser testing across all portals (Citizen, Officer, Incident Desk, Neglect Radar, Resolution Quality, Appeals Desk, Reopening Desk) passed 100%.
-3. **Phases 11–15:**
+3. **Phases 13–15:**
    - Clearly documented as *PLANNED* in accordance with the revised 16-phase roadmap.
