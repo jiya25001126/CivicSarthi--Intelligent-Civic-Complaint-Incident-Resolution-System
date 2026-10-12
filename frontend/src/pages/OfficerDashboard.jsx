@@ -14,7 +14,8 @@ import {
   Building2,
   CheckCircle2,
   AlertTriangle,
-  ArrowRight
+  ArrowRight,
+  BarChart3
 } from 'lucide-react';
 
 export default function OfficerDashboard() {
@@ -67,6 +68,13 @@ export default function OfficerDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-2.5">
+          <Link
+            to="/officer/analytics"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold shadow-sm transition border border-slate-700"
+          >
+            <BarChart3 size={14} className="text-blue-400" />
+            <span>Analytics & Reports</span>
+          </Link>
           <Link
             to="/officer/complaints"
             className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition"

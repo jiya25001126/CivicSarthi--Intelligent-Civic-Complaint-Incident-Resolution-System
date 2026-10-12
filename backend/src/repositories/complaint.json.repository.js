@@ -242,11 +242,13 @@ export class JsonComplaintRepository {
         priority: complaintData.priority || COMPLAINT_PRIORITY.MEDIUM,
         intelligence: complaintData.intelligence || null,
         duplicateOf: complaintData.duplicateOf || null,
-        createdAt: timestamp,
-        updatedAt: timestamp,
-        lastUpdated: timestamp,
-        reassignments: 0,
-        citizenReminders: 0,
+        createdAt: complaintData.createdAt || timestamp,
+        updatedAt: complaintData.updatedAt || timestamp,
+        lastUpdated: complaintData.lastUpdated || complaintData.updatedAt || timestamp,
+        resolvedAt: complaintData.resolvedAt || null,
+        deadline: complaintData.deadline || null,
+        reassignments: complaintData.reassignments !== undefined ? complaintData.reassignments : 0,
+        citizenReminders: complaintData.citizenReminders !== undefined ? complaintData.citizenReminders : 0,
         evidence: complaintData.evidence || [],
         citizenId: complaintData.citizenId || 'SYNTHETIC_CPGRAMS_DEMO',
         assignedOfficerId: complaintData.assignedOfficerId || null,
@@ -256,7 +258,7 @@ export class JsonComplaintRepository {
         screeningResult: complaintData.screeningResult || null,
         isFlaggedSpam: Boolean(complaintData.isFlaggedSpam),
         spamReviewId: complaintData.spamReviewId || null,
-        statusHistory: [
+        statusHistory: complaintData.statusHistory || [
           {
             timestamp,
             status: complaintData.status || COMPLAINT_STATUS.SUBMITTED,
@@ -264,7 +266,7 @@ export class JsonComplaintRepository {
             remarks: 'Grievance submitted by citizen'
           }
         ],
-        officerNotes: [],
+        officerNotes: complaintData.officerNotes || [],
         synthetic: Boolean(complaintData.synthetic) || false
       };
 

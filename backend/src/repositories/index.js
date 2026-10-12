@@ -11,3 +11,4 @@ export { spamReviewRepository, SpamReviewRepositoryFactory } from './spamReview.
 export { citizenReputationRepository, CitizenReputationRepositoryFactory } from './citizenReputation.repository.js';
 export { clarificationRepository, ClarificationRepositoryFactory } from './clarification.repository.js';
 export { reminderRepository, ReminderRepositoryFactory } from './reminder.repository.js';
+export { analyticsRepository, AnalyticsRepository } from './analytics.repository.js';

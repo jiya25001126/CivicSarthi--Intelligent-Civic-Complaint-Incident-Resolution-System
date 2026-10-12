@@ -25,8 +25,8 @@
 | **9** | Resolution Quality Checker | **VERIFIED** | `main` | `06f22de` | [phase9-report.md](file:///docs/phase9-report.md) |
 | **10** | Citizen Resolution Feedback & Appeals | **VERIFIED** | `phase-10-citizen-feedback-appeals-ratings` | `d579aed` | [phase10-report.md](file:///docs/phase10-report.md) |
 | **11** | Spam/Fake Complaint Detection & Review | **VERIFIED** | `phase-11-spam-fake-complaint-detection` | `18ef1e6` | [phase11-report.md](file:///docs/phase11-report.md) |
-| **12** | Citizen Clarifications, Reminders & Status Translator | **VERIFIED** | `phase-12-clarification-reminders-status-translator` | `c89ccf4` | [phase12-report.md](file:///docs/phase12-report.md) |
-| **13** | Aggregate Analytics & Reporting | *PLANNED* | &mdash; | &mdash; | Scope defined in Roadmap |
+| **12** | Citizen Clarifications, Reminders & Status Translator | **VERIFIED** | `phase-12-clarification-reminders-status-translator` | `656e503` | [phase12-report.md](file:///docs/phase12-report.md) |
+| **13** | Aggregate Analytics & Reporting | **VERIFIED** | `phase-13-analytics-reporting` | `b9f43ac` | [phase13-report.md](file:///docs/phase13-report.md) |
 | **14** | Security, A11y & Deployment Readiness | *PLANNED* | &mdash; | &mdash; | Scope defined in Roadmap |
 | **15** | Voice, Vision & External Integrations | *PLANNED* | &mdash; | &mdash; | Scope defined in Roadmap |
 
@@ -134,6 +134,18 @@
   3. Citizen-friendly vernacular status translator (`StatusTranslatorService`) explaining all official statuses across Meaning, What Happened, Next Steps, and SLA in plain English and Hindi, with deterministic fallback, zero private note leakage, and interactive frontend widget.
 - **Verification:** Verified via `backend/tests/clarification.test.js` (24 passing tests). Full regression: 388 tests passing across 76 suites (0 failures).
 
+### Phase 13: Aggregate Analytics & Reporting
+- **Status:** **VERIFIED**
+- **Branch:** `phase-13-analytics-reporting`
+- **Scope:**
+  1. Role-governed server-side analytics engine (`AnalyticsService` & `analytics.routes.js`) computing real-time overview metrics, resolution rates, statutory SLA compliance rates, and overdue backlogs.
+  2. Historical time-series trend reconstruction (`getTimeSeriesTrends`) analyzing registration velocity, terminal remediations, and open backlog curves over time.
+  3. Departmental performance comparison matrix, sectoral category breakdowns, and PII-stripped geographic distributions (state & district granularity only).
+  4. Operational quality, follow-ups, and cross-phase integrations (Subtasks, Clarifications, Reminders, Feedback ratings, Appeals, and Spam review desk stats).
+  5. Formula-injection-safe CSV export generator with audit logging (`AUDIT_EXPORT`).
+  6. Executive frontend analytics dashboard (`AnalyticsDashboardPage.jsx`) with interactive Recharts trends, status and priority charts, and CSV report downloads.
+- **Verification:** Verified via `backend/tests/analytics.test.js` (21 passing tests). Full regression: 409 tests passing across 85 suites (0 failures).
+
 ---
 
 ## 3. Global Automated Verification Summary
@@ -147,19 +159,19 @@ Test Runner: Native Node.js Test Runner (node --test)
 Execution Command: npm.cmd test (in /backend)
 Exit Code: 0 (SUCCESS)
 
-Total Test Suites: 76
-Total Tests Executed: 388
-Passed: 388 (100%)
+Total Test Suites: 85
+Total Tests Executed: 409
+Passed: 409 (100%)
 Failed: 0
 Skipped: 0
 Cancelled: 0
-Duration: 6.44 seconds
+Duration: 7.65 seconds
 
 Frontend Build: npm.cmd --prefix frontend run build
 Vite Version: Vite v6.4.4
-Modules Transformed: 1,659
+Modules Transformed: 2,278
 Build Exit Code: 0 (SUCCESS)
-Build Duration: 3.09 seconds
+Build Duration: 7.90 seconds
 ======================================================================
 ```
 
@@ -172,6 +184,6 @@ Build Duration: 3.09 seconds
    - Live socket connectivity to a running MongoDB instance was not tested because no MongoDB daemon was listening on `localhost:27017` in the local development environment.
 2. **Automated Playwright Browser Driver (UNVERIFIED Automated / 100% Manual Passed):**
    - Playwright automated browser driver download failed due to network CDN restrictions (AzureEdge 404).
-   - Manual browser testing across all portals (Citizen, Officer, Incident Desk, Neglect Radar, Resolution Quality, Appeals Desk, Reopening Desk) passed 100%.
-3. **Phases 13–15:**
+   - Manual browser testing across all portals (Citizen, Officer, Incident Desk, Neglect Radar, Resolution Quality, Appeals Desk, Reopening Desk, Analytics Dashboard) passed 100%.
+3. **Phases 14–15:**
    - Clearly documented as *PLANNED* in accordance with the revised 16-phase roadmap.

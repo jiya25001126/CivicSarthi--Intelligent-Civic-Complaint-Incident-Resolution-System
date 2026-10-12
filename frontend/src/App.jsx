@@ -20,6 +20,7 @@ import StatusTranslatorPage from './pages/StatusTranslatorPage';
 import AppealManagementPage from './pages/AppealManagementPage';
 import ReopeningManagementPage from './pages/ReopeningManagementPage';
 import SpamReviewPage from './pages/SpamReviewPage';
+import AnalyticsDashboardPage from './pages/AnalyticsDashboardPage';
 
 export default function App() {
   return (
@@ -124,6 +125,22 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['officer', 'admin']}>
                   <SpamReviewPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="officer/analytics"
+              element={
+                <ProtectedRoute allowedRoles={['officer', 'admin']}>
+                  <AnalyticsDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="analytics"
+              element={
+                <ProtectedRoute allowedRoles={['officer', 'admin']}>
+                  <AnalyticsDashboardPage />
                 </ProtectedRoute>
               }
             />
