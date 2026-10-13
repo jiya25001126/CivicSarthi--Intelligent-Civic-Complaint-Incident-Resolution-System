@@ -46,21 +46,21 @@ export const config = {
     mode: (process.env.PERSISTENCE_MODE || (process.env.MONGODB_URI ? 'mongodb' : 'json')).toLowerCase()
   },
   dataPath: {
-    complaints: path.resolve(__dirname, '../../../data/complaints.json'),
-    departments: path.resolve(__dirname, '../../../data/departments.json'),
-    officers: path.resolve(__dirname, '../../../data/officers.json'),
-    incidents: path.resolve(__dirname, '../../../data/incidents.json'),
-    subtasks: path.resolve(__dirname, '../../../data/subtasks.json'),
-    statusHistory: path.resolve(__dirname, '../../../data/status_history.json'),
-    users: path.resolve(__dirname, '../../../data/users.json'),
-    auditLogs: path.resolve(__dirname, '../../../data/audit_logs.json'),
-    feedback: path.resolve(__dirname, '../../../data/feedback.json'),
-    appeals: path.resolve(__dirname, '../../../data/appeals.json'),
-    reopeningRequests: path.resolve(__dirname, '../../../data/reopening_requests.json'),
-    spamReviews: path.resolve(__dirname, '../../../data/spam_reviews.json'),
-    citizenReputations: path.resolve(__dirname, '../../../data/citizen_reputations.json'),
-    clarifications: path.resolve(__dirname, '../../../data/clarifications.json'),
-    reminders: path.resolve(__dirname, '../../../data/reminders.json')
+    complaints: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'complaints.json'),
+    departments: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'departments.json'),
+    officers: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'officers.json'),
+    incidents: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'incidents.json'),
+    subtasks: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'subtasks.json'),
+    statusHistory: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'status_history.json'),
+    users: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'users.json'),
+    auditLogs: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'audit_logs.json'),
+    feedback: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'feedback.json'),
+    appeals: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'appeals.json'),
+    reopeningRequests: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'reopening_requests.json'),
+    spamReviews: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'spam_reviews.json'),
+    citizenReputations: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'citizen_reputations.json'),
+    clarifications: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'clarifications.json'),
+    reminders: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'reminders.json')
   },
   reminders: {
     cooldownHours: Number(process.env.REMINDER_COOLDOWN_HOURS || 24)
