@@ -2054,49 +2054,66 @@ export default function ComplaintDetailPage() {
               </button>
             </form>
 
-            {/* Department Reassignment Control */}
-            <form onSubmit={handleDepartmentReassign} className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
-              <span className="text-xs font-bold text-slate-800 uppercase tracking-wide block">
-                Reassign Department
-              </span>
-              {reassignMessage && (
-                <div className={`p-2.5 rounded-lg text-xs ${reassignMessage.type === 'success' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
-                  {reassignMessage.text}
+            {/* Department Reassignment Control (Admin Gated) */}
+            {isAdmin ? (
+              <form onSubmit={handleDepartmentReassign} className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-800 uppercase tracking-wide block">
+                    Reassign Department
+                  </span>
+                  <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-bold">
+                    Admin Privilege
+                  </span>
                 </div>
-              )}
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-600 mb-1">Target Department *</label>
-                <select
-                  required
-                  value={reassignDeptId}
-                  onChange={(e) => setReassignDeptId(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                {reassignMessage && (
+                  <div className={`p-2.5 rounded-lg text-xs ${reassignMessage.type === 'success' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+                    {reassignMessage.text}
+                  </div>
+                )}
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">Target Department *</label>
+                  <select
+                    required
+                    value={reassignDeptId}
+                    onChange={(e) => setReassignDeptId(e.target.value)}
+                    className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  >
+                    {departments.map((d) => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">Reassignment Rationale</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Jurisdiction falls under municipal drainage division..."
+                    value={reassignRemarks}
+                    onChange={(e) => setReassignRemarks(e.target.value)}
+                    className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={reassigning || reassignDeptId === complaint.departmentId}
+                  className="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow transition disabled:opacity-50"
                 >
-                  {departments.map((d) => (
-                    <option key={d.id} value={d.id}>{d.name}</option>
-                  ))}
-                </select>
+                  {reassigning ? 'Reassigning...' : 'Reassign Grievance'}
+                </button>
+              </form>
+            ) : (
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-1">
+                <span className="font-bold text-slate-800 flex items-center gap-1.5 text-[11px]">
+                  <Lock size={12} className="text-slate-500" />
+                  Department Reassignment
+                </span>
+                <p className="text-[11px] text-slate-500">
+                  Cross-department reassignment requires System Administrator privileges to prevent departmental loop bounces.
+                </p>
               </div>
-
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-600 mb-1">Reassignment Rationale</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Jurisdiction falls under municipal drainage division..."
-                  value={reassignRemarks}
-                  onChange={(e) => setReassignRemarks(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={reassigning || reassignDeptId === complaint.departmentId}
-                className="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow transition disabled:opacity-50"
-              >
-                {reassigning ? 'Reassigning...' : 'Reassign Grievance'}
-              </button>
-            </form>
+            )}
           </div>
 
           {/* Internal Officer Notes Section */}

@@ -134,8 +134,72 @@ export default function LoginPage() {
             </button>
           </form>
 
+          {/* Quick Demo Credentials Panel for Evaluation */}
+          <div className="mt-6 pt-5 border-t border-slate-200">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <UserCheck size={13} className="text-blue-600" aria-hidden="true" />
+                Quick Demo Credentials
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">1-Click Fill</span>
+            </div>
+            <p className="text-[11px] text-slate-500 mb-2.5">
+              Select a persona below to populate pre-configured synthetic demonstration credentials:
+            </p>
+            <div className="grid grid-cols-2 gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('citizen.demo@civicsarthi.internal');
+                  setPassword('DemoUser@2026');
+                  setErrorMessage('');
+                }}
+                className="p-2 text-left rounded-lg bg-slate-50 hover:bg-blue-50 hover:border-blue-300 border border-slate-200 transition text-[11px]"
+              >
+                <span className="font-semibold text-slate-800 block text-[11px]">👤 Demo Citizen</span>
+                <span className="text-[10px] text-slate-500 block truncate">citizen.demo@civicsarthi.internal</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('officer.roads@civicsarthi.internal');
+                  setPassword('DemoUser@2026');
+                  setErrorMessage('');
+                }}
+                className="p-2 text-left rounded-lg bg-slate-50 hover:bg-blue-50 hover:border-blue-300 border border-slate-200 transition text-[11px]"
+              >
+                <span className="font-semibold text-slate-800 block text-[11px]">🚧 Roads Officer</span>
+                <span className="text-[10px] text-slate-500 block truncate">DEPT_ROADS</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('officer.water@civicsarthi.internal');
+                  setPassword('DemoUser@2026');
+                  setErrorMessage('');
+                }}
+                className="p-2 text-left rounded-lg bg-slate-50 hover:bg-blue-50 hover:border-blue-300 border border-slate-200 transition text-[11px]"
+              >
+                <span className="font-semibold text-slate-800 block text-[11px]">💧 Water Officer</span>
+                <span className="text-[10px] text-slate-500 block truncate">DEPT_WATER</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('admin.demo@civicsarthi.internal');
+                  setPassword('DemoUser@2026');
+                  setErrorMessage('');
+                }}
+                className="p-2 text-left rounded-lg bg-slate-50 hover:bg-blue-50 hover:border-blue-300 border border-slate-200 transition text-[11px]"
+              >
+                <span className="font-semibold text-slate-800 block text-[11px]">🛡️ System Admin</span>
+                <span className="text-[10px] text-slate-500 block truncate">Full Platform Scope</span>
+              </button>
+            </div>
+          </div>
+
           {/* Registration Prompt for Citizens */}
-          <div className="mt-6 pt-5 border-t border-slate-100 text-center">
+          <div className="mt-4 pt-4 border-t border-slate-100 text-center">
             <p className="text-xs text-slate-600">
               Need to file a public complaint?{' '}
               <Link to="/register" className="font-semibold text-blue-600 hover:text-blue-800 underline">
@@ -145,7 +209,7 @@ export default function LoginPage() {
           </div>
 
           {/* System Security Notice */}
-          <div className="mt-5 p-3 rounded bg-slate-50 border border-slate-200 text-[11px] text-slate-500 space-y-1">
+          <div className="mt-4 p-3 rounded bg-slate-50 border border-slate-200 text-[11px] text-slate-500 space-y-1">
             <p className="font-semibold text-slate-700 flex items-center gap-1.5">
               <Shield size={12} className="text-blue-600" />
               Role & Access Governance
