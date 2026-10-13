@@ -1,4 +1,4 @@
-import express from 'express';
+import { createRequire } from 'module';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -6,6 +6,20 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DATA_PATH = path.resolve(__dirname, '../data/complaints.json');
+
+/**
+ * Resilient Express Resolution:
+ * Supports isolated backend deployment (e.g. Render with `npm ci --prefix backend`),
+ * monorepo workspace hoisting, and standalone mock-cpgrams installations.
+ */
+const require = createRequire(import.meta.url);
+let express;
+try {
+  express = require('express');
+} catch {
+  const backendRequire = createRequire(new URL('../backend/package.json', import.meta.url));
+  express = backendRequire('express');
+}
 
 /**
  * Isolated mock storage helper for CPGRAMS simulation
