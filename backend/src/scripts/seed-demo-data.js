@@ -472,16 +472,15 @@ export async function runDemoSeed() {
       await connectDatabase();
     }
     if (isConnected()) {
-      const { initializeDemoAccounts } = await import('../services/demoInit.service.js');
-      await initializeDemoAccounts({ forcePasswordSync: true });
+      const forceSync = process.env.FORCE_DEMO_PASSWORD_SYNC === 'true';
+      await initializeDemoAccounts({ force: true, forcePasswordSync: forceSync });
     }
   } catch (mongoErr) {
     console.warn('[Demo Seed Warning] MongoDB demo sync skipped:', mongoErr.message);
   }
 
   console.log('---------------------------------------------------------------');
-  console.log('DEMO ACCOUNTS READY FOR 5-7 MINUTE HACKATHON DEMO:');
-  console.log('Password for all demo accounts: ' + DEMO_PASSWORD_PLAINTEXT);
+  console.log('DEMO ACCOUNTS READY FOR EVALUATION:');
   console.log('  1. Citizen:      citizen.demo@civicsarthi.internal');
   console.log('  2. Roads Officer: officer.roads@civicsarthi.internal (DEPT_ROADS)');
   console.log('  3. Water Officer: officer.water@civicsarthi.internal (DEPT_WATER)');

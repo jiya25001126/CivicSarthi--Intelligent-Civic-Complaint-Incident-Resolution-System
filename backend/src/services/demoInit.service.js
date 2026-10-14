@@ -50,17 +50,34 @@ export const DEMO_ACCOUNTS_FIXTURES = [
 
 /**
  * Idempotent, safe initialization of standard departments and demo accounts.
+ * - Opt-in: requires INITIALIZE_DEMO_ACCOUNTS=true or options.force=true.
+ * - Password requirement: requires DEMO_USER_PASSWORD or DEMO_PASSWORD env variable (no hardcoded fallback).
  * - Preserves all existing citizen and officer records without dropping or resetting collections.
- * - Uses existing bcrypt hashing mechanism and environment-provided password.
- * - Does NOT expose credentials in logs.
+ * - Uses existing bcrypt hashing mechanism (same salt rounds as normal registration).
+ * - Does NOT expose credentials, hashes, or tokens in logs.
  */
 export async function initializeDemoAccounts(options = {}) {
-  const enabled = process.env.INITIALIZE_DEMO_ACCOUNTS !== 'false';
-  if (!enabled && !options.force) {
-    return { initialized: false, reason: 'INITIALIZE_DEMO_ACCOUNTS is disabled' };
+  const isOptedIn =
+    options.force === true ||
+    process.env.INITIALIZE_DEMO_ACCOUNTS === 'true' ||
+    process.env.INITIALIZE_DEMO_ACCOUNTS === '1';
+
+  if (!isOptedIn) {
+    return {
+      initialized: false,
+      reason: 'INITIALIZE_DEMO_ACCOUNTS is not enabled (set INITIALIZE_DEMO_ACCOUNTS=true to opt in)'
+    };
   }
 
-  const demoPassword = process.env.DEMO_USER_PASSWORD || process.env.DEMO_PASSWORD || 'DemoUser@2026';
+  const demoPassword = options.demoPassword || process.env.DEMO_USER_PASSWORD || process.env.DEMO_PASSWORD;
+  if (!demoPassword) {
+    console.log('[CivicSarthi Demo Init] Initialization skipped: no demo password configured in environment.');
+    return {
+      initialized: false,
+      reason: 'DEMO_USER_PASSWORD or DEMO_PASSWORD environment variable is required'
+    };
+  }
+
   const saltRounds = config.auth?.bcryptSaltRounds || 10;
   const passwordHash = await bcrypt.hash(demoPassword, saltRounds);
 
@@ -85,11 +102,15 @@ export async function initializeDemoAccounts(options = {}) {
 
   // 2. Ensure Demo Accounts Exist in User Storage (Non-destructive)
   const results = {
+    initialized: true,
     departmentsEnsured: deptsCreated,
     usersCreated: 0,
     usersPreserved: 0,
     usersUpdated: 0
   };
+
+  const shouldSyncPassword =
+    options.forcePasswordSync === true || process.env.FORCE_DEMO_PASSWORD_SYNC === 'true';
 
   for (const acct of DEMO_ACCOUNTS_FIXTURES) {
     try {
@@ -107,8 +128,7 @@ export async function initializeDemoAccounts(options = {}) {
         });
         results.usersCreated++;
       } else {
-        // If account already exists, preserve it. If forcePasswordSync is true, sync password.
-        if (options.forcePasswordSync || process.env.FORCE_DEMO_PASSWORD_SYNC === 'true') {
+        if (shouldSyncPassword) {
           await userRepository.update(existing.id, {
             passwordHash,
             role: acct.role,

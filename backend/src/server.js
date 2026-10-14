@@ -8,8 +8,13 @@ const app = createApp();
 // Connect to MongoDB if configured, otherwise falls back to JSON file repository
 await connectDatabase();
 
-// Safely ensure standard departments and demo accounts exist (non-destructive)
-await initializeDemoAccounts();
+// Safely invoke demo accounts check (strictly opt-in via INITIALIZE_DEMO_ACCOUNTS=true and DEMO_USER_PASSWORD)
+try {
+  await initializeDemoAccounts();
+} catch (err) {
+  // eslint-disable-next-line no-console
+  console.warn('[CivicSarthi Startup Warning] Demo initialization could not be completed:', err.message);
+}
 
 const server = app.listen(config.port, () => {
   // eslint-disable-next-line no-console
