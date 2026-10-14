@@ -33,6 +33,7 @@ import {
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
 import {
   ArrowLeft,
+  ArrowRight,
   Calendar,
   Clock,
   Shield,
