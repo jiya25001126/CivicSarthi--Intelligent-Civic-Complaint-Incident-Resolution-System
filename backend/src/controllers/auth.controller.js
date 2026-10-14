@@ -2,19 +2,20 @@ import config from '../config/app.config.js';
 import authService from '../services/auth.service.js';
 
 const isProduction = config.env === 'production';
+const sameSitePolicy = process.env.COOKIE_SAME_SITE || (isProduction ? 'none' : 'lax');
 
 export const getCookieOptions = (isSession = true) => ({
   httpOnly: isSession,
-  secure: isProduction,
-  sameSite: 'lax',
+  secure: isProduction || sameSitePolicy === 'none',
+  sameSite: sameSitePolicy,
   path: '/',
   maxAge: 24 * 60 * 60 * 1000 // 24 hours
 });
 
 export const getClearCookieOptions = (isSession = true) => ({
   httpOnly: isSession,
-  secure: isProduction,
-  sameSite: 'lax',
+  secure: isProduction || sameSitePolicy === 'none',
+  sameSite: sameSitePolicy,
   path: '/'
 });
 

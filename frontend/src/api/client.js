@@ -26,8 +26,15 @@ const api = axios.create({
   }
 });
 
-// Request interceptor to attach CSRF token header for state-modifying calls
+// Request interceptor to attach Authorization and CSRF token headers
 api.interceptors.request.use((reqConfig) => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('civicsarthi_token');
+    if (token && !reqConfig.headers['Authorization']) {
+      reqConfig.headers['Authorization'] = `Bearer ${token}`;
+    }
+  }
+
   if (['post', 'put', 'patch', 'delete'].includes(reqConfig.method?.toLowerCase())) {
     const csrfToken = getCookie('civicsarthi_csrf');
     if (csrfToken) {
@@ -65,15 +72,30 @@ api.interceptors.response.use(
 
 export async function login({ email, password }) {
   const res = await api.post('/auth/login', { email, password });
+  if (res.data?.data?.token && typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('civicsarthi_token', res.data.data.token);
+    } catch {}
+  }
   return res.data;
 }
 
 export async function register({ email, password, name }) {
   const res = await api.post('/auth/register', { email, password, name });
+  if (res.data?.data?.token && typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('civicsarthi_token', res.data.data.token);
+    } catch {}
+  }
   return res.data;
 }
 
 export async function logout() {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.removeItem('civicsarthi_token');
+    } catch {}
+  }
   const res = await api.post('/auth/logout');
   return res.data;
 }
