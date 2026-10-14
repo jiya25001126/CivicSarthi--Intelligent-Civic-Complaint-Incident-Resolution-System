@@ -14,7 +14,12 @@ import {
   AlertTriangle,
   ArrowRight,
   TrendingUp,
-  Inbox
+  Inbox,
+  MapPin,
+  Sparkles,
+  Filter,
+  X,
+  Flame
 } from 'lucide-react';
 import { formatOutcomeType } from '../constants/resolutionQuality.constants';
 
@@ -22,6 +27,8 @@ export default function CitizenDashboard() {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filterTab, setFilterTab] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const loadData = async () => {
     try {
@@ -52,15 +59,48 @@ export default function CitizenDashboard() {
   const resolvedCount = complaints.filter(
     (c) => c.status === 'RESOLVED' || c.status === 'CLOSED'
   ).length;
+  const criticalCount = complaints.filter(
+    (c) => c.priority === 'CRITICAL' || c.priority === 'HIGH'
+  ).length;
 
-  const recentComplaints = complaints.slice(0, 6);
+  const hasSynthetic = complaints.some((c) => c.synthetic === true);
+
+  // Apply interactive filter tabs and search query
+  const filteredComplaints = complaints.filter((c) => {
+    if (filterTab === 'TRIAGE' && c.status !== 'SUBMITTED' && c.status !== 'UNDER_REVIEW') return false;
+    if (filterTab === 'ACTIVE' && c.status !== 'ASSIGNED' && c.status !== 'IN_PROGRESS' && c.status !== 'AWAITING_INFORMATION') return false;
+    if (filterTab === 'RESOLVED' && c.status !== 'RESOLVED' && c.status !== 'CLOSED') return false;
+    if (filterTab === 'CRITICAL' && c.priority !== 'CRITICAL' && c.priority !== 'HIGH') return false;
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const ref = (c.referenceNumber || c.id || '').toLowerCase();
+      const title = (c.title || c.text || '').toLowerCase();
+      const desc = (c.description || '').toLowerCase();
+      const cat = (c.category || '').toLowerCase();
+      const dept = (c.departmentId || c.department || '').toLowerCase();
+      const loc = (c.location?.landmark || c.location?.ward || c.locality || '').toLowerCase();
+      if (!ref.includes(q) && !title.includes(q) && !desc.includes(q) && !cat.includes(q) && !dept.includes(q) && !loc.includes(q)) {
+        return false;
+      }
+    }
+    return true;
+  });
 
   return (
     <div className="space-y-6">
       {/* Top Banner & Quick Actions */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Citizen Grievance Portal</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Citizen Grievance Portal</h1>
+            {hasSynthetic && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-200">
+                <Sparkles size={11} className="text-blue-500" />
+                Demo Profile
+              </span>
+            )}
+          </div>
           <p className="text-sm text-slate-600 mt-1">
             Track filed grievances, review department actions, and monitor resolution timelines.
           </p>
@@ -92,9 +132,41 @@ export default function CitizenDashboard() {
         </div>
       </div>
 
-      {/* Stats Cards — strictly derived from authenticated citizen data */}
+      {/* Synthetic Demo Notification Banner (Only when synthetic records are present) */}
+      {hasSynthetic && (
+        <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-sky-50 border border-blue-200/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-700 shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+              <Sparkles size={16} />
+            </div>
+            <div>
+              <span className="font-bold text-slate-900 block text-xs">
+                Interactive Demonstration Grievance Records Loaded
+              </span>
+              <span className="text-slate-600 text-[11px]">
+                Showing 8 synthetic scenarios illustrating grievance intake, department triage, active repairs, citizen clarifications, appeals, and verified resolutions.
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="px-2.5 py-1 rounded-lg bg-white/80 border border-blue-200 text-blue-800 font-semibold text-[11px]">
+              {complaints.length} Records Active
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Stats Cards — interactive filter cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <button
+          type="button"
+          onClick={() => setFilterTab('ALL')}
+          className={`p-5 rounded-2xl border text-left transition ${
+            filterTab === 'ALL'
+              ? 'bg-blue-50/60 border-blue-500 ring-2 ring-blue-500/20 shadow-sm'
+              : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
+          }`}
+        >
           <div className="flex items-center justify-between text-slate-500 mb-2">
             <span className="text-xs font-semibold uppercase">Total Filed</span>
             <FileText size={18} className="text-blue-600" />
@@ -103,9 +175,17 @@ export default function CitizenDashboard() {
             {loading ? '—' : totalCount}
           </div>
           <p className="text-[11px] text-slate-500 mt-1">Grievances registered by you</p>
-        </div>
+        </button>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <button
+          type="button"
+          onClick={() => setFilterTab('TRIAGE')}
+          className={`p-5 rounded-2xl border text-left transition ${
+            filterTab === 'TRIAGE'
+              ? 'bg-amber-50/60 border-amber-500 ring-2 ring-amber-500/20 shadow-sm'
+              : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
+          }`}
+        >
           <div className="flex items-center justify-between text-slate-500 mb-2">
             <span className="text-xs font-semibold uppercase">Pending Triage</span>
             <Clock size={18} className="text-amber-600" />
@@ -114,9 +194,17 @@ export default function CitizenDashboard() {
             {loading ? '—' : triageCount}
           </div>
           <p className="text-[11px] text-slate-500 mt-1">Submitted & initial review</p>
-        </div>
+        </button>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <button
+          type="button"
+          onClick={() => setFilterTab('ACTIVE')}
+          className={`p-5 rounded-2xl border text-left transition ${
+            filterTab === 'ACTIVE'
+              ? 'bg-blue-50/60 border-blue-500 ring-2 ring-blue-500/20 shadow-sm'
+              : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
+          }`}
+        >
           <div className="flex items-center justify-between text-slate-500 mb-2">
             <span className="text-xs font-semibold uppercase">Active Remediation</span>
             <TrendingUp size={18} className="text-blue-600" />
@@ -125,9 +213,17 @@ export default function CitizenDashboard() {
             {loading ? '—' : activeCount}
           </div>
           <p className="text-[11px] text-slate-500 mt-1">Assigned or in progress</p>
-        </div>
+        </button>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <button
+          type="button"
+          onClick={() => setFilterTab('RESOLVED')}
+          className={`p-5 rounded-2xl border text-left transition ${
+            filterTab === 'RESOLVED'
+              ? 'bg-emerald-50/60 border-emerald-500 ring-2 ring-emerald-500/20 shadow-sm'
+              : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
+          }`}
+        >
           <div className="flex items-center justify-between text-slate-500 mb-2">
             <span className="text-xs font-semibold uppercase">Resolved & Closed</span>
             <CheckCircle2 size={18} className="text-emerald-600" />
@@ -136,7 +232,7 @@ export default function CitizenDashboard() {
             {loading ? '—' : resolvedCount}
           </div>
           <p className="text-[11px] text-slate-500 mt-1">Completed by department</p>
-        </div>
+        </button>
       </div>
 
       {/* Error state */}
@@ -157,24 +253,92 @@ export default function CitizenDashboard() {
         </div>
       )}
 
-      {/* Recent Complaints Section */}
+      {/* Complaints Section with Interactive Filter Tabs and Instant Search */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-sm text-slate-800">My Recent Grievances</span>
-            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">
-              {complaints.length} total
-            </span>
-          </div>
-          {complaints.length > 0 && (
-            <Link
-              to="/citizen/complaints"
-              className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-semibold"
+        {/* Controls Bar */}
+        <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
+          {/* Quick Filter Tabs */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setFilterTab('ALL')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                filterTab === 'ALL'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
             >
-              <span>View All</span>
-              <ArrowRight size={13} />
-            </Link>
-          )}
+              All ({totalCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterTab('TRIAGE')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                filterTab === 'TRIAGE'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              Pending Triage ({triageCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterTab('ACTIVE')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                filterTab === 'ACTIVE'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              In Remediation ({activeCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterTab('RESOLVED')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                filterTab === 'RESOLVED'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              Resolved ({resolvedCount})
+            </button>
+            {criticalCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setFilterTab('CRITICAL')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  filterTab === 'CRITICAL'
+                    ? 'bg-rose-600 text-white shadow-xs'
+                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                Critical / High ({criticalCount})
+              </button>
+            )}
+          </div>
+
+          {/* Instant Search Bar */}
+          <div className="relative min-w-[220px]">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search reference, locality, issue..."
+              className="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 placeholder:text-slate-400"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                title="Clear search"
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
         </div>
 
         {loading ? (
@@ -211,6 +375,25 @@ export default function CitizenDashboard() {
               </Link>
             </div>
           </div>
+        ) : filteredComplaints.length === 0 ? (
+          /* Empty state when filtering or searching */
+          <div className="p-10 text-center flex flex-col items-center justify-center space-y-2">
+            <Filter size={24} className="text-slate-400" />
+            <h4 className="text-sm font-bold text-slate-700">No Grievances Match Selected Filter</h4>
+            <p className="text-xs text-slate-500 max-w-sm">
+              No complaint matched &quot;{searchQuery || filterTab}&quot;. Clear your search query or switch filter tabs to view other records.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setFilterTab('ALL');
+                setSearchQuery('');
+              }}
+              className="mt-2 px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition"
+            >
+              Reset Filters
+            </button>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-600">
@@ -218,18 +401,26 @@ export default function CitizenDashboard() {
                 <tr>
                   <th className="px-4 py-3">Reference No</th>
                   <th className="px-4 py-3">Category</th>
-                  <th className="px-6 py-3">Subject</th>
-                  <th className="px-4 py-3">Status</th>
+                  <th className="px-6 py-3">Subject & Locality</th>
+                  <th className="px-3 py-3">Priority</th>
+                  <th className="px-4 py-3">Status & Outcome</th>
                   <th className="px-4 py-3">Filed Date</th>
                   <th className="px-4 py-3">Last Updated</th>
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {recentComplaints.map((item) => (
+                {filteredComplaints.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="px-4 py-3.5 font-bold font-mono text-slate-900 whitespace-nowrap">
-                      {item.referenceNumber || item.id}
+                      <div className="flex items-center gap-1.5">
+                        <span>{item.referenceNumber || item.id}</span>
+                        {item.synthetic && (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                            Demo
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap">
                       <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 font-medium capitalize">
@@ -240,9 +431,20 @@ export default function CitizenDashboard() {
                       <p className="font-semibold text-slate-900 line-clamp-1">
                         {item.title || item.text}
                       </p>
-                      <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
-                        {item.description || item.text}
-                      </p>
+                      <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500">
+                        {(item.location?.landmark || item.location?.ward || item.locality) && (
+                          <span className="inline-flex items-center gap-0.5 text-slate-600 font-medium">
+                            <MapPin size={11} className="text-slate-400" />
+                            {item.location?.landmark || item.location?.ward || item.locality}
+                          </span>
+                        )}
+                        <span className="line-clamp-1 text-slate-400">
+                          {item.description || item.text}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-3.5 whitespace-nowrap">
+                      <PriorityBadge priority={item.priority} />
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap">
                       <div>
