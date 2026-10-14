@@ -18,6 +18,7 @@
     "seed": "npm --prefix backend run seed",
     "seed:reset": "npm --prefix backend run seed:reset",
     "seed:demo": "npm --prefix backend run seed:demo",
+    "init:demo": "npm --prefix backend run init:demo",
     "provision:user": "npm --prefix backend run provision:user --",
     "migrate:mongo": "npm --prefix backend run migrate:mongo",
     "install:all": "npm install --prefix mock-cpgrams && npm install --prefix backend && npm install --prefix frontend"

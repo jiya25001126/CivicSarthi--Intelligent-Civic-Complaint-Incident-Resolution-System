@@ -7,6 +7,8 @@ import { connectDatabase, disconnectDatabase, isConnected } from '../config/data
 import { ComplaintModel } from '../models/complaint.model.js';
 import { DepartmentModel } from '../models/department.model.js';
 import { StatusHistoryModel } from '../models/statusHistory.model.js';
+import { UserModel } from '../models/user.model.js';
+import { initializeDemoAccounts } from '../services/demoInit.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -60,7 +62,8 @@ export async function runMigration(options = {}) {
     dryRun: isDryRun,
     departments: { total: 0, imported: 0, skipped: 0, rejected: 0, errors: [] },
     complaints: { total: 0, imported: 0, skipped: 0, rejected: 0, errors: [] },
-    statusHistory: { total: 0, imported: 0, skipped: 0, rejected: 0, errors: [] }
+    statusHistory: { total: 0, imported: 0, skipped: 0, rejected: 0, errors: [] },
+    users: { total: 0, imported: 0, skipped: 0, rejected: 0, errors: [] }
   };
 
   try {
@@ -200,6 +203,57 @@ export async function runMigration(options = {}) {
       console.log(`[CivicSarthi Migrate] Status History: ${summary.statusHistory.imported} imported, ${summary.statusHistory.skipped} skipped, ${summary.statusHistory.rejected} rejected`);
     } catch (err) {
       console.warn(`[CivicSarthi Migrate Warning] Could not process ${histPath}: ${err.message}`);
+    }
+
+    // 4. Migrate Users
+    const usersPath = path.join(dataDir, 'users.json');
+    try {
+      const rawUsers = await fs.readFile(usersPath, 'utf-8');
+      const parsedUsers = JSON.parse(rawUsers);
+      const userList = Array.isArray(parsedUsers.users) ? parsedUsers.users : [];
+      summary.users.total = userList.length;
+
+      for (const u of userList) {
+        if (!u.email || !u.name || !u.passwordHash) {
+          summary.users.rejected++;
+          summary.users.errors.push(`Invalid user missing email/name/passwordHash: ${JSON.stringify(u)}`);
+          continue;
+        }
+
+        const normalizedEmail = u.email.trim().toLowerCase();
+        const existing = await UserModel.findOne({ email: normalizedEmail });
+
+        if (existing && !isForce) {
+          summary.users.skipped++;
+        } else {
+          if (!isDryRun) {
+            await UserModel.updateOne(
+              { email: normalizedEmail },
+              {
+                $set: {
+                  id: u.id || `USR-${Date.now().toString(36).toUpperCase()}`,
+                  email: normalizedEmail,
+                  name: u.name.trim(),
+                  passwordHash: u.passwordHash,
+                  role: u.role || 'citizen',
+                  departmentId: u.departmentId || null,
+                  isActive: u.isActive !== undefined ? u.isActive : true
+                }
+              },
+              { upsert: true }
+            );
+          }
+          summary.users.imported++;
+        }
+      }
+      console.log(`[CivicSarthi Migrate] Users: ${summary.users.imported} imported, ${summary.users.skipped} skipped, ${summary.users.rejected} rejected`);
+    } catch (err) {
+      console.warn(`[CivicSarthi Migrate Warning] Could not process ${usersPath}: ${err.message}`);
+    }
+
+    // Ensure all demo accounts exist
+    if (!isDryRun) {
+      await initializeDemoAccounts();
     }
 
     console.log('[CivicSarthi Migrate] ============================================');

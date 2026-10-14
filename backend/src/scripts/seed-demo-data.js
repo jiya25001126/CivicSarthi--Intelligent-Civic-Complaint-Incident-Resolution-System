@@ -463,8 +463,21 @@ export async function runDemoSeed() {
       2
     ),
     'utf-8'
-  );
   console.log(`[Demo Seed] Seeded ${demoSpamReviews.length} synthetic spam review records`);
+
+  // If MongoDB is configured/connected, also synchronize demo accounts into MongoDB
+  try {
+    const { isConnected, connectDatabase } = await import('../config/database.js');
+    if (!isConnected() && process.env.MONGODB_URI) {
+      await connectDatabase();
+    }
+    if (isConnected()) {
+      const { initializeDemoAccounts } = await import('../services/demoInit.service.js');
+      await initializeDemoAccounts({ forcePasswordSync: true });
+    }
+  } catch (mongoErr) {
+    console.warn('[Demo Seed Warning] MongoDB demo sync skipped:', mongoErr.message);
+  }
 
   console.log('---------------------------------------------------------------');
   console.log('DEMO ACCOUNTS READY FOR 5-7 MINUTE HACKATHON DEMO:');

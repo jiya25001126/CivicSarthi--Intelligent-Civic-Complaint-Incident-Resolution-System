@@ -3,21 +3,23 @@ import authService from '../services/auth.service.js';
 
 const isProduction = config.env === 'production';
 
-const cookieOptions = {
-  httpOnly: true,
+export const getCookieOptions = (isSession = true) => ({
+  httpOnly: isSession,
   secure: isProduction,
   sameSite: 'lax',
   path: '/',
   maxAge: 24 * 60 * 60 * 1000 // 24 hours
-};
+});
 
-const csrfCookieOptions = {
-  httpOnly: false, // Must be readable by client script to send in x-csrf-token header
+export const getClearCookieOptions = (isSession = true) => ({
+  httpOnly: isSession,
   secure: isProduction,
   sameSite: 'lax',
-  path: '/',
-  maxAge: 24 * 60 * 60 * 1000
-};
+  path: '/'
+});
+
+const cookieOptions = getCookieOptions(true);
+const csrfCookieOptions = getCookieOptions(false);
 
 export const register = async (req, res, next) => {
   try {
@@ -62,19 +64,8 @@ export const login = async (req, res, next) => {
 };
 
 export const logout = (req, res) => {
-  res.clearCookie(config.auth.cookieName, {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: 'lax',
-    path: '/'
-  });
-
-  res.clearCookie(config.auth.csrfCookieName, {
-    httpOnly: false,
-    secure: isProduction,
-    sameSite: 'lax',
-    path: '/'
-  });
+  res.clearCookie(config.auth.cookieName, getClearCookieOptions(true));
+  res.clearCookie(config.auth.csrfCookieName, getClearCookieOptions(false));
 
   res.json({
     success: true,
@@ -97,5 +88,7 @@ export default {
   register,
   login,
   logout,
-  getCurrentUser
+  getCurrentUser,
+  getCookieOptions,
+  getClearCookieOptions
 };

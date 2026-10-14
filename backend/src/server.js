@@ -1,11 +1,15 @@
 import createApp from './app.js';
 import config from './config/app.config.js';
 import { connectDatabase } from './config/database.js';
+import { initializeDemoAccounts } from './services/demoInit.service.js';
 
 const app = createApp();
 
 // Connect to MongoDB if configured, otherwise falls back to JSON file repository
 await connectDatabase();
+
+// Safely ensure standard departments and demo accounts exist (non-destructive)
+await initializeDemoAccounts();
 
 const server = app.listen(config.port, () => {
   // eslint-disable-next-line no-console

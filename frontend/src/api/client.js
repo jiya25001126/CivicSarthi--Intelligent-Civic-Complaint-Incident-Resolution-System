@@ -1,6 +1,15 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+export function resolveApiBaseUrl(configuredUrl, isProd = false) {
+  if (configuredUrl && typeof configuredUrl === 'string' && configuredUrl.trim() !== '') {
+    return configuredUrl.trim().replace(/\/+$/, '');
+  }
+  return isProd ? '' : 'http://localhost:5000';
+}
+
+const envUrl = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_API_URL : undefined;
+const isProduction = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.PROD : false;
+const API_BASE_URL = resolveApiBaseUrl(envUrl, isProduction);
 
 function getCookie(name) {
   if (typeof document === 'undefined') return null;
