@@ -85,11 +85,22 @@ export const getCurrentUser = (req, res) => {
   });
 };
 
+export const getCsrfToken = (req, res) => {
+  const csrfToken = req.cookies?.[config.auth.csrfCookieName] || authService.generateCsrfToken();
+  res.cookie(config.auth.csrfCookieName, csrfToken, csrfCookieOptions);
+
+  res.json({
+    success: true,
+    csrfToken
+  });
+};
+
 export default {
   register,
   login,
   logout,
   getCurrentUser,
+  getCsrfToken,
   getCookieOptions,
   getClearCookieOptions
 };

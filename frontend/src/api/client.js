@@ -30,15 +30,28 @@ const api = axios.create({
 api.interceptors.request.use((reqConfig) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('civicsarthi_token');
-    if (token && !reqConfig.headers['Authorization']) {
-      reqConfig.headers['Authorization'] = `Bearer ${token}`;
+    if (token) {
+      if (typeof reqConfig.headers.set === 'function') {
+        reqConfig.headers.set('Authorization', `Bearer ${token}`);
+      } else {
+        reqConfig.headers['Authorization'] = `Bearer ${token}`;
+      }
     }
   }
 
   if (['post', 'put', 'patch', 'delete'].includes(reqConfig.method?.toLowerCase())) {
-    const csrfToken = getCookie('civicsarthi_csrf');
+    let csrfToken = getCookie('civicsarthi_csrf');
+    if (!csrfToken && typeof window !== 'undefined') {
+      try {
+        csrfToken = localStorage.getItem('civicsarthi_csrf');
+      } catch {}
+    }
     if (csrfToken) {
-      reqConfig.headers['x-csrf-token'] = csrfToken;
+      if (typeof reqConfig.headers.set === 'function') {
+        reqConfig.headers.set('x-csrf-token', csrfToken);
+      } else {
+        reqConfig.headers['x-csrf-token'] = csrfToken;
+      }
     }
   }
   return reqConfig;
@@ -70,11 +83,33 @@ api.interceptors.response.use(
 // Authentication & Session Endpoints
 // ==========================================
 
+export async function fetchCsrfToken() {
+  try {
+    const res = await api.get('/auth/csrf');
+    const csrf = res.data?.csrfToken || res.data?.data?.csrfToken;
+    if (csrf && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('civicsarthi_csrf', csrf);
+      } catch {}
+    }
+    return csrf;
+  } catch (err) {
+    console.warn('Failed to fetch CSRF token:', err.message);
+    return null;
+  }
+}
+
 export async function login({ email, password }) {
   const res = await api.post('/auth/login', { email, password });
-  if (res.data?.data?.token && typeof window !== 'undefined') {
+  if (typeof window !== 'undefined') {
     try {
-      localStorage.setItem('civicsarthi_token', res.data.data.token);
+      if (res.data?.data?.token) {
+        localStorage.setItem('civicsarthi_token', res.data.data.token);
+      }
+      const csrf = res.data?.data?.csrfToken || res.data?.csrfToken;
+      if (csrf) {
+        localStorage.setItem('civicsarthi_csrf', csrf);
+      }
     } catch {}
   }
   return res.data;
@@ -82,9 +117,15 @@ export async function login({ email, password }) {
 
 export async function register({ email, password, name }) {
   const res = await api.post('/auth/register', { email, password, name });
-  if (res.data?.data?.token && typeof window !== 'undefined') {
+  if (typeof window !== 'undefined') {
     try {
-      localStorage.setItem('civicsarthi_token', res.data.data.token);
+      if (res.data?.data?.token) {
+        localStorage.setItem('civicsarthi_token', res.data.data.token);
+      }
+      const csrf = res.data?.data?.csrfToken || res.data?.csrfToken;
+      if (csrf) {
+        localStorage.setItem('civicsarthi_csrf', csrf);
+      }
     } catch {}
   }
   return res.data;
@@ -94,6 +135,7 @@ export async function logout() {
   if (typeof window !== 'undefined') {
     try {
       localStorage.removeItem('civicsarthi_token');
+      localStorage.removeItem('civicsarthi_csrf');
     } catch {}
   }
   const res = await api.post('/auth/logout');
@@ -102,6 +144,12 @@ export async function logout() {
 
 export async function fetchCurrentUser() {
   const res = await api.get('/auth/me');
+  const csrf = res.data?.csrfToken || res.data?.data?.csrfToken;
+  if (csrf && typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('civicsarthi_csrf', csrf);
+    } catch {}
+  }
   return res.data;
 }
 
@@ -165,6 +213,18 @@ export async function createComplaint(payload, idempotencyKey = null) {
   const headers = {};
   if (idempotencyKey) {
     headers['Idempotency-Key'] = idempotencyKey;
+  }
+  let csrf = getCookie('civicsarthi_csrf');
+  if (!csrf && typeof window !== 'undefined') {
+    try {
+      csrf = localStorage.getItem('civicsarthi_csrf');
+    } catch {}
+  }
+  if (!csrf) {
+    csrf = await fetchCsrfToken();
+  }
+  if (csrf) {
+    headers['x-csrf-token'] = csrf;
   }
   const res = await api.post('/complaints', payload, { headers });
   return res.data;

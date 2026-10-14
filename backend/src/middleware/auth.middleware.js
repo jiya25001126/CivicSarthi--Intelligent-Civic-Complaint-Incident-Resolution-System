@@ -6,13 +6,13 @@ import authService from '../services/auth.service.js';
  * Extract token from either HttpOnly session cookie or Authorization Bearer header
  */
 export const extractToken = (req) => {
-  if (req.cookies && req.cookies[config.auth.cookieName]) {
-    return { token: req.cookies[config.auth.cookieName], source: 'cookie' };
-  }
-
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
     return { token: authHeader.substring(7).trim(), source: 'header' };
+  }
+
+  if (req.cookies && req.cookies[config.auth.cookieName]) {
+    return { token: req.cookies[config.auth.cookieName], source: 'cookie' };
   }
 
   return { token: null, source: null };

@@ -317,6 +317,66 @@ describe('CivicSarthi — Public Hackathon Deployment Readiness & Regression Sui
       assert.equal(res.status, 201);
       assert.equal(res.body.success, true);
     });
+
+    it('4.6 dedicated CSRF token endpoint GET /api/v1/auth/csrf returns token and sets cookie', async () => {
+      const res = await request(app).get('/api/v1/auth/csrf');
+      assert.equal(res.status, 200);
+      assert.equal(res.body.success, true);
+      assert.ok(typeof res.body.csrfToken === 'string' && res.body.csrfToken.length >= 16);
+
+      const setCookies = res.headers['set-cookie'] || [];
+      const csrfSetCookie = setCookies.find(c => c.startsWith('civicsarthi_csrf='));
+      assert.ok(csrfSetCookie, 'Must set civicsarthi_csrf cookie');
+      assert.ok(!csrfSetCookie.includes('HttpOnly'), 'civicsarthi_csrf must be accessible to client script');
+    });
+
+    it('4.7 dedicated CSRF token endpoint GET /api/v1/auth/csrf-token alias returns token', async () => {
+      const res = await request(app).get('/api/v1/auth/csrf-token');
+      assert.equal(res.status, 200);
+      assert.equal(res.body.success, true);
+      assert.ok(typeof res.body.csrfToken === 'string' && res.body.csrfToken.length >= 16);
+    });
+
+    it('4.8 permits state-modifying POST request when authenticated via Bearer token AND sending matching x-csrf-token header', async () => {
+      const csrfRes = await request(app).get('/api/v1/auth/csrf');
+      const token = csrfRes.body.csrfToken;
+
+      const res = await request(app)
+        .post('/api/v1/complaints')
+        .set('Authorization', `Bearer ${bearerToken}`)
+        .set('x-csrf-token', token)
+        .send({
+          title: 'Water pipe leak on Market Street',
+          description: 'High pressure drinking water main leaking near vegetable market stalls',
+          category: 'water',
+          departmentId: 'DEPT_WATER',
+          state: 'Maharashtra',
+          district: 'West',
+          locality: 'Market Yard'
+        });
+
+      assert.equal(res.status, 201);
+      assert.equal(res.body.success, true);
+    });
+
+    it('4.9 rejects state-modifying POST request when authenticated via cookie with empty or missing x-csrf-token header with 403', async () => {
+      const res = await request(app)
+        .post('/api/v1/complaints')
+        .set('Cookie', [sessionCookie, csrfCookie])
+        .set('x-csrf-token', '')
+        .send({
+          title: 'Empty CSRF Header Complaint',
+          description: 'This request sends an empty string for x-csrf-token',
+          category: 'roads',
+          departmentId: 'DEPT_ROADS',
+          district: 'Central',
+          locality: 'MG Road'
+        });
+
+      assert.equal(res.status, 403);
+      assert.equal(res.body.success, false);
+      assert.ok(res.body.error.toLowerCase().includes('csrf'));
+    });
   });
 
   describe('5. Cookie SameSite & Security Attributes Configuration', () => {
