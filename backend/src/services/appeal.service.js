@@ -20,6 +20,55 @@ export class AppealService {
   }
 
   /**
+   * Resolves a trusted, consistent department identifier from an entity or user profile.
+   * Rejects missing or conflicting department fields ('departmentId' vs 'department').
+   */
+  _resolveAuthorizedDepartment(entity, entityName = 'resource') {
+    if (!entity) {
+      const err = new Error(`Access denied: ${entityName} is missing or undefined`);
+      err.status = 403;
+      err.code = 'FORBIDDEN_DEPARTMENT_MISMATCH';
+      throw err;
+    }
+
+    const deptId = entity.departmentId ? String(entity.departmentId).trim() : null;
+    const dept = entity.department ? String(entity.department).trim() : null;
+
+    if (!deptId && !dept) {
+      const err = new Error(`Access denied: officer is not authorized for department (${entityName} has no assigned department)`);
+      err.status = 403;
+      err.code = 'FORBIDDEN_DEPARTMENT_MISMATCH';
+      throw err;
+    }
+
+    if (deptId && dept && deptId !== dept) {
+      const err = new Error(`Access denied: ${entityName} has conflicting department fields ('${deptId}' vs '${dept}')`);
+      err.status = 403;
+      err.code = 'FORBIDDEN_DEPARTMENT_MISMATCH';
+      throw err;
+    }
+
+    return deptId || dept;
+  }
+
+  /**
+   * Enforces strict officer department authorization scope against an entity.
+   */
+  _assertOfficerDepartmentScope(user, entity, entityName = 'resource') {
+    if (user.role !== 'officer') return;
+
+    const officerDept = this._resolveAuthorizedDepartment(user, 'officer profile');
+    const resourceDept = this._resolveAuthorizedDepartment(entity, entityName);
+
+    if (officerDept !== resourceDept) {
+      const err = new Error(`Access denied: officer is not authorized for department '${resourceDept}' (outside your authorized department scope)`);
+      err.status = 403;
+      err.code = 'FORBIDDEN_DEPARTMENT_MISMATCH';
+      throw err;
+    }
+  }
+
+  /**
    * Submit formal resolution appeal against a disputed resolution
    */
   async createAppeal(complaintIdOrRef, data = {}, user) {
@@ -173,12 +222,8 @@ export class AppealService {
     }
 
     if (user.role === 'officer') {
-      if (user.departmentId && appeal.departmentId !== user.departmentId) {
-        const err = new Error(`Access denied: appeal belongs to department '${appeal.departmentId}'`);
-        err.status = 403;
-        err.code = 'FORBIDDEN_DEPARTMENT_MISMATCH';
-        throw err;
-      }
+      this._assertOfficerDepartmentScope(user, appeal, 'appeal');
+      return appeal;
     }
 
     return appeal;
@@ -200,6 +245,62 @@ export class AppealService {
   }
 
   /**
+   * List all appeals for a specific complaint with role-based access scoping
+   */
+  async getAppealsForComplaint(complaintIdOrRef, user) {
+    if (!user) {
+      const err = new Error('Authentication required');
+      err.status = 401;
+      err.code = 'UNAUTHORIZED';
+      throw err;
+    }
+
+    const complaint = await this.complaintRepo.findById(complaintIdOrRef);
+    if (!complaint) {
+      const err = new Error('Grievance record not found');
+      err.status = 404;
+      err.code = 'COMPLAINT_NOT_FOUND';
+      throw err;
+    }
+
+    if (user.role === 'citizen') {
+      if (complaint.citizenId !== user.id) {
+        const err = new Error('Access denied: you can only view appeals for complaints you filed');
+        err.status = 403;
+        err.code = 'FORBIDDEN_COMPLAINT_OWNER';
+        throw err;
+      }
+      let list = await this.appealRepo.findAll({ complaintId: complaint.id });
+      if (list.length === 0 && complaint.referenceNumber && complaint.referenceNumber !== complaint.id) {
+        list = await this.appealRepo.findAll({ complaintId: complaint.referenceNumber });
+      }
+      return list.map((a) => this.sanitizeForCitizen(a));
+    }
+
+    if (user.role === 'officer') {
+      this._assertOfficerDepartmentScope(user, complaint, 'complaint');
+      let list = await this.appealRepo.findAll({ complaintId: complaint.id });
+      if (list.length === 0 && complaint.referenceNumber && complaint.referenceNumber !== complaint.id) {
+        list = await this.appealRepo.findAll({ complaintId: complaint.referenceNumber });
+      }
+      return list;
+    }
+
+    if (user.role === 'admin') {
+      let list = await this.appealRepo.findAll({ complaintId: complaint.id });
+      if (list.length === 0 && complaint.referenceNumber && complaint.referenceNumber !== complaint.id) {
+        list = await this.appealRepo.findAll({ complaintId: complaint.referenceNumber });
+      }
+      return list;
+    }
+
+    const err = new Error(`Access denied: role '${user.role}' is not authorized`);
+    err.status = 403;
+    err.code = 'FORBIDDEN_ROLE';
+    throw err;
+  }
+
+  /**
    * List appeals for authorized officer review desk or admin oversight
    */
   async listAppeals(filters = {}, user) {
@@ -212,7 +313,8 @@ export class AppealService {
 
     const queryFilters = { ...filters };
     if (user.role === 'officer') {
-      queryFilters.departmentId = user.departmentId;
+      const officerDept = this._resolveAuthorizedDepartment(user, 'officer profile');
+      queryFilters.departmentId = officerDept;
     }
 
     return this.appealRepo.findAll(queryFilters);
@@ -237,11 +339,8 @@ export class AppealService {
       throw err;
     }
 
-    if (user.role === 'officer' && user.departmentId && appeal.departmentId !== user.departmentId) {
-      const err = new Error(`Access denied: appeal belongs to department '${appeal.departmentId}'`);
-      err.status = 403;
-      err.code = 'FORBIDDEN_DEPARTMENT_MISMATCH';
-      throw err;
+    if (user.role === 'officer') {
+      this._assertOfficerDepartmentScope(user, appeal, 'appeal');
     }
 
     const updated = await this.appealRepo.updateStatus(appeal.id, {
@@ -284,11 +383,8 @@ export class AppealService {
       throw err;
     }
 
-    if (user.role === 'officer' && user.departmentId && appeal.departmentId !== user.departmentId) {
-      const err = new Error(`Access denied: appeal belongs to department '${appeal.departmentId}'`);
-      err.status = 403;
-      err.code = 'FORBIDDEN_DEPARTMENT_MISMATCH';
-      throw err;
+    if (user.role === 'officer') {
+      this._assertOfficerDepartmentScope(user, appeal, 'appeal');
     }
 
     const cleanNote = String(note || '').trim();
@@ -321,11 +417,8 @@ export class AppealService {
       throw err;
     }
 
-    if (user.role === 'officer' && user.departmentId && appeal.departmentId !== user.departmentId) {
-      const err = new Error(`Access denied: appeal belongs to department '${appeal.departmentId}'`);
-      err.status = 403;
-      err.code = 'FORBIDDEN_DEPARTMENT_MISMATCH';
-      throw err;
+    if (user.role === 'officer') {
+      this._assertOfficerDepartmentScope(user, appeal, 'appeal');
     }
 
     const finalOutcome = outcome || decision;
@@ -396,12 +489,59 @@ export class AppealService {
   }
 
   /**
-   * Sanitizes appeal for citizen viewing (scrubs internal officer review notes)
+   * Sanitizes appeal for citizen viewing with an explicit citizen-safe projection.
+   * Strips internal reviewer metadata, confidential officer notes, and private employee identifiers.
    */
   sanitizeForCitizen(appeal) {
     if (!appeal) return null;
-    const { internalNotes, ...safe } = appeal;
-    return safe;
+    const plain = typeof appeal.toObject === 'function' ? appeal.toObject() : (appeal._doc ? { ...appeal._doc } : { ...appeal });
+
+    let safeDecision = null;
+    if (plain.decision) {
+      if (typeof plain.decision === 'object') {
+        const d = typeof plain.decision.toObject === 'function' ? plain.decision.toObject() : plain.decision;
+        safeDecision = {
+          outcome: d.outcome || null,
+          reason: d.reason || d.citizenExplanation || null,
+          decidedAt: d.decidedAt || null
+        };
+      } else {
+        safeDecision = plain.decision;
+      }
+    }
+
+    const safeStatusHistory = Array.isArray(plain.statusHistory)
+      ? plain.statusHistory.map((entry) => {
+          const item = typeof entry?.toObject === 'function' ? entry.toObject() : { ...entry };
+          return {
+            status: item.status,
+            timestamp: item.timestamp,
+            remarks: item.remarks || '',
+            actorRole: item.actorRole || 'system'
+          };
+        })
+      : [];
+
+    const explanation = plain.citizenExplanation || plain.explanation || '';
+
+    return {
+      id: plain.id,
+      referenceNumber: plain.referenceNumber || plain.id,
+      complaintId: plain.complaintId,
+      complaintReference: plain.complaintReference || plain.complaintId,
+      requesterId: plain.requesterId,
+      departmentId: plain.departmentId || plain.department || null,
+      reasonCategory: plain.reasonCategory,
+      explanation,
+      citizenExplanation: explanation,
+      evidence: Array.isArray(plain.evidence) ? plain.evidence : (plain.supportingEvidence || []),
+      resolutionMilestone: String(plain.resolutionMilestone || '1'),
+      status: plain.status,
+      statusHistory: safeStatusHistory,
+      decision: safeDecision,
+      createdAt: plain.createdAt,
+      updatedAt: plain.updatedAt
+    };
   }
 }
 

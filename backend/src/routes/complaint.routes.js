@@ -27,8 +27,8 @@ import {
 import { COMPLAINT_STATUS, COMPLAINT_PRIORITY } from '../constants/status.constants.js';
 import { APPEAL_REASONS, REOPENING_REASONS } from '../constants/feedback.constants.js';
 import { submitFeedback, getComplaintFeedback } from '../controllers/feedback.controller.js';
-import { createAppeal } from '../controllers/appeal.controller.js';
-import { createReopeningRequest } from '../controllers/reopening.controller.js';
+import { createAppeal, getComplaintAppeals } from '../controllers/appeal.controller.js';
+import { createReopeningRequest, getComplaintReopeningRequests } from '../controllers/reopening.controller.js';
 import { createClarification, getComplaintClarifications } from '../controllers/clarification.controller.js';
 import { requestReminder, checkReminderEligibility, getComplaintReminders } from '../controllers/reminder.controller.js';
 import { getStatusExplanation } from '../controllers/statusTranslator.controller.js';
@@ -242,7 +242,9 @@ router.post('/:id/notes', authenticate, requireRole('officer', 'admin'), validat
 router.post('/:id/feedback', authenticate, validate(submitFeedbackSchema), submitFeedback);
 router.get('/:id/feedback', authenticate, validate(getComplaintSchema), getComplaintFeedback);
 router.post('/:id/appeals', authenticate, validate(createAppealNestedSchema), createAppeal);
+router.get('/:id/appeals', authenticate, validate(getComplaintSchema), getComplaintAppeals);
 router.post('/:id/reopening-requests', authenticate, validate(createReopeningNestedSchema), createReopeningRequest);
+router.get('/:id/reopening-requests', authenticate, validate(getComplaintSchema), getComplaintReopeningRequests);
 
 // Phase 12: Citizen Clarification & Reminder Endpoints
 router.post('/:id/clarifications', authenticate, requireRole('citizen'), validate(createClarificationNestedSchema), createClarification);

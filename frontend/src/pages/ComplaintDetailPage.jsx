@@ -13,6 +13,7 @@ import {
   submitComplaintFeedback,
   getComplaintFeedback,
   submitComplaintAppeal,
+  fetchComplaintAppeals,
   fetchAppeals,
   updateAppealStatus,
   addAppealNote,
@@ -122,6 +123,10 @@ export default function ComplaintDetailPage() {
   const [feedbackList, setFeedbackList] = useState([]);
   const [appealsList, setAppealsList] = useState([]);
   const [reopeningsList, setReopeningsList] = useState([]);
+  const [appealsLoading, setAppealsLoading] = useState(false);
+  const [appealLoadError, setAppealLoadError] = useState(null);
+  const [reopeningsLoading, setReopeningsLoading] = useState(false);
+  const [reopeningLoadError, setReopeningLoadError] = useState(null);
 
   const [feedbackRating, setFeedbackRating] = useState(5);
   const [feedbackComments, setFeedbackComments] = useState('');
@@ -174,13 +179,21 @@ export default function ComplaintDetailPage() {
     try {
       setLoading(true);
       setError(null);
-      const [compRes, deptsRes] = await Promise.all([
+      const [compRes, deptsRes] = await Promise.allSettled([
         fetchComplaintById(id),
         fetchDepartments()
       ]);
-      const comp = compRes.data;
+
+      if (compRes.status === 'rejected') {
+        throw new Error(compRes.reason?.message || 'Failed to load grievance details');
+      }
+
+      const comp = compRes.value?.data || compRes.value;
       setComplaint(comp);
-      setDepartments(deptsRes.data || []);
+
+      const depts = deptsRes.status === 'fulfilled' ? (deptsRes.value?.data || deptsRes.value || []) : [];
+      setDepartments(Array.isArray(depts) ? depts : []);
+
       if (comp) {
         setReassignDeptId(comp.departmentId || comp.department || '');
         setNewPriority(comp.priority || 'MEDIUM');
@@ -201,25 +214,44 @@ export default function ComplaintDetailPage() {
         }
       }
 
-      // Phase 10: Fetch feedback, appeals, and reopening requests for this complaint
-      try {
-        const [fbRes, appRes, reopRes] = await Promise.allSettled([
-          getComplaintFeedback(id),
-          fetchAppeals({ complaintId: id }),
-          fetchComplaintReopenings(id)
-        ]);
-        if (fbRes.status === 'fulfilled' && fbRes.value?.data) {
-          setFeedbackList(fbRes.value.data);
-        }
-        if (appRes.status === 'fulfilled' && appRes.value?.data) {
-          setAppealsList(appRes.value.data);
-        }
-        if (reopRes.status === 'fulfilled' && reopRes.value?.data) {
-          setReopeningsList(reopRes.value.data);
-        }
-      } catch (p10Err) {
-        console.warn('Phase 10 data load notice:', p10Err.message);
+      // Phase 10: Fetch feedback, appeals, and reopening requests independently
+      setAppealsLoading(true);
+      setAppealLoadError(null);
+      setReopeningsLoading(true);
+      setReopeningLoadError(null);
+
+      const [fbRes, appRes, reopRes] = await Promise.allSettled([
+        getComplaintFeedback(id),
+        fetchComplaintAppeals(id),
+        fetchComplaintReopenings(id)
+      ]);
+
+      if (fbRes.status === 'fulfilled') {
+        const val = fbRes.value?.data ?? fbRes.value;
+        setFeedbackList(Array.isArray(val) ? val : (val ? [val] : []));
       }
+
+      if (appRes.status === 'fulfilled') {
+        const val = appRes.value?.data ?? appRes.value;
+        setAppealsList(Array.isArray(val) ? val : []);
+        setAppealLoadError(null);
+      } else {
+        const errMsg = appRes.reason?.response?.data?.error || appRes.reason?.message || 'Failed to load appeals';
+        console.warn('Appeals load failed:', errMsg);
+        setAppealLoadError(errMsg);
+      }
+      setAppealsLoading(false);
+
+      if (reopRes.status === 'fulfilled') {
+        const val = reopRes.value?.data ?? reopRes.value;
+        setReopeningsList(Array.isArray(val) ? val : []);
+        setReopeningLoadError(null);
+      } else {
+        const errMsg = reopRes.reason?.response?.data?.error || reopRes.reason?.message || 'Failed to load reopening requests';
+        console.warn('Reopenings load failed:', errMsg);
+        setReopeningLoadError(errMsg);
+      }
+      setReopeningsLoading(false);
 
       // Phase 12: Fetch clarifications, reminder eligibility & status explanation
       try {
@@ -278,6 +310,7 @@ export default function ComplaintDetailPage() {
       });
       setAppealMessage({ type: 'success', text: `Appeal submitted successfully (Ref: ${res.data.referenceNumber || res.data.id}).` });
       setAppealsList(prev => [...prev, res.data]);
+      setAppealLoadError(null);
       setShowAppealForm(false);
       setAppealExplanation('');
       setAppealEvidence('');
@@ -299,6 +332,7 @@ export default function ComplaintDetailPage() {
       });
       setReopeningMessage({ type: 'success', text: `Reopening request lodged successfully (ID: ${res.data.id}). Awaiting supervisor review.` });
       setReopeningsList(prev => [...prev, res.data]);
+      setReopeningLoadError(null);
       setShowReopeningForm(false);
       setReopeningExplanation('');
     } catch (err) {
@@ -1514,7 +1548,16 @@ export default function ComplaintDetailPage() {
         </div>
 
         {/* Existing Appeals List */}
-        {appealsList.length > 0 ? (
+        {appealsLoading ? (
+          <div className="p-4 text-center text-slate-500 text-xs">
+            <RefreshCw size={14} className="animate-spin inline mr-1 text-purple-600" />
+            Loading appeals history...
+          </div>
+        ) : appealLoadError ? (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+            Unable to load appeal history at this time ({appealLoadError}).
+          </div>
+        ) : appealsList.length > 0 ? (
           <div className="space-y-3">
             {appealsList.map((appeal) => (
               <div key={appeal.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
@@ -1537,18 +1580,18 @@ export default function ComplaintDetailPage() {
                 </div>
 
                 <p className="text-slate-800 italic bg-white p-2.5 rounded-lg border border-slate-100">
-                  "{appeal.citizenExplanation}"
+                  "{appeal.citizenExplanation || appeal.explanation}"
                 </p>
 
                 {appeal.decision && (
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-[11px] space-y-1">
                     <div className="flex items-center justify-between font-bold text-blue-900">
-                      <span>Adjudication Verdict: {appeal.decision}</span>
-                      <span>Decided: {new Date(appeal.decidedAt).toLocaleDateString('en-IN')}</span>
+                      <span>Adjudication Verdict: {typeof appeal.decision === 'object' ? appeal.decision.outcome : appeal.decision}</span>
+                      <span>Decided: {new Date(appeal.decision?.decidedAt || appeal.decidedAt || appeal.updatedAt).toLocaleDateString('en-IN')}</span>
                     </div>
-                    {appeal.citizenExplanationDecision && (
+                    {(appeal.decision?.reason || appeal.citizenExplanationDecision) && (
                       <p className="text-blue-800">
-                        {appeal.citizenExplanationDecision}
+                        {appeal.decision?.reason || appeal.citizenExplanationDecision}
                       </p>
                     )}
                   </div>
@@ -1672,14 +1715,23 @@ export default function ComplaintDetailPage() {
         </div>
 
         {/* Existing Reopening Requests */}
-        {reopeningsList.length > 0 ? (
+        {reopeningsLoading ? (
+          <div className="p-4 text-center text-slate-500 text-xs">
+            <RefreshCw size={14} className="animate-spin inline mr-1 text-rose-600" />
+            Loading reopening history...
+          </div>
+        ) : reopeningLoadError ? (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+            Unable to load reopening history at this time ({reopeningLoadError}).
+          </div>
+        ) : reopeningsList.length > 0 ? (
           <div className="space-y-3">
             {reopeningsList.map((req) => (
               <div key={req.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="font-mono font-bold text-rose-700">
-                      #{req.id}
+                      #{req.referenceNumber || req.id}
                     </span>
                     <span className="px-2 py-0.5 rounded bg-slate-200 text-slate-700 text-[10px] font-bold">
                       {req.reasonCategory}
@@ -1695,18 +1747,18 @@ export default function ComplaintDetailPage() {
                 </div>
 
                 <p className="text-slate-800 italic bg-white p-2.5 rounded-lg border border-slate-100">
-                  "{req.citizenExplanation}"
+                  "{req.citizenExplanation || req.explanation}"
                 </p>
 
                 {req.decision && (
                   <div className="p-3 bg-slate-100 border border-slate-200 rounded-lg text-[11px] space-y-1">
                     <div className="flex items-center justify-between font-bold text-slate-900">
-                      <span>Supervisor Verdict: {req.decision}</span>
-                      <span>Decided: {new Date(req.decidedAt).toLocaleDateString('en-IN')}</span>
+                      <span>Supervisor Verdict: {typeof req.decision === 'object' ? req.decision.outcome : req.decision}</span>
+                      <span>Decided: {new Date(req.decision?.decidedAt || req.decidedAt || req.updatedAt).toLocaleDateString('en-IN')}</span>
                     </div>
-                    {req.decisionReason && (
+                    {(req.decision?.reason || req.decisionReason) && (
                       <p className="text-slate-700">
-                        Reason: {req.decisionReason}
+                        Reason: {req.decisionReason || req.decision?.reason}
                       </p>
                     )}
                   </div>

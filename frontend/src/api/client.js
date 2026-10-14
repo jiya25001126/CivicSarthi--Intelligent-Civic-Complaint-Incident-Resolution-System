@@ -442,6 +442,11 @@ export async function submitComplaintAppeal(complaintId, payload) {
   return res.data;
 }
 
+export async function fetchComplaintAppeals(complaintId) {
+  const res = await api.get(`/complaints/${encodeURIComponent(complaintId)}/appeals`);
+  return res.data;
+}
+
 export async function fetchMyAppeals() {
   const res = await api.get('/appeals/my');
   return res.data;

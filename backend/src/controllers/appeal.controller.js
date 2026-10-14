@@ -99,3 +99,15 @@ export const recordAppealDecision = async (req, res, next) => {
     next(err);
   }
 };
+
+export const getComplaintAppeals = async (req, res, next) => {
+  try {
+    const list = await appealService.getAppealsForComplaint(req.params.id, req.user);
+    res.json({
+      success: true,
+      data: list
+    });
+  } catch (err) {
+    next(err);
+  }
+};

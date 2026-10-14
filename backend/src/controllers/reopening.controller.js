@@ -61,3 +61,15 @@ export const recordReopeningDecision = async (req, res, next) => {
     next(err);
   }
 };
+
+export const getComplaintReopeningRequests = async (req, res, next) => {
+  try {
+    const list = await reopeningService.getReopeningRequestsForComplaint(req.params.id, req.user);
+    res.json({
+      success: true,
+      data: list
+    });
+  } catch (err) {
+    next(err);
+  }
+};
