@@ -100,6 +100,9 @@ export class JsonAppealRepository {
 
       const id = data.id || this.generateAppealId(list);
       const referenceNumber = data.referenceNumber || this.generateAppealReference(list);
+      const requesterId = data.requesterId || data.citizenId;
+      const citizenId = data.citizenId || data.requesterId;
+      const complaintReference = data.complaintReference || data.complaintId;
       const now = new Date().toISOString();
 
       const initialStatus = data.status || APPEAL_STATUS.SUBMITTED;
@@ -107,7 +110,7 @@ export class JsonAppealRepository {
         {
           status: initialStatus,
           timestamp: now,
-          actorId: data.requesterId || 'SYSTEM',
+          actorId: requesterId || 'SYSTEM',
           actorRole: 'citizen',
           remarks: 'Appeal officially registered by citizen complainant'
         }
@@ -117,6 +120,9 @@ export class JsonAppealRepository {
         ...data,
         id,
         referenceNumber,
+        requesterId,
+        citizenId,
+        complaintReference,
         status: initialStatus,
         statusHistory: initialHistory,
         internalNotes: data.internalNotes || [],
@@ -146,18 +152,29 @@ export class JsonAppealRepository {
     let list = fileData.appeals || [];
 
     if (filters.complaintId) {
+      const targetCmp = String(filters.complaintId).trim().toLowerCase();
       list = list.filter(
-        (a) => a.complaintId === filters.complaintId || a.complaintReference === filters.complaintId
+        (a) =>
+          (a.complaintId && a.complaintId.toLowerCase() === targetCmp) ||
+          (a.complaintReference && a.complaintReference.toLowerCase() === targetCmp)
       );
     }
-    if (filters.requesterId) {
-      list = list.filter((a) => a.requesterId === filters.requesterId || a.citizenId === filters.requesterId);
+    const requester = filters.requesterId || filters.citizenId;
+    if (requester) {
+      const targetReq = String(requester).trim().toLowerCase();
+      list = list.filter(
+        (a) =>
+          (a.requesterId && a.requesterId.toLowerCase() === targetReq) ||
+          (a.citizenId && a.citizenId.toLowerCase() === targetReq)
+      );
     }
     if (filters.departmentId && filters.departmentId !== 'ALL') {
-      list = list.filter((a) => a.departmentId === filters.departmentId);
+      const targetDept = String(filters.departmentId).trim().toUpperCase();
+      list = list.filter((a) => a.departmentId && a.departmentId.toUpperCase() === targetDept);
     }
     if (filters.status && filters.status !== 'ALL') {
-      list = list.filter((a) => a.status === filters.status);
+      const targetStatus = String(filters.status).trim().toUpperCase();
+      list = list.filter((a) => a.status && a.status.toUpperCase() === targetStatus);
     }
     if (filters.assignedReviewerId) {
       list = list.filter((a) => a.assignedReviewerId === filters.assignedReviewerId);

@@ -46,12 +46,22 @@ describe('CivicSarthi Phase 3 Authentication, Sessions & RBAC Security Tests', (
     complaintRepository.setFilePath(TEST_COMPLAINTS_PATH);
     auditLogRepository.setFilePath(TEST_AUDIT_PATH);
 
-    // Initialize clean test complaints fixture
-    const initialComplaints = {
-      metadata: { synthetic: false, total: 0 },
-      complaints: []
-    };
-    await fs.writeFile(TEST_COMPLAINTS_PATH, JSON.stringify(initialComplaints, null, 2), 'utf-8');
+    // Initialize clean test fixtures
+    await fs.writeFile(
+      TEST_USERS_PATH,
+      JSON.stringify({ metadata: { total: 0 }, users: [] }, null, 2),
+      'utf-8'
+    );
+    await fs.writeFile(
+      TEST_COMPLAINTS_PATH,
+      JSON.stringify({ metadata: { synthetic: false, total: 0 }, complaints: [] }, null, 2),
+      'utf-8'
+    );
+    await fs.writeFile(
+      TEST_AUDIT_PATH,
+      JSON.stringify({ metadata: { total: 0 }, logs: [] }, null, 2),
+      'utf-8'
+    );
 
     // Create Admin user via provisioning service
     const adminUser = await authService.provisionUser({
@@ -617,5 +627,11 @@ describe('CivicSarthi Phase 3 Authentication, Sessions & RBAC Security Tests', (
     const complaintRecord = await complaintRepository.findById(testRef);
     assert.ok(complaintRecord, 'Complaint record must exist in repository');
     assert.equal(complaintRecord.departmentId, 'DEPT_ROADS', 'Complaint department must remain DEPT_ROADS');
+  });
+
+  after(async () => {
+    if (typeof userRepository.resetFilePath === 'function') userRepository.resetFilePath();
+    if (typeof complaintRepository.resetFilePath === 'function') complaintRepository.resetFilePath();
+    if (typeof auditLogRepository.resetFilePath === 'function') auditLogRepository.resetFilePath();
   });
 });

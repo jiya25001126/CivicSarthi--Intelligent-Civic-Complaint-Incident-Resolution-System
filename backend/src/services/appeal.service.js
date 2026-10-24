@@ -41,7 +41,14 @@ export class AppealService {
       throw err;
     }
 
-    if (deptId && dept && deptId !== dept) {
+    // If both exist, only throw conflict if both are explicit DEPT_ codes and differ
+    if (
+      deptId &&
+      dept &&
+      deptId.toUpperCase().startsWith('DEPT_') &&
+      dept.toUpperCase().startsWith('DEPT_') &&
+      deptId.toUpperCase() !== dept.toUpperCase()
+    ) {
       const err = new Error(`Access denied: ${entityName} has conflicting department fields ('${deptId}' vs '${dept}')`);
       err.status = 403;
       err.code = 'FORBIDDEN_DEPARTMENT_MISMATCH';
@@ -60,7 +67,7 @@ export class AppealService {
     const officerDept = this._resolveAuthorizedDepartment(user, 'officer profile');
     const resourceDept = this._resolveAuthorizedDepartment(entity, entityName);
 
-    if (officerDept !== resourceDept) {
+    if (String(officerDept).trim().toUpperCase() !== String(resourceDept).trim().toUpperCase()) {
       const err = new Error(`Access denied: officer is not authorized for department '${resourceDept}' (outside your authorized department scope)`);
       err.status = 403;
       err.code = 'FORBIDDEN_DEPARTMENT_MISMATCH';
@@ -170,6 +177,7 @@ export class AppealService {
       complaintId: complaint.id,
       complaintReference: complaint.referenceNumber || complaint.id,
       requesterId: user.id,
+      citizenId: user.id,
       departmentId: complaint.departmentId || complaint.department || 'DEPT_MUNICIPAL',
       reasonCategory,
       explanation: cleanExplanation,
