@@ -4,10 +4,19 @@ import { fileURLToPath } from 'url';
 import mongoose from 'mongoose';
 import config from '../config/app.config.js';
 import { connectDatabase, disconnectDatabase, isConnected } from '../config/database.js';
-import { ComplaintModel } from '../models/complaint.model.js';
-import { DepartmentModel } from '../models/department.model.js';
-import { StatusHistoryModel } from '../models/statusHistory.model.js';
-import { UserModel } from '../models/user.model.js';
+import {
+  ComplaintModel,
+  DepartmentModel,
+  StatusHistoryModel,
+  UserModel,
+  AppealModel,
+  ReopeningRequestModel,
+  SpamReviewModel,
+  IncidentModel,
+  SubtaskModel,
+  CitizenReputationModel,
+  FeedbackModel
+} from '../models/index.js';
 import { initializeDemoAccounts } from '../services/demoInit.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -63,7 +72,14 @@ export async function runMigration(options = {}) {
     departments: { total: 0, imported: 0, skipped: 0, rejected: 0, errors: [] },
     complaints: { total: 0, imported: 0, skipped: 0, rejected: 0, errors: [] },
     statusHistory: { total: 0, imported: 0, skipped: 0, rejected: 0, errors: [] },
-    users: { total: 0, imported: 0, skipped: 0, rejected: 0, errors: [] }
+    users: { total: 0, imported: 0, skipped: 0, rejected: 0, errors: [] },
+    appeals: { total: 0, imported: 0, skipped: 0, rejected: 0, errors: [] },
+    reopeningRequests: { total: 0, imported: 0, skipped: 0, rejected: 0, errors: [] },
+    spamReviews: { total: 0, imported: 0, skipped: 0, rejected: 0, errors: [] },
+    incidents: { total: 0, imported: 0, skipped: 0, rejected: 0, errors: [] },
+    subtasks: { total: 0, imported: 0, skipped: 0, rejected: 0, errors: [] },
+    feedback: { total: 0, imported: 0, skipped: 0, rejected: 0, errors: [] },
+    citizenReputations: { total: 0, imported: 0, skipped: 0, rejected: 0, errors: [] }
   };
 
   try {
@@ -73,6 +89,13 @@ export async function runMigration(options = {}) {
       await DepartmentModel.deleteMany({});
       await ComplaintModel.deleteMany({});
       await StatusHistoryModel.deleteMany({});
+      await AppealModel.deleteMany({});
+      await ReopeningRequestModel.deleteMany({});
+      await SpamReviewModel.deleteMany({});
+      await IncidentModel.deleteMany({});
+      await SubtaskModel.deleteMany({});
+      await FeedbackModel.deleteMany({});
+      await CitizenReputationModel.deleteMany({});
     }
 
     // 1. Migrate Departments
@@ -249,6 +272,350 @@ export async function runMigration(options = {}) {
       console.log(`[CivicSarthi Migrate] Users: ${summary.users.imported} imported, ${summary.users.skipped} skipped, ${summary.users.rejected} rejected`);
     } catch (err) {
       console.warn(`[CivicSarthi Migrate Warning] Could not process ${usersPath}: ${err.message}`);
+    }
+
+    // 5. Migrate Appeals
+    const appealsPath = path.join(dataDir, 'appeals.json');
+    try {
+      const rawAppeals = await fs.readFile(appealsPath, 'utf-8');
+      const parsedAppeals = JSON.parse(rawAppeals);
+      const appealList = Array.isArray(parsedAppeals.appeals) ? parsedAppeals.appeals : [];
+      summary.appeals.total = appealList.length;
+
+      for (const a of appealList) {
+        if (!a.id || !a.complaintId) {
+          summary.appeals.rejected++;
+          summary.appeals.errors.push(`Invalid appeal missing id/complaintId: ${JSON.stringify(a)}`);
+          continue;
+        }
+
+        const existing = await AppealModel.findOne({
+          $or: [{ id: a.id }, { referenceNumber: a.referenceNumber || a.id }]
+        });
+
+        if (existing && !isForce) {
+          summary.appeals.skipped++;
+        } else {
+          if (!isDryRun) {
+            const requester = a.requesterId || a.citizenId || 'UNKNOWN';
+            const compRef = a.complaintReference || a.referenceNumber || a.complaintId;
+            const refNum = a.referenceNumber && a.referenceNumber.startsWith('APP-') ? a.referenceNumber : a.id;
+            await AppealModel.updateOne(
+              { id: a.id },
+              {
+                $set: {
+                  id: a.id,
+                  referenceNumber: refNum,
+                  complaintId: a.complaintId,
+                  complaintReference: compRef,
+                  requesterId: requester,
+                  citizenId: requester,
+                  citizenName: a.citizenName || 'Citizen',
+                  departmentId: a.departmentId,
+                  reasonCategory: a.reasonCategory,
+                  status: a.status || 'SUBMITTED',
+                  explanation: a.explanation || '',
+                  evidence: a.evidence || [],
+                  statusHistory: a.statusHistory || [],
+                  internalNotes: a.internalNotes || [],
+                  decision: a.decision || null,
+                  createdAt: a.createdAt || new Date(),
+                  updatedAt: a.updatedAt || new Date()
+                }
+              },
+              { upsert: true }
+            );
+          }
+          summary.appeals.imported++;
+        }
+      }
+      console.log(`[CivicSarthi Migrate] Appeals: ${summary.appeals.imported} imported, ${summary.appeals.skipped} skipped, ${summary.appeals.rejected} rejected`);
+    } catch (err) {
+      console.warn(`[CivicSarthi Migrate Warning] Could not process ${appealsPath}: ${err.message}`);
+    }
+
+    // 6. Migrate Controlled Reopening Requests
+    const reopeningPath = path.join(dataDir, 'reopening_requests.json');
+    try {
+      const rawReopen = await fs.readFile(reopeningPath, 'utf-8');
+      const parsedReopen = JSON.parse(rawReopen);
+      const reopenList = Array.isArray(parsedReopen.reopeningRequests) ? parsedReopen.reopeningRequests : [];
+      summary.reopeningRequests.total = reopenList.length;
+
+      for (const r of reopenList) {
+        if (!r.id || !r.complaintId) {
+          summary.reopeningRequests.rejected++;
+          summary.reopeningRequests.errors.push(`Invalid reopening request missing id/complaintId: ${JSON.stringify(r)}`);
+          continue;
+        }
+
+        const existing = await ReopeningRequestModel.findOne({
+          $or: [{ id: r.id }, { referenceNumber: r.referenceNumber || r.id }]
+        });
+
+        if (existing && !isForce) {
+          summary.reopeningRequests.skipped++;
+        } else {
+          if (!isDryRun) {
+            const requester = r.requesterId || r.citizenId || 'UNKNOWN';
+            const compRef = r.complaintReference || r.complaintId;
+            const refNum = r.referenceNumber || r.id;
+            await ReopeningRequestModel.updateOne(
+              { id: r.id },
+              {
+                $set: {
+                  id: r.id,
+                  referenceNumber: refNum,
+                  complaintId: r.complaintId,
+                  complaintReference: compRef,
+                  requesterId: requester,
+                  citizenId: requester,
+                  citizenName: r.citizenName || 'Citizen',
+                  departmentId: r.departmentId,
+                  reasonCategory: r.reasonCategory,
+                  explanation: r.explanation || '',
+                  status: r.status || 'PENDING_REVIEW',
+                  statusHistory: r.statusHistory || [],
+                  decision: r.decision || null,
+                  createdAt: r.createdAt || new Date(),
+                  updatedAt: r.updatedAt || new Date()
+                }
+              },
+              { upsert: true }
+            );
+          }
+          summary.reopeningRequests.imported++;
+        }
+      }
+      console.log(`[CivicSarthi Migrate] Reopening Requests: ${summary.reopeningRequests.imported} imported, ${summary.reopeningRequests.skipped} skipped, ${summary.reopeningRequests.rejected} rejected`);
+    } catch (err) {
+      console.warn(`[CivicSarthi Migrate Warning] Could not process ${reopeningPath}: ${err.message}`);
+    }
+
+    // 7. Migrate Spam Reviews
+    const spamPath = path.join(dataDir, 'spam_reviews.json');
+    try {
+      const rawSpam = await fs.readFile(spamPath, 'utf-8');
+      const parsedSpam = JSON.parse(rawSpam);
+      const spamList = Array.isArray(parsedSpam.spamReviews) ? parsedSpam.spamReviews : [];
+      summary.spamReviews.total = spamList.length;
+
+      for (const s of spamList) {
+        if (!s.id || !s.complaintId) {
+          summary.spamReviews.rejected++;
+          summary.spamReviews.errors.push(`Invalid spam review missing id/complaintId: ${JSON.stringify(s)}`);
+          continue;
+        }
+
+        const existing = await SpamReviewModel.findOne({ id: s.id });
+
+        if (existing && !isForce) {
+          summary.spamReviews.skipped++;
+        } else {
+          if (!isDryRun) {
+            const statusNorm = s.reviewStatus === 'PENDING_REVIEW' ? 'PENDING' : (s.reviewStatus || 'PENDING');
+            const compRef = s.complaintReference || s.referenceNumber || s.complaintId;
+            const reasonsNorm = s.reasons || s.screeningReasons || [];
+            const scoreNorm = typeof s.score === 'number' ? s.score : (s.screeningScore || 50);
+
+            await SpamReviewModel.updateOne(
+              { id: s.id },
+              {
+                $set: {
+                  id: s.id,
+                  complaintId: s.complaintId,
+                  complaintReference: compRef,
+                  referenceNumber: compRef,
+                  citizenId: s.citizenId || 'UNKNOWN',
+                  departmentId: s.departmentId || 'GENERAL',
+                  riskLevel: s.riskLevel || 'MEDIUM',
+                  score: scoreNorm,
+                  reasons: reasonsNorm,
+                  explanations: s.explanations || reasonsNorm,
+                  reviewStatus: statusNorm,
+                  decision: s.decision || null,
+                  reviewHistory: s.reviewHistory || [],
+                  evaluatedAt: s.evaluatedAt || new Date(),
+                  createdAt: s.createdAt || new Date(),
+                  updatedAt: s.updatedAt || new Date()
+                }
+              },
+              { upsert: true }
+            );
+          }
+          summary.spamReviews.imported++;
+        }
+      }
+      console.log(`[CivicSarthi Migrate] Spam Reviews: ${summary.spamReviews.imported} imported, ${summary.spamReviews.skipped} skipped, ${summary.spamReviews.rejected} rejected`);
+    } catch (err) {
+      console.warn(`[CivicSarthi Migrate Warning] Could not process ${spamPath}: ${err.message}`);
+    }
+
+    // 8. Migrate Incidents
+    const incidentsPath = path.join(dataDir, 'incidents.json');
+    try {
+      const rawInc = await fs.readFile(incidentsPath, 'utf-8');
+      const parsedInc = JSON.parse(rawInc);
+      const incList = Array.isArray(parsedInc.incidents) ? parsedInc.incidents : [];
+      summary.incidents.total = incList.length;
+
+      for (const inc of incList) {
+        if (!inc.id || !inc.title) {
+          summary.incidents.rejected++;
+          summary.incidents.errors.push(`Invalid incident missing id/title: ${JSON.stringify(inc)}`);
+          continue;
+        }
+
+        const existing = await IncidentModel.findOne({ id: inc.id });
+
+        if (existing && !isForce) {
+          summary.incidents.skipped++;
+        } else {
+          if (!isDryRun) {
+            await IncidentModel.updateOne(
+              { id: inc.id },
+              {
+                $set: {
+                  id: inc.id,
+                  title: inc.title.trim(),
+                  description: inc.description || inc.title,
+                  category: (inc.category || 'general').toLowerCase(),
+                  priority: inc.priority || 'MEDIUM',
+                  status: inc.status || 'ACTIVE',
+                  leadDepartment: inc.leadDepartment || 'DEPT_DISASTER',
+                  participatingDepartments: inc.participatingDepartments || [],
+                  linkedComplaints: inc.linkedComplaints || [],
+                  location: inc.location || { locality: '', district: 'Pune', state: 'Maharashtra' },
+                  synthetic: inc.synthetic || false,
+                  createdAt: inc.createdAt || new Date(),
+                  updatedAt: inc.updatedAt || new Date()
+                }
+              },
+              { upsert: true }
+            );
+          }
+          summary.incidents.imported++;
+        }
+      }
+      console.log(`[CivicSarthi Migrate] Incidents: ${summary.incidents.imported} imported, ${summary.incidents.skipped} skipped, ${summary.incidents.rejected} rejected`);
+    } catch (err) {
+      console.warn(`[CivicSarthi Migrate Warning] Could not process ${incidentsPath}: ${err.message}`);
+    }
+
+    // 9. Migrate Subtasks
+    const subtasksPath = path.join(dataDir, 'subtasks.json');
+    try {
+      const rawSub = await fs.readFile(subtasksPath, 'utf-8');
+      const parsedSub = JSON.parse(rawSub);
+      const subList = Array.isArray(parsedSub.subtasks) ? parsedSub.subtasks : [];
+      summary.subtasks.total = subList.length;
+
+      for (const sub of subList) {
+        if (!sub.id || !sub.incidentId || !sub.title) {
+          summary.subtasks.rejected++;
+          summary.subtasks.errors.push(`Invalid subtask missing id/incidentId/title: ${JSON.stringify(sub)}`);
+          continue;
+        }
+
+        const existing = await SubtaskModel.findOne({ id: sub.id });
+
+        if (existing && !isForce) {
+          summary.subtasks.skipped++;
+        } else {
+          if (!isDryRun) {
+            await SubtaskModel.updateOne(
+              { id: sub.id },
+              {
+                $set: {
+                  id: sub.id,
+                  incidentId: sub.incidentId,
+                  complaintId: sub.complaintId || null,
+                  title: sub.title.trim(),
+                  department: sub.department,
+                  officerId: sub.officerId || sub.assignedOfficerId || null,
+                  assignedOfficerId: sub.assignedOfficerId || sub.officerId || null,
+                  status: sub.status || 'PENDING',
+                  dueDate: sub.dueDate || null,
+                  synthetic: sub.synthetic || false,
+                  createdAt: sub.createdAt || new Date(),
+                  updatedAt: sub.updatedAt || new Date()
+                }
+              },
+              { upsert: true }
+            );
+          }
+          summary.subtasks.imported++;
+        }
+      }
+      console.log(`[CivicSarthi Migrate] Subtasks: ${summary.subtasks.imported} imported, ${summary.subtasks.skipped} skipped, ${summary.subtasks.rejected} rejected`);
+    } catch (err) {
+      console.warn(`[CivicSarthi Migrate Warning] Could not process ${subtasksPath}: ${err.message}`);
+    }
+
+    // 10. Migrate Feedback
+    const feedbackPath = path.join(dataDir, 'feedback.json');
+    try {
+      const rawFb = await fs.readFile(feedbackPath, 'utf-8');
+      const parsedFb = JSON.parse(rawFb);
+      const fbList = Array.isArray(parsedFb.feedback) ? parsedFb.feedback : [];
+      summary.feedback.total = fbList.length;
+
+      for (const fb of fbList) {
+        if (!fb.id || !fb.complaintId) {
+          summary.feedback.rejected++;
+          continue;
+        }
+
+        const existing = await FeedbackModel.findOne({ id: fb.id });
+        if (existing && !isForce) {
+          summary.feedback.skipped++;
+        } else {
+          if (!isDryRun) {
+            await FeedbackModel.updateOne(
+              { id: fb.id },
+              { $set: fb },
+              { upsert: true }
+            );
+          }
+          summary.feedback.imported++;
+        }
+      }
+      console.log(`[CivicSarthi Migrate] Feedback: ${summary.feedback.imported} imported, ${summary.feedback.skipped} skipped, ${summary.feedback.rejected} rejected`);
+    } catch (err) {
+      console.warn(`[CivicSarthi Migrate Warning] Could not process ${feedbackPath}: ${err.message}`);
+    }
+
+    // 11. Migrate Citizen Reputations
+    const repPath = path.join(dataDir, 'citizen_reputations.json');
+    try {
+      const rawRep = await fs.readFile(repPath, 'utf-8');
+      const parsedRep = JSON.parse(rawRep);
+      const repList = Array.isArray(parsedRep.reputations) ? parsedRep.reputations : [];
+      summary.citizenReputations.total = repList.length;
+
+      for (const rep of repList) {
+        if (!rep.citizenId) {
+          summary.citizenReputations.rejected++;
+          continue;
+        }
+
+        const existing = await CitizenReputationModel.findOne({ citizenId: rep.citizenId });
+        if (existing && !isForce) {
+          summary.citizenReputations.skipped++;
+        } else {
+          if (!isDryRun) {
+            await CitizenReputationModel.updateOne(
+              { citizenId: rep.citizenId },
+              { $set: rep },
+              { upsert: true }
+            );
+          }
+          summary.citizenReputations.imported++;
+        }
+      }
+      console.log(`[CivicSarthi Migrate] Citizen Reputations: ${summary.citizenReputations.imported} imported, ${summary.citizenReputations.skipped} skipped, ${summary.citizenReputations.rejected} rejected`);
+    } catch (err) {
+      console.warn(`[CivicSarthi Migrate Warning] Could not process ${repPath}: ${err.message}`);
     }
 
     // Ensure all demo accounts exist

@@ -108,9 +108,9 @@ export const createApp = () => {
   app.get('/health/live', getLiveness);
   app.get('/health/ready', getReadiness);
 
-  // Body Parsing with safe size bounds
-  app.use(express.json({ limit: '2mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+  // Body Parsing with safe size bounds (supports up to 5MB photo attachments in base64)
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
   // API Mount
   app.use('/api', apiRouter);

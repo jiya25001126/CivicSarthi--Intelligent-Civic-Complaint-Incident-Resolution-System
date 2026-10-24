@@ -3,5 +3,85 @@
     "version": "1.0.0",
     "description": "CivicSarthi Formal Resolution Appeals"
   },
-  "appeals": []
+  "appeals": [
+    {
+      "id": "APP-2026-0001",
+      "referenceNumber": "APP-2026-0001",
+      "complaintId": "CPG-2026-00103",
+      "complaintReference": "CS-2026-0003",
+      "requesterId": "USR-DEMO-CITIZEN-001",
+      "citizenId": "USR-DEMO-CITIZEN-001",
+      "citizenName": "Aarav Sharma",
+      "departmentId": "DEPT_WATER",
+      "reasonCategory": "INCOMPLETE_WORK",
+      "status": "UNDER_REVIEW",
+      "explanation": "Pipeline leak was patched with temporary clamp, but water pressure is still leaking onto pedestrian footpath.",
+      "evidence": [
+        "sub_base_leakage_photo_synth.jpg"
+      ],
+      "statusHistory": [
+        {
+          "timestamp": "2026-10-10T16:00:00.000Z",
+          "fromStatus": "SUBMITTED",
+          "toStatus": "UNDER_REVIEW",
+          "actor": "officer.water@civicsarthi.internal",
+          "remarks": "Appeals desk review initiated by Water Department Nodal Officer."
+        }
+      ],
+      "internalNotes": [
+        {
+          "id": "NOTE-001",
+          "authorId": "USR-DEMO-WATER-003",
+          "authorEmail": "officer.water@civicsarthi.internal",
+          "authorRole": "officer",
+          "text": "Field engineer ordered to re-excavate and install permanent pressure collar.",
+          "timestamp": "2026-10-10T16:05:00.000Z"
+        }
+      ],
+      "createdAt": "2026-10-10T15:30:00.000Z",
+      "updatedAt": "2026-10-10T16:05:00.000Z"
+    },
+    {
+      "id": "APP-2026-0002",
+      "referenceNumber": "APP-2026-0002",
+      "complaintId": "CPG-2026-00108",
+      "complaintReference": "CS-2026-0008",
+      "requesterId": "USR-DEMO-CITIZEN-001",
+      "citizenId": "USR-DEMO-CITIZEN-001",
+      "citizenName": "Aarav Sharma",
+      "departmentId": "DEPT_HEALTH",
+      "reasonCategory": "OFFICER_ERROR",
+      "status": "UPHELD",
+      "explanation": "Empanelled civil hospital refused to provide prescribed generic medicines under Jan Aushadhi scheme.",
+      "evidence": [
+        "pharmacy_refusal_receipt_synth.pdf"
+      ],
+      "decision": {
+        "outcome": "UPHELD",
+        "reason": "Hospital inspection confirmed medicine stock was diverted; show cause notice issued.",
+        "citizenExplanation": "Your appeal has been upheld. Civil Surgeon issued instructions for reimbursement and drug restock.",
+        "decidedBy": "officer.health@civicsarthi.internal",
+        "decidedAt": "2026-10-11T14:00:00.000Z"
+      },
+      "statusHistory": [
+        {
+          "timestamp": "2026-10-09T10:00:00.000Z",
+          "fromStatus": "SUBMITTED",
+          "toStatus": "UNDER_REVIEW",
+          "actor": "officer.health@civicsarthi.internal",
+          "remarks": "Health Department appeal under investigation."
+        },
+        {
+          "timestamp": "2026-10-11T14:00:00.000Z",
+          "fromStatus": "UNDER_REVIEW",
+          "toStatus": "UPHELD",
+          "actor": "officer.health@civicsarthi.internal",
+          "remarks": "Appeal upheld in citizen favor."
+        }
+      ],
+      "internalNotes": [],
+      "createdAt": "2026-10-09T09:00:00.000Z",
+      "updatedAt": "2026-10-11T14:00:00.000Z"
+    }
+  ]
 }

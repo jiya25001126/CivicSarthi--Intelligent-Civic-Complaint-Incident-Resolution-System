@@ -3,5 +3,30 @@
     "version": "1.0.0",
     "description": "CivicSarthi Controlled Reopening Requests"
   },
-  "reopeningRequests": []
+  "reopeningRequests": [
+    {
+      "id": "REOPEN-2026-0001",
+      "referenceNumber": "REQ-2026-0001",
+      "complaintId": "CPG-2026-00109",
+      "complaintReference": "CS-2026-0009",
+      "requesterId": "USR-DEMO-CITIZEN-001",
+      "citizenId": "USR-DEMO-CITIZEN-001",
+      "citizenName": "Aarav Sharma",
+      "departmentId": "DEPT_ROADS",
+      "reasonCategory": "ISSUE_PERSISTS",
+      "explanation": "Streetlight fixture was replaced but phase circuit trips every night after 10 PM leaving the stretch dark.",
+      "status": "PENDING_REVIEW",
+      "statusHistory": [
+        {
+          "timestamp": "2026-10-12T09:00:00.000Z",
+          "fromStatus": null,
+          "toStatus": "PENDING_REVIEW",
+          "actor": "citizen.demo@civicsarthi.internal",
+          "remarks": "Reopening petition submitted by citizen."
+        }
+      ],
+      "createdAt": "2026-10-12T09:00:00.000Z",
+      "updatedAt": "2026-10-12T09:00:00.000Z"
+    }
+  ]
 }

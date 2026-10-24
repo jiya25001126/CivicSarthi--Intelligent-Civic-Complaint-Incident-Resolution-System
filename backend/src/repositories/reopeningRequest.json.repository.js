@@ -164,12 +164,12 @@ export class JsonReopeningRequestRepository {
       );
     }
     if (filters.requesterId) {
-      list = list.filter((r) => r.requesterId === filters.requesterId);
+      list = list.filter((r) => r.requesterId === filters.requesterId || r.citizenId === filters.requesterId);
     }
-    if (filters.departmentId) {
+    if (filters.departmentId && filters.departmentId !== 'ALL') {
       list = list.filter((r) => r.departmentId === filters.departmentId);
     }
-    if (filters.status) {
+    if (filters.status && filters.status !== 'ALL') {
       list = list.filter((r) => r.status === filters.status);
     }
 

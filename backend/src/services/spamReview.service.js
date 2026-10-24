@@ -229,7 +229,141 @@ export class SpamReviewService {
 
     return updatedReview;
   }
+
+  /**
+   * Manually flags a complaint for Spam/Abuse human review by an authorized officer or admin.
+   * Creates or updates the spam review queue record without duplicate active flags.
+   */
+  async flagComplaintManually(complaintIdOrRef, { reason, reasonCode, notes }, user) {
+    if (!user || (user.role !== 'officer' && user.role !== 'admin')) {
+      const err = new Error('Access denied: only authorized officers or administrators can flag complaints for review');
+      err.status = 403;
+      err.code = 'FORBIDDEN_ROLE';
+      throw err;
+    }
+
+    const cleanReason = String(notes || reason || '').trim();
+    if (cleanReason.length < 10) {
+      const err = new Error('A detailed explanation of at least 10 characters is required for flagging a complaint');
+      err.status = 400;
+      err.code = 'FLAG_REASON_TOO_SHORT';
+      throw err;
+    }
+
+    const complaint = await this.complaintRepo.findById(complaintIdOrRef);
+    if (!complaint) {
+      const err = new Error('Complaint record not found');
+      err.status = 404;
+      err.code = 'COMPLAINT_NOT_FOUND';
+      throw err;
+    }
+
+    // Officer department scoping:
+    if (user.role === 'officer' && user.departmentId) {
+      const cmpDept = complaint.departmentId || complaint.department;
+      if (cmpDept && cmpDept !== user.departmentId) {
+        const err = new Error(
+          `Access denied: complaint belongs to department '${cmpDept}' which is outside your authorized department scope`
+        );
+        err.status = 403;
+        err.code = 'FORBIDDEN_DEPARTMENT_MISMATCH';
+        throw err;
+      }
+    }
+
+    // Check for existing active spam review for this complaint
+    let existingReview = await this.spamReviewRepo.findByComplaintId(complaint.id);
+    if (!existingReview && complaint.referenceNumber && complaint.referenceNumber !== complaint.id) {
+      existingReview = await this.spamReviewRepo.findByComplaintId(complaint.referenceNumber);
+    }
+
+    const now = new Date();
+    const reasonText = reasonCode ? `[${reasonCode}] ${cleanReason}` : cleanReason;
+
+    if (existingReview && (existingReview.reviewStatus === SPAM_REVIEW_STATUS.PENDING || existingReview.reviewStatus === 'PENDING_REVIEW')) {
+      const err = new Error('Complaint is already queued under an active spam review. Cannot submit duplicate active review.');
+      err.status = 409;
+      err.code = 'ACTIVE_REVIEW_EXISTS';
+      err.existingReviewId = existingReview.id;
+      throw err;
+    }
+
+    // Create a new spam review record
+    const reviewId = `REV-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+    const newRecord = {
+      id: reviewId,
+      complaintId: complaint.id,
+      complaintReference: complaint.referenceNumber || complaint.id,
+      citizenId: complaint.citizenId || 'UNKNOWN',
+      departmentId: complaint.departmentId || complaint.department || user.departmentId || 'GENERAL',
+      riskLevel: 'HIGH',
+      score: 75,
+      reasons: [reasonText],
+      explanations: [cleanReason],
+      reviewStatus: SPAM_REVIEW_STATUS.PENDING,
+      decision: null,
+      duplicateReferences: [],
+      ruleVersion: '1.0.0',
+      evaluatedAt: now,
+      reviewHistory: [
+        {
+          action: 'MANUAL_OFFICER_FLAG',
+          reason: cleanReason,
+          actorId: user.id,
+          actorRole: user.role,
+          timestamp: now
+        }
+      ],
+      createdAt: now,
+      updatedAt: now
+    };
+
+    const savedReview = await this.spamReviewRepo.create(newRecord);
+
+    // Update complaint record to mark isFlaggedSpam: true and link spamReviewId
+    try {
+      if (typeof this.complaintRepo.update === 'function') {
+        await this.complaintRepo.update(complaint.id, {
+          isFlaggedSpam: true,
+          spamReviewId: reviewId
+        });
+      }
+    } catch (cmpErr) {
+      console.warn('[SpamReviewService] Non-fatal complaint update warning:', cmpErr.message);
+    }
+
+    // Audit logging
+    try {
+      await this.auditRepo.create({
+        action: 'MANUAL_SPAM_FLAG_INITIATED',
+        userId: user.id,
+        userEmail: user.email,
+        role: user.role,
+        targetResource: reviewId,
+        complaintId: complaint.id,
+        details: {
+          complaintId: complaint.id,
+          complaintReference: complaint.referenceNumber || complaint.id,
+          reasonCode: reasonCode || 'MANUAL_FLAG',
+          reason: cleanReason
+        }
+      });
+    } catch (auditErr) {
+      console.warn('[SpamReviewService] Non-fatal audit log warning:', auditErr.message);
+    }
+
+    return {
+      success: true,
+      message: 'Complaint successfully flagged for spam & abuse investigation',
+      review: savedReview,
+      id: savedReview.id,
+      complaintId: savedReview.complaintId,
+      reviewStatus: savedReview.reviewStatus,
+      reasons: savedReview.reasons
+    };
+  }
 }
 
 export const spamReviewService = new SpamReviewService();
 export default spamReviewService;
+

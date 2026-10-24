@@ -21,12 +21,12 @@ export class MongoAppealRepository {
       query.$or = [{ complaintId: filters.complaintId }, { complaintReference: filters.complaintId }];
     }
     if (filters.requesterId) {
-      query.requesterId = filters.requesterId;
+      query.$or = [{ requesterId: filters.requesterId }, { citizenId: filters.requesterId }];
     }
-    if (filters.departmentId) {
+    if (filters.departmentId && filters.departmentId !== 'ALL') {
       query.departmentId = filters.departmentId;
     }
-    if (filters.status) {
+    if (filters.status && filters.status !== 'ALL') {
       query.status = filters.status;
     }
     if (filters.assignedReviewerId) {

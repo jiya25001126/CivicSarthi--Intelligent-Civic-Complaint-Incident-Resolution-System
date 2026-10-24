@@ -55,6 +55,11 @@ const appealSchema = new mongoose.Schema(
       index: true,
       trim: true
     },
+    citizenId: {
+      type: String,
+      index: true,
+      trim: true
+    },
     departmentId: {
       type: String,
       required: [true, 'Department ID is required'],
@@ -113,6 +118,19 @@ const appealSchema = new mongoose.Schema(
     timestamps: true
   }
 );
+
+appealSchema.pre('validate', function (next) {
+  if (!this.requesterId && this.citizenId) {
+    this.requesterId = this.citizenId;
+  }
+  if (!this.citizenId && this.requesterId) {
+    this.citizenId = this.requesterId;
+  }
+  if (!this.complaintReference && this.complaintId) {
+    this.complaintReference = this.complaintId;
+  }
+  next();
+});
 
 appealSchema.index({ complaintId: 1, status: 1 });
 appealSchema.index({ departmentId: 1, status: 1 });

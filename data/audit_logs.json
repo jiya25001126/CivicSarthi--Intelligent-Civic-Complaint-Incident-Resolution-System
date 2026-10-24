@@ -3,5 +3,278 @@
     "version": "1.0.0",
     "description": "CivicSarthi Security Audit Logs"
   },
-  "logs": []
+  "logs": [
+    {
+      "id": "AUDIT-1792873432784-DYGT",
+      "timestamp": "2026-10-24T20:23:52.784Z",
+      "userId": "USR-ADMIN-001",
+      "userEmail": "system@internal",
+      "role": "admin",
+      "action": "SUBTASK_CREATED",
+      "targetResource": "SUB-2026-005",
+      "complaintId": "SUB-2026-005",
+      "details": {
+        "incidentId": "INC-2026-0001",
+        "department": "DEPT_WATER",
+        "title": "Initial Lead Department Pipeline Assessment",
+        "status": "PENDING"
+      },
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "AUDIT-1792873432749-Y60E",
+      "timestamp": "2026-10-24T20:23:52.749Z",
+      "userId": "USR-ADMIN-001",
+      "userEmail": "system@internal",
+      "role": "admin",
+      "action": "INCIDENT_CREATED",
+      "targetResource": "INC-2026-0001",
+      "complaintId": "INC-2026-0001",
+      "details": {
+        "title": "Burst Water Trunk Line & Pavement Collapse",
+        "category": "water",
+        "leadDepartment": "DEPT_WATER",
+        "priority": "CRITICAL"
+      },
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "AUDIT-1792873432558-PYU8",
+      "timestamp": "2026-10-24T20:23:52.558Z",
+      "userId": "USR-ADMIN-001",
+      "userEmail": "system@internal",
+      "role": "admin",
+      "action": "MANUAL_SPAM_FLAG_INITIATED",
+      "targetResource": "REV-MVMUJU7E-KONM",
+      "complaintId": "CPG-2026-00127",
+      "details": {
+        "complaintId": "CPG-2026-00127",
+        "complaintReference": "CS-2026-0027",
+        "reasonCode": "SUSPICIOUS_CONTENT",
+        "reason": "Observed automated duplicate submission pattern across multiple wards."
+      },
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "AUDIT-1792873244348-WH75",
+      "timestamp": "2026-10-24T20:20:44.348Z",
+      "userId": "USR-ADMIN-001",
+      "userEmail": "system@internal",
+      "role": "admin",
+      "action": "SUBTASK_CREATED",
+      "targetResource": "SUB-2026-008",
+      "complaintId": "SUB-2026-008",
+      "details": {
+        "incidentId": "INC-2026-0005",
+        "department": "DEPT_WATER",
+        "title": "Initial Lead Department Pipeline Assessment",
+        "status": "PENDING"
+      },
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "AUDIT-1792873244324-BRBY",
+      "timestamp": "2026-10-24T20:20:44.324Z",
+      "userId": "USR-ADMIN-001",
+      "userEmail": "system@internal",
+      "role": "admin",
+      "action": "INCIDENT_CREATED",
+      "targetResource": "INC-2026-0005",
+      "complaintId": "INC-2026-0005",
+      "details": {
+        "title": "Burst Water Trunk Line & Pavement Collapse",
+        "category": "water",
+        "leadDepartment": "DEPT_WATER",
+        "priority": "CRITICAL"
+      },
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "AUDIT-1792873244194-84U1",
+      "timestamp": "2026-10-24T20:20:44.194Z",
+      "userId": "USR-ADMIN-001",
+      "userEmail": "system@internal",
+      "role": "admin",
+      "action": "MANUAL_SPAM_FLAG_INITIATED",
+      "targetResource": "REV-MVMUFSW2-16YC",
+      "complaintId": "CPG-2026-00137",
+      "details": {
+        "complaintId": "CPG-2026-00137",
+        "complaintReference": "CS-2026-0037",
+        "reasonCode": "SUSPICIOUS_CONTENT",
+        "reason": "Observed automated duplicate submission pattern across multiple wards."
+      },
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "AUDIT-1792873210469-G18W",
+      "timestamp": "2026-10-24T20:20:10.469Z",
+      "userId": "USR-ADMIN-001",
+      "userEmail": "system@internal",
+      "role": "admin",
+      "action": "SUBTASK_CREATED",
+      "targetResource": "SUB-2026-007",
+      "complaintId": "SUB-2026-007",
+      "details": {
+        "incidentId": "INC-2026-0004",
+        "department": "DEPT_WATER",
+        "title": "Initial Lead Department Pipeline Assessment",
+        "status": "PENDING"
+      },
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "AUDIT-1792873210447-M71J",
+      "timestamp": "2026-10-24T20:20:10.447Z",
+      "userId": "USR-ADMIN-001",
+      "userEmail": "system@internal",
+      "role": "admin",
+      "action": "INCIDENT_CREATED",
+      "targetResource": "INC-2026-0004",
+      "complaintId": "INC-2026-0004",
+      "details": {
+        "title": "Burst Water Trunk Line & Pavement Collapse",
+        "category": "water",
+        "leadDepartment": "DEPT_WATER",
+        "priority": "CRITICAL"
+      },
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "AUDIT-1792873210397-LVTJ",
+      "timestamp": "2026-10-24T20:20:10.397Z",
+      "userId": "USR-ADMIN-001",
+      "userEmail": "system@internal",
+      "role": "admin",
+      "action": "MANUAL_SPAM_FLAG_INITIATED",
+      "targetResource": "REV-MVMUF2TP-MPL8",
+      "complaintId": "CPG-2026-00130",
+      "details": {
+        "complaintId": "CPG-2026-00130",
+        "complaintReference": "CS-2026-0030",
+        "reasonCode": "SUSPICIOUS_CONTENT",
+        "reason": "Observed automated duplicate submission pattern across multiple wards."
+      },
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "AUDIT-1792873180420-WJD5",
+      "timestamp": "2026-10-24T20:19:40.420Z",
+      "userId": "USR-ADMIN-001",
+      "userEmail": "system@internal",
+      "role": "admin",
+      "action": "SUBTASK_CREATED",
+      "targetResource": "SUB-2026-006",
+      "complaintId": "SUB-2026-006",
+      "details": {
+        "incidentId": "INC-2026-0003",
+        "department": "DEPT_WATER",
+        "title": "Initial Lead Department Pipeline Assessment",
+        "status": "PENDING"
+      },
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "AUDIT-1792873180402-Y4C1",
+      "timestamp": "2026-10-24T20:19:40.402Z",
+      "userId": "USR-ADMIN-001",
+      "userEmail": "system@internal",
+      "role": "admin",
+      "action": "INCIDENT_CREATED",
+      "targetResource": "INC-2026-0003",
+      "complaintId": "INC-2026-0003",
+      "details": {
+        "title": "Burst Water Trunk Line & Pavement Collapse",
+        "category": "water",
+        "leadDepartment": "DEPT_WATER",
+        "priority": "CRITICAL"
+      },
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "AUDIT-1792873180353-G5KN",
+      "timestamp": "2026-10-24T20:19:40.353Z",
+      "userId": "USR-ADMIN-001",
+      "userEmail": "system@internal",
+      "role": "admin",
+      "action": "MANUAL_SPAM_FLAG_INITIATED",
+      "targetResource": "REV-MVMUEFN5-2U9R",
+      "complaintId": "CPG-2026-00123",
+      "details": {
+        "complaintId": "CPG-2026-00123",
+        "complaintReference": "CS-2026-0023",
+        "reasonCode": "SUSPICIOUS_CONTENT",
+        "reason": "Observed automated duplicate submission pattern across multiple wards."
+      },
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "AUDIT-1792873116156-ESL6",
+      "timestamp": "2026-10-24T20:18:36.156Z",
+      "userId": "USR-ADMIN-001",
+      "userEmail": "system@internal",
+      "role": "admin",
+      "action": "SUBTASK_CREATED",
+      "targetResource": "SUB-2026-005",
+      "complaintId": "SUB-2026-005",
+      "details": {
+        "incidentId": "INC-2026-0002",
+        "department": "DEPT_WATER",
+        "title": "Initial Lead Department Pipeline Assessment",
+        "status": "PENDING"
+      },
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "AUDIT-1792873116134-K75Q",
+      "timestamp": "2026-10-24T20:18:36.134Z",
+      "userId": "USR-ADMIN-001",
+      "userEmail": "system@internal",
+      "role": "admin",
+      "action": "INCIDENT_CREATED",
+      "targetResource": "INC-2026-0002",
+      "complaintId": "INC-2026-0002",
+      "details": {
+        "title": "Burst Water Trunk Line & Pavement Collapse",
+        "category": "water",
+        "leadDepartment": "DEPT_WATER",
+        "priority": "CRITICAL"
+      },
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "AUDIT-1792872944563-2SDX",
+      "timestamp": "2026-10-24T20:15:44.563Z",
+      "userId": "USR-ADMIN-001",
+      "userEmail": "system@internal",
+      "role": "admin",
+      "action": "INCIDENT_CREATED",
+      "targetResource": "INC-2026-0001",
+      "complaintId": "INC-2026-0001",
+      "details": {
+        "title": "Burst Water Trunk Line & Pavement Collapse",
+        "category": "water",
+        "leadDepartment": "DEPT_WATER",
+        "priority": "CRITICAL"
+      },
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "AUDIT-1792872944478-J6A8",
+      "timestamp": "2026-10-24T20:15:44.478Z",
+      "userId": "USR-ADMIN-001",
+      "userEmail": "system@internal",
+      "role": "admin",
+      "action": "MANUAL_SPAM_FLAG_INITIATED",
+      "targetResource": "REV-MVMU9DN3-VIRW",
+      "complaintId": "CPG-2026-00127",
+      "details": {
+        "complaintId": "CPG-2026-00127",
+        "complaintReference": "CS-2026-0027",
+        "reasonCode": "SUSPICIOUS_CONTENT",
+        "reason": "Observed automated duplicate submission pattern across multiple wards."
+      },
+      "ipAddress": "127.0.0.1"
+    }
+  ]
 }

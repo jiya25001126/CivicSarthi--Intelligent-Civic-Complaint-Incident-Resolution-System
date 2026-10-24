@@ -34,6 +34,11 @@ const spamReviewSchema = new mongoose.Schema(
       index: true,
       trim: true
     },
+    referenceNumber: {
+      type: String,
+      index: true,
+      trim: true
+    },
     citizenId: {
       type: String,
       required: [true, 'Citizen ID is required'],
@@ -100,6 +105,19 @@ const spamReviewSchema = new mongoose.Schema(
     timestamps: true
   }
 );
+
+spamReviewSchema.pre('validate', function (next) {
+  if (!this.complaintReference && this.referenceNumber) {
+    this.complaintReference = this.referenceNumber;
+  }
+  if (!this.complaintReference && this.complaintId) {
+    this.complaintReference = this.complaintId;
+  }
+  if (this.reviewStatus === 'PENDING_REVIEW') {
+    this.reviewStatus = SPAM_REVIEW_STATUS.PENDING;
+  }
+  next();
+});
 
 export const SpamReviewModel = mongoose.models.SpamReview || mongoose.model('SpamReview', spamReviewSchema);
 export default SpamReviewModel;

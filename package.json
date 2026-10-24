@@ -21,6 +21,7 @@
     "init:demo": "npm --prefix backend run init:demo",
     "provision:user": "npm --prefix backend run provision:user --",
     "migrate:mongo": "npm --prefix backend run migrate:mongo",
+    "seed:mongo:demo": "npm --prefix backend run seed:mongo:demo --",
     "install:all": "npm install --prefix mock-cpgrams && npm install --prefix backend && npm install --prefix frontend"
   },
   "keywords": [

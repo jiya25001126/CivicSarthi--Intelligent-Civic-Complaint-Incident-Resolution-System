@@ -137,11 +137,17 @@ export class JsonSpamReviewRepository {
       list = list.filter((r) => r.departmentId && r.departmentId.toUpperCase() === targetDept);
     }
 
-    if (filters.reviewStatus) {
-      list = list.filter((r) => r.reviewStatus === filters.reviewStatus);
+    const statusVal = filters.reviewStatus || filters.status;
+    if (statusVal && statusVal !== 'ALL') {
+      const normalized = (statusVal === 'PENDING_REVIEW' || statusVal === 'PENDING')
+        ? ['PENDING', 'PENDING_REVIEW']
+        : (statusVal === 'RESOLVED' || statusVal === 'REVIEWED')
+          ? ['REVIEWED', 'RESOLVED']
+          : [statusVal];
+      list = list.filter((r) => normalized.includes(r.reviewStatus));
     }
 
-    if (filters.riskLevel) {
+    if (filters.riskLevel && filters.riskLevel !== 'ALL') {
       list = list.filter((r) => r.riskLevel === filters.riskLevel);
     }
 

@@ -1,7 +1,63 @@
 {
   "metadata": {
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "CivicSarthi User Directory"
   },
-  "users": []
+  "users": [
+    {
+      "id": "USR-DEMO-CITIZEN-001",
+      "email": "citizen.demo@civicsarthi.internal",
+      "passwordHash": "$2b$10$AiImIc6KzB59xmzepVoyleQvysab6igRIFTUe7nUk0.chMAA1crEq",
+      "name": "Aarav Sharma (Citizen)",
+      "role": "citizen",
+      "departmentId": null,
+      "isActive": true,
+      "createdAt": "2026-10-14T15:26:32.430Z",
+      "updatedAt": "2026-10-14T15:42:41.952Z"
+    },
+    {
+      "id": "USR-DEMO-ROADS-002",
+      "email": "officer.roads@civicsarthi.internal",
+      "passwordHash": "$2b$10$AiImIc6KzB59xmzepVoyleQvysab6igRIFTUe7nUk0.chMAA1crEq",
+      "name": "Rajesh Patel (Roads Nodal Officer)",
+      "role": "officer",
+      "departmentId": "DEPT_ROADS",
+      "isActive": true,
+      "createdAt": "2026-10-14T15:26:32.431Z",
+      "updatedAt": "2026-10-14T15:42:41.953Z"
+    },
+    {
+      "id": "USR-DEMO-WATER-003",
+      "email": "officer.water@civicsarthi.internal",
+      "passwordHash": "$2b$10$AiImIc6KzB59xmzepVoyleQvysab6igRIFTUe7nUk0.chMAA1crEq",
+      "name": "Sunita Verma (Water Nodal Officer)",
+      "role": "officer",
+      "departmentId": "DEPT_WATER",
+      "isActive": true,
+      "createdAt": "2026-10-14T15:26:32.431Z",
+      "updatedAt": "2026-10-14T15:42:41.953Z"
+    },
+    {
+      "id": "USR-DEMO-MUNICIPAL-004",
+      "email": "officer.municipal@civicsarthi.internal",
+      "passwordHash": "$2b$10$AiImIc6KzB59xmzepVoyleQvysab6igRIFTUe7nUk0.chMAA1crEq",
+      "name": "Anil Deshmukh (Municipal Nodal Officer)",
+      "role": "officer",
+      "departmentId": "DEPT_MUNICIPAL",
+      "isActive": true,
+      "createdAt": "2026-10-14T15:26:32.431Z",
+      "updatedAt": "2026-10-14T15:42:41.953Z"
+    },
+    {
+      "id": "USR-DEMO-ADMIN-005",
+      "email": "admin.demo@civicsarthi.internal",
+      "passwordHash": "$2b$10$AiImIc6KzB59xmzepVoyleQvysab6igRIFTUe7nUk0.chMAA1crEq",
+      "name": "Kavita Mehta (System Administrator)",
+      "role": "admin",
+      "departmentId": null,
+      "isActive": true,
+      "createdAt": "2026-10-14T15:26:32.431Z",
+      "updatedAt": "2026-10-14T15:42:41.953Z"
+    }
+  ]
 }

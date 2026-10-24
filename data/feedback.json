@@ -3,5 +3,26 @@
     "version": "1.0.0",
     "description": "CivicSarthi Citizen Resolution Feedback Records"
   },
-  "feedback": []
+  "feedback": [
+    {
+      "id": "FB-2026-0001",
+      "complaintId": "CPG-2026-00111",
+      "referenceNumber": "CS-2026-0011",
+      "citizenId": "USR-DEMO-CITIZEN-001",
+      "rating": 4,
+      "comments": "Water pipeline repaired reasonably quickly. Slight excavation debris left on shoulder.",
+      "createdAt": "2026-10-09T17:00:00.000Z",
+      "updatedAt": "2026-10-09T17:00:00.000Z"
+    },
+    {
+      "id": "FB-2026-0002",
+      "complaintId": "CPG-2026-00108",
+      "referenceNumber": "CS-2026-0008",
+      "citizenId": "USR-DEMO-CITIZEN-001",
+      "rating": 5,
+      "comments": "District health inspector intervened directly to correct hospital pharmacy billing.",
+      "createdAt": "2026-10-11T16:00:00.000Z",
+      "updatedAt": "2026-10-11T16:00:00.000Z"
+    }
+  ]
 }

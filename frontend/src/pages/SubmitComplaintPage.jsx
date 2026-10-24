@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { createComplaint, fetchDepartments, analyzeGrievancePreview } from '../api/client';
+import { createComplaint, fetchDepartments, analyzeGrievancePreview, uploadAttachment } from '../api/client';
 import {
   FilePlus,
   Send,
@@ -15,7 +15,11 @@ import {
   ExternalLink,
   Sparkles,
   Copy,
-  Info
+  Info,
+  UploadCloud,
+  X,
+  Image as ImageIcon,
+  Trash2
 } from 'lucide-react';
 
 const INDIAN_STATES = [
@@ -53,6 +57,12 @@ export default function SubmitComplaintPage() {
   const [preferredLanguage, setPreferredLanguage] = useState('en');
   const [departmentId, setDepartmentId] = useState('');
   const [evidenceName, setEvidenceName] = useState('');
+
+  // Photo Attachment State
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [filePreview, setFilePreview] = useState(null);
+  const [fileError, setFileError] = useState(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
 
   // AI Assistant preview state
   const [aiSuggestion, setAiSuggestion] = useState(null);
@@ -129,6 +139,50 @@ export default function SubmitComplaintPage() {
     setAiApplied(true);
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFileError(null);
+
+    // Validate size (5MB max)
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      setFileError('File size exceeds 5MB limit. Please select a photo under 5MB.');
+      return;
+    }
+
+    // Validate MIME type
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!ALLOWED_TYPES.includes(file.type.toLowerCase())) {
+      setFileError('Invalid file format. Allowed formats: JPEG, PNG, WebP.');
+      return;
+    }
+
+    setSelectedFile(file);
+    if (filePreview) {
+      URL.revokeObjectURL(filePreview);
+    }
+    const objectUrl = URL.createObjectURL(file);
+    setFilePreview(objectUrl);
+  };
+
+  const handleRemoveFile = () => {
+    if (filePreview) {
+      URL.revokeObjectURL(filePreview);
+    }
+    setSelectedFile(null);
+    setFilePreview(null);
+    setFileError(null);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (filePreview) {
+        URL.revokeObjectURL(filePreview);
+      }
+    };
+  }, [filePreview]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (submitting) return; // Prevent duplicate click
@@ -168,6 +222,39 @@ export default function SubmitComplaintPage() {
 
     try {
       setSubmitting(true);
+      let evidenceList = [];
+
+      // If a photo file was selected, upload it first
+      if (selectedFile) {
+        setUploadingFile(true);
+        const base64Data = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result;
+            const base64String = typeof result === 'string' && result.includes(',')
+              ? result.split(',')[1]
+              : result;
+            resolve(base64String);
+          };
+          reader.onerror = () => reject(new Error('Failed to read selected image file.'));
+          reader.readAsDataURL(selectedFile);
+        });
+
+        const uploadRes = await uploadAttachment({
+          filename: selectedFile.name,
+          mimeType: selectedFile.type,
+          base64Data
+        });
+
+        if (uploadRes?.data?.filename) {
+          evidenceList.push(uploadRes.data.filename);
+        } else {
+          throw new Error('Upload succeeded but server did not return a valid attachment reference.');
+        }
+      } else if (trimmedEvidence) {
+        evidenceList.push(trimmedEvidence);
+      }
+
       const idempotencyKey = `SUB-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const payload = {
         title: trimmedTitle,
@@ -178,7 +265,7 @@ export default function SubmitComplaintPage() {
         locality: trimmedLocality || undefined,
         preferredLanguage,
         departmentId: departmentId || undefined,
-        evidence: trimmedEvidence ? [trimmedEvidence] : []
+        evidence: evidenceList
       };
 
       const res = await createComplaint(payload, idempotencyKey);
@@ -187,6 +274,7 @@ export default function SubmitComplaintPage() {
       setError(err.message || 'Failed to submit grievance. Please verify fields and try again.');
     } finally {
       setSubmitting(false);
+      setUploadingFile(false);
     }
   };
 
@@ -509,26 +597,96 @@ export default function SubmitComplaintPage() {
         </div>
 
         {/* Supporting Evidence and Preferences */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <label htmlFor="complaint-evidence" className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
-              Attached Evidence Citation (Optional)
-            </label>
-            <div className="relative">
-              <Paperclip size={16} className="absolute left-3 top-3 text-slate-400" />
+        {/* Supporting Evidence and Preferences */}
+        <div className="space-y-4">
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
+                Photo Attachment & Evidence (Optional)
+              </label>
+              <span className="text-[11px] text-slate-500">Max 5MB • JPG, PNG, WebP</span>
+            </div>
+
+            {/* File Upload / Preview Area */}
+            {selectedFile && filePreview ? (
+              <div className="flex items-center gap-4 p-3 bg-white border border-emerald-200 rounded-xl shadow-xs">
+                <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 shrink-0">
+                  <img
+                    src={filePreview}
+                    alt="Evidence Preview"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-slate-800 truncate" title={selectedFile.name}>
+                      {selectedFile.name}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-semibold">
+                      Ready
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    {(selectedFile.size / 1024).toFixed(1)} KB • {selectedFile.type}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRemoveFile}
+                  disabled={submitting}
+                  className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition"
+                  title="Remove selected photo"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ) : (
+              <div>
+                <label
+                  htmlFor="complaint-photo-input"
+                  className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 hover:border-blue-500 bg-white hover:bg-blue-50/50 rounded-xl p-5 cursor-pointer transition text-center group"
+                >
+                  <div className="w-10 h-10 rounded-full bg-blue-50 group-hover:bg-blue-100 text-blue-600 flex items-center justify-center mb-2 transition">
+                    <UploadCloud size={20} />
+                  </div>
+                  <span className="text-xs font-semibold text-slate-700 group-hover:text-blue-700">
+                    Click or drag photo here to attach evidence
+                  </span>
+                  <span className="text-[11px] text-slate-400 mt-1">
+                    Supports high-resolution camera photos (.jpg, .jpeg, .png, .webp) up to 5MB
+                  </span>
+                  <input
+                    id="complaint-photo-input"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleFileChange}
+                    disabled={submitting}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            )}
+
+            {fileError && (
+              <div className="flex items-center gap-1.5 text-xs text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200">
+                <AlertCircle size={14} className="shrink-0" />
+                <span>{fileError}</span>
+              </div>
+            )}
+
+            {/* Optional text reference */}
+            <div className="pt-2 border-t border-slate-200/60 flex items-center gap-2">
+              <Paperclip size={14} className="text-slate-400 shrink-0" />
               <input
                 id="complaint-evidence"
                 type="text"
-                placeholder="e.g. photo_pipeline_leak_2026.jpg"
+                placeholder="Or enter an existing document/citation reference (optional)..."
                 value={evidenceName}
                 onChange={(e) => setEvidenceName(e.target.value)}
-                disabled={submitting}
-                className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:opacity-60"
+                disabled={submitting || Boolean(selectedFile)}
+                className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-600 disabled:opacity-50"
               />
             </div>
-            <p className="text-[11px] text-slate-400">
-              Safe document reference or photo filename for investigation record.
-            </p>
           </div>
 
           <div className="space-y-1.5">

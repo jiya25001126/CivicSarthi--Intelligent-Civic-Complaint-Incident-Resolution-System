@@ -3,5 +3,21 @@
     "version": "1.0.0",
     "description": "CivicSarthi Citizen Grievance Reminders and Follow-up Log"
   },
-  "reminders": []
+  "reminders": [
+    {
+      "id": "REM-2026-0001",
+      "complaintId": "CPG-2026-00101",
+      "referenceNumber": "CS-2026-0001",
+      "citizenId": "USR-DEMO-CITIZEN-001",
+      "citizenName": "Aarav Sharma",
+      "departmentId": "DEPT_PENSION",
+      "reason": "PPO generation delay is exceeding 4 months; request expedited verification.",
+      "status": "ACCEPTED",
+      "deliveryChannel": "IN_APP",
+      "deliveryStatus": "LOGGED_IN_APP",
+      "requestedAt": "2026-10-11T12:00:00.000Z",
+      "createdAt": "2026-10-11T12:00:00.000Z",
+      "updatedAt": "2026-10-11T12:00:00.000Z"
+    }
+  ]
 }

@@ -15,7 +15,10 @@ import {
   getComplaintIntelligence,
   getComplaintDuplicates,
   updateComplaintPriority,
-  linkDuplicateComplaint
+  linkDuplicateComplaint,
+  uploadComplaintAttachment,
+  getComplaintAttachment,
+  flagComplaintForSpam
 } from '../controllers/complaint.controller.js';
 import { validate } from '../middleware/validate.middleware.js';
 import {
@@ -81,6 +84,30 @@ const createComplaintSchema = {
     citizenEmail: z.string().email().optional(),
     citizenPhone: z.string().max(20).optional(),
     idempotencyKey: z.string().max(100).optional()
+  })
+};
+
+const uploadAttachmentSchema = {
+  body: z.object({
+    filename: z.string().min(1).max(255),
+    mimeType: z.string().min(1).max(100),
+    base64Data: z.string().min(1, 'Image data is required').optional(),
+    data: z.string().min(1, 'Image data is required').optional()
+  }).refine((d) => d.base64Data || d.data, {
+    message: 'Image data payload is required'
+  })
+};
+
+const flagComplaintSchema = {
+  params: z.object({
+    id: z.string().min(1, 'Complaint ID is required')
+  }),
+  body: z.object({
+    reason: z.string().optional(),
+    reasonCode: z.string().optional(),
+    notes: z.string().optional()
+  }).refine((d) => (d.notes && d.notes.trim().length >= 10) || (d.reason && d.reason.trim().length >= 10), {
+    message: 'A flag explanation of at least 10 characters is required'
   })
 };
 
@@ -223,9 +250,11 @@ router.post('/analyze', submissionRateLimiter, validate(analyzeSchema), analyzeG
 
 // ==========================================
 // Protected Endpoints (Authentication strictly required)
-// NOTE: Static routes (/my) must precede dynamic param routes (/:id)
+// NOTE: Static routes (/my, /upload, /attachments) must precede dynamic param routes (/:id)
 // ==========================================
 router.get('/my', authenticate, validate(listComplaintsSchema), listMyComplaints);
+router.post('/upload', authenticate, submissionRateLimiter, validate(uploadAttachmentSchema), uploadComplaintAttachment);
+router.get('/attachments/:filename', authenticate, getComplaintAttachment);
 router.get('/', authenticate, validate(listComplaintsSchema), listComplaints);
 router.get('/:id', authenticate, validate(getComplaintSchema), getComplaint);
 router.get('/:id/intelligence', authenticate, validate(getComplaintSchema), getComplaintIntelligence);
@@ -235,6 +264,7 @@ router.patch('/:id/status', authenticate, requireRole('officer', 'admin'), valid
 router.patch('/:id/priority', authenticate, requireRole('officer', 'admin'), validate(updatePrioritySchema), updateComplaintPriority);
 router.patch('/:id/duplicate', authenticate, requireRole('officer', 'admin'), validate(linkDuplicateSchema), linkDuplicateComplaint);
 router.patch('/:id/department', authenticate, requireRole('admin'), validate(updateDepartmentSchema), updateComplaintDepartment);
+router.post('/:id/flag', authenticate, requireRole('officer', 'admin'), validate(flagComplaintSchema), flagComplaintForSpam);
 router.get('/:id/history', authenticate, validate(getComplaintSchema), getComplaintHistory);
 router.post('/:id/notes', authenticate, requireRole('officer', 'admin'), validate(addNoteSchema), addOfficerNote);
 
