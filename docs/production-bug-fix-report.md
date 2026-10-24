@@ -5,6 +5,7 @@
 **Live Application URL:** https://civicsarthi-frontend.onrender.com/  
 **GitHub Repository:** https://github.com/jiya25001126/CivicSarthi--Intelligent-Civic-Complaint-Incident-Resolution-System.git  
 **Branch:** `bugfix/production-fixes-and-data-integrity`  
+**Commit:** `aa04771`  
 **Date:** October 25, 2026  
 
 ---
@@ -348,6 +349,7 @@ Once deployed to Render:
 
 ### 1. Active Branch
 - `bugfix/production-fixes-and-data-integrity`
+- Commit: `aa04771` ("fix(production): resolve citizen photo attachment, spam review triage, appeals and reopening desk queries, incident declaration, and neglect radar evidence crashes")
 
 ### 2. Summary of Changed & Created Files
 - **Backend Core & Services:**
