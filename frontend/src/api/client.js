@@ -251,6 +251,42 @@ export async function addOfficerNote(id, { note }) {
   return res.data;
 }
 
+export async function uploadAttachment(payload) {
+  let csrf = getCookie('civicsarthi_csrf');
+  if (!csrf && typeof window !== 'undefined') {
+    try {
+      csrf = localStorage.getItem('civicsarthi_csrf');
+    } catch {}
+  }
+  if (!csrf) {
+    csrf = await fetchCsrfToken();
+  }
+  const headers = {};
+  if (csrf) {
+    headers['x-csrf-token'] = csrf;
+  }
+  const res = await api.post('/complaints/upload', payload, { headers });
+  return res.data;
+}
+
+export async function flagComplaintForReview(complaintId, payload) {
+  let csrf = getCookie('civicsarthi_csrf');
+  if (!csrf && typeof window !== 'undefined') {
+    try {
+      csrf = localStorage.getItem('civicsarthi_csrf');
+    } catch {}
+  }
+  if (!csrf) {
+    csrf = await fetchCsrfToken();
+  }
+  const headers = {};
+  if (csrf) {
+    headers['x-csrf-token'] = csrf;
+  }
+  const res = await api.post(`/complaints/${encodeURIComponent(complaintId)}/flag`, payload, { headers });
+  return res.data;
+}
+
 export async function fetchComplaintHistory(id) {
   const res = await api.get(`/complaints/${encodeURIComponent(id)}/history`);
   return res.data;

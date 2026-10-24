@@ -28,7 +28,9 @@ import {
   requestComplaintReminder,
   fetchComplaintReminderStatus,
   fetchComplaintReminders,
-  fetchComplaintStatusExplanation
+  fetchComplaintStatusExplanation,
+  flagComplaintForReview,
+  API_BASE_URL
 } from '../api/client';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
 import {
@@ -64,7 +66,10 @@ import {
   ChevronUp,
   Languages,
   Bell,
-  Info
+  Info,
+  Flag,
+  ExternalLink,
+  Image as ImageIcon
 } from 'lucide-react';
 import {
   RESOLUTION_OUTCOME_OPTIONS,
@@ -119,6 +124,13 @@ export default function ComplaintDetailPage() {
   const [duplicateRemarks, setDuplicateRemarks] = useState('');
   const [linkingDuplicate, setLinkingDuplicate] = useState(false);
   const [duplicateMessage, setDuplicateMessage] = useState(null);
+
+  // Manual Spam / Abuse Review Flagging State (Problem C)
+  const [showFlagModal, setShowFlagModal] = useState(false);
+  const [flagReasonCode, setFlagReasonCode] = useState('SUSPICIOUS_CONTENT');
+  const [flagNotes, setFlagNotes] = useState('');
+  const [flagging, setFlagging] = useState(false);
+  const [flagMessage, setFlagMessage] = useState(null);
 
   // Phase 10: Feedback, Appeals & Controlled Reopening State
   const [feedbackList, setFeedbackList] = useState([]);
@@ -340,6 +352,46 @@ export default function ComplaintDetailPage() {
       setReopeningMessage({ type: 'error', text: err.message });
     } finally {
       setSubmittingReopening(false);
+    }
+  };
+
+  const handleFlagComplaint = async (e) => {
+    e.preventDefault();
+    if (flagging || !complaint) return;
+    setFlagMessage(null);
+
+    const trimmedNotes = flagNotes.trim();
+    if (!trimmedNotes || trimmedNotes.length < 10) {
+      setFlagMessage({
+        type: 'error',
+        text: 'Please provide at least 10 characters explaining why this complaint is being flagged for review.'
+      });
+      return;
+    }
+
+    try {
+      setFlagging(true);
+      const res = await flagComplaintForReview(complaint.id, {
+        reasonCode: flagReasonCode,
+        notes: trimmedNotes
+      });
+      setFlagMessage({
+        type: 'success',
+        text: `Complaint successfully flagged for review (Ref: ${res.data?.referenceNumber || res.data?.id || 'Created'}). It is now visible in the Spam Review Desk.`
+      });
+      setComplaint(prev => ({ ...prev, isFlaggedSpam: true }));
+      setTimeout(() => {
+        setShowFlagModal(false);
+        setFlagNotes('');
+        setFlagMessage(null);
+      }, 3000);
+    } catch (err) {
+      setFlagMessage({
+        type: 'error',
+        text: err.message || 'Failed to flag complaint for review.'
+      });
+    } finally {
+      setFlagging(false);
     }
   };
 
@@ -840,16 +892,69 @@ export default function ComplaintDetailPage() {
               Attached Evidence & Citations
             </h2>
             {complaint.evidence && complaint.evidence.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {complaint.evidence.map((item, idx) => (
-                  <span
-                    key={idx}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-900 border border-blue-200 text-xs font-medium"
-                  >
-                    <Paperclip size={13} className="text-blue-600" />
-                    {item}
-                  </span>
-                ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {complaint.evidence.map((item, idx) => {
+                  const isImage = typeof item === 'string' && (
+                    item.startsWith('ATTACH-') ||
+                    /\.(jpe?g|png|webp)$/i.test(item)
+                  );
+                  const attachmentUrl = isImage ? `${API_BASE_URL}/api/v1/complaints/attachments/${encodeURIComponent(item)}` : null;
+
+                  if (isImage) {
+                    return (
+                      <div
+                        key={idx}
+                        className="group bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs hover:shadow-md transition flex flex-col"
+                      >
+                        <div className="relative h-32 bg-slate-100 overflow-hidden flex items-center justify-center">
+                          <img
+                            src={attachmentUrl}
+                            alt={`Evidence ${item}`}
+                            className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.style.display = 'none';
+                              if (e.target.nextSibling) {
+                                e.target.nextSibling.style.display = 'flex';
+                              }
+                            }}
+                          />
+                          <div style={{ display: 'none' }} className="p-3 text-center text-slate-400 flex flex-col items-center justify-center">
+                            <ImageIcon size={24} className="text-slate-300 mb-1" />
+                            <span className="text-[10px]">Photo Attachment</span>
+                          </div>
+                        </div>
+                        <div className="p-2.5 flex items-center justify-between gap-2 bg-white">
+                          <div className="min-w-0 flex-1">
+                            <span className="text-[11px] font-semibold text-slate-800 block truncate" title={item}>
+                              {item}
+                            </span>
+                            <span className="text-[10px] text-slate-400">Attached Photo</span>
+                          </div>
+                          <a
+                            href={attachmentUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition"
+                            title="View full size in new tab"
+                          >
+                            <ExternalLink size={14} />
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={idx}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-50 text-blue-900 border border-blue-200 text-xs font-medium"
+                    >
+                      <Paperclip size={14} className="text-blue-600 shrink-0" />
+                      <span className="truncate" title={String(item)}>{String(item)}</span>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <p className="text-xs text-slate-500 italic">No attachments lodged with this grievance.</p>
@@ -1852,9 +1957,20 @@ export default function ComplaintDetailPage() {
                 Officer Decision & Redressal Controls
               </h2>
             </div>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 font-semibold">
-              Authorized Triage Desk
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 font-semibold">
+                Authorized Triage Desk
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowFlagModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-semibold transition shadow-xs"
+                title="Flag complaint for fraud, abuse, or spam review"
+              >
+                <Flag size={13} className="text-amber-700" />
+                <span>Flag for Review</span>
+              </button>
+            </div>
           </div>
 
           {/* Phase 6: AI Complaint Intelligence & Decision Support Cockpit */}
@@ -2656,6 +2772,121 @@ export default function ComplaintDetailPage() {
                 >
                   {resolutionSubmitting && <RefreshCw size={13} className="animate-spin" />}
                   <span>{resolutionSubmitting ? 'Validating Resolution...' : `Validate & Confirm ${resolutionTargetStatus}`}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MANUAL SPAM / ABUSE REVIEW MODAL (Problem C) */}
+      {showFlagModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="p-5 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-amber-100 text-amber-800 rounded-xl">
+                  <Flag size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">
+                    Flag Grievance for Spam / Fraud Review
+                  </h3>
+                  <p className="text-[11px] text-slate-600">
+                    Target Reference: <span className="font-mono font-bold text-amber-900">#{complaint.referenceNumber || complaint.id}</span>
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowFlagModal(false);
+                  setFlagMessage(null);
+                }}
+                disabled={flagging}
+                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleFlagComplaint} className="p-6 space-y-4 text-xs">
+              <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-amber-900 space-y-1">
+                <span className="font-bold block flex items-center gap-1.5 text-[11px]">
+                  <ShieldAlert size={14} className="text-amber-700" />
+                  Responsible Human-in-the-Loop Review
+                </span>
+                <p className="text-[11px] text-amber-800 leading-relaxed">
+                  Flagging this grievance adds it to the Spam Review Desk queue with full telemetry for supervisory evaluation. The complaint is not rejected or deleted; citizen rights and audit trails are strictly preserved.
+                </p>
+              </div>
+
+              {flagMessage && (
+                <div className={`p-3 rounded-xl text-xs ${
+                  flagMessage.type === 'success'
+                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                    : 'bg-rose-50 text-rose-800 border border-rose-200'
+                }`}>
+                  {flagMessage.text}
+                </div>
+              )}
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Reason for Flagging *
+                </label>
+                <select
+                  value={flagReasonCode}
+                  onChange={(e) => setFlagReasonCode(e.target.value)}
+                  disabled={flagging}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium"
+                >
+                  <option value="SUSPICIOUS_CONTENT">Suspicious or Contradictory Grievance Details</option>
+                  <option value="DUPLICATE_TEXT_EXACT">Identical Repeated Narrative Pattern</option>
+                  <option value="GIBBERISH_NONSENSE_DETECTED">Nonsensical or Incomprehensible Content</option>
+                  <option value="BURST_FREQUENCY">Abnormal Submission Frequency / Automation</option>
+                  <option value="OTHER">Other Administrative Screening Required</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Officer Explanation & Evidence Notes * (Min 10 characters)
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  value={flagNotes}
+                  onChange={(e) => setFlagNotes(e.target.value)}
+                  disabled={flagging}
+                  placeholder="State the factual basis for flagging this complaint for review (e.g. repeated identical wording observed across multiple ward filings)..."
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 leading-relaxed"
+                />
+                <div className="flex justify-between text-[11px] text-slate-400 mt-1">
+                  <span>Minimum 10 characters required</span>
+                  <span>{flagNotes.length} chars</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowFlagModal(false);
+                    setFlagMessage(null);
+                  }}
+                  disabled={flagging}
+                  className="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={flagging || flagNotes.trim().length < 10}
+                  className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow transition disabled:opacity-50 flex items-center gap-2"
+                >
+                  {flagging && <RefreshCw size={13} className="animate-spin" />}
+                  <span>{flagging ? 'Submitting Flag...' : 'Confirm & Flag for Review'}</span>
                 </button>
               </div>
             </form>

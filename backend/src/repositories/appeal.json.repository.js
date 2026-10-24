@@ -151,12 +151,12 @@ export class JsonAppealRepository {
       );
     }
     if (filters.requesterId) {
-      list = list.filter((a) => a.requesterId === filters.requesterId);
+      list = list.filter((a) => a.requesterId === filters.requesterId || a.citizenId === filters.requesterId);
     }
-    if (filters.departmentId) {
+    if (filters.departmentId && filters.departmentId !== 'ALL') {
       list = list.filter((a) => a.departmentId === filters.departmentId);
     }
-    if (filters.status) {
+    if (filters.status && filters.status !== 'ALL') {
       list = list.filter((a) => a.status === filters.status);
     }
     if (filters.assignedReviewerId) {

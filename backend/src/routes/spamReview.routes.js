@@ -5,7 +5,8 @@ import {
   getSpamReviewDetail,
   recordReviewDecision,
   getMyReputation,
-  getCitizenReputationDetail
+  getCitizenReputationDetail,
+  flagComplaint
 } from '../controllers/spamReview.controller.js';
 import { validate } from '../middleware/validate.middleware.js';
 import { authenticate, requireRole } from '../middleware/auth.middleware.js';
@@ -17,9 +18,21 @@ const listReviewsSchema = {
   query: z.object({
     departmentId: z.string().optional(),
     reviewStatus: z.string().optional(),
+    status: z.string().optional(),
     riskLevel: z.string().optional(),
     citizenId: z.string().optional(),
     complaintId: z.string().optional()
+  })
+};
+
+const flagComplaintSchema = {
+  body: z.object({
+    complaintId: z.string().optional(),
+    reason: z.string().optional(),
+    reasonCode: z.string().optional(),
+    notes: z.string().optional()
+  }).refine((d) => (d.notes && d.notes.trim().length >= 10) || (d.reason && d.reason.trim().length >= 10), {
+    message: 'A flag explanation or notes of at least 10 characters is required'
   })
 };
 
@@ -100,6 +113,23 @@ router.post(
   requireRole(['officer', 'admin']),
   validate(recordReviewDecisionSchema),
   recordReviewDecision
+);
+
+// Manual officer flag routes
+router.post(
+  '/flag',
+  authenticate,
+  requireRole(['officer', 'admin']),
+  validate(flagComplaintSchema),
+  flagComplaint
+);
+
+router.post(
+  '/complaints/:id/flag',
+  authenticate,
+  requireRole(['officer', 'admin']),
+  validate(flagComplaintSchema),
+  flagComplaint
 );
 
 export default router;

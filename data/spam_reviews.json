@@ -3,5 +3,36 @@
     "version": "1.0.0",
     "description": "CivicSarthi Flagged Spam & Suspicious Complaint Review Queue"
   },
-  "spamReviews": []
+  "spamReviews": [
+    {
+      "id": "REV-2026-0001",
+      "complaintId": "CPG-2026-00104",
+      "complaintReference": "CS-2026-0004",
+      "referenceNumber": "CS-2026-0004",
+      "citizenId": "USR-MV5PDNOR-EFQA",
+      "departmentId": "DEPT_ROADS",
+      "screeningScore": 45,
+      "riskLevel": "MEDIUM",
+      "screeningSignals": {
+        "burstRate": false,
+        "identicalText": false,
+        "gibberishScore": 0.1,
+        "duplicateCandidates": 2,
+        "fairnessProtected": true
+      },
+      "screeningReasons": [
+        "Multiple duplicate candidate grievances detected across identical road stretch within 24h."
+      ],
+      "reasons": [
+        "Multiple duplicate candidate grievances detected across identical road stretch within 24h."
+      ],
+      "score": 45,
+      "reviewStatus": "PENDING",
+      "decision": null,
+      "reviewHistory": [],
+      "evaluatedAt": "2026-10-12T11:00:00.000Z",
+      "createdAt": "2026-10-12T11:00:00.000Z",
+      "updatedAt": "2026-10-12T11:00:00.000Z"
+    }
+  ]
 }

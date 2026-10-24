@@ -28,10 +28,16 @@ export class MongoSpamReviewRepository {
     if (filters.departmentId) {
       query.departmentId = filters.departmentId.toUpperCase();
     }
-    if (filters.reviewStatus) {
-      query.reviewStatus = filters.reviewStatus;
+    const statusVal = filters.reviewStatus || filters.status;
+    if (statusVal && statusVal !== 'ALL') {
+      const normalized = (statusVal === 'PENDING_REVIEW' || statusVal === 'PENDING')
+        ? ['PENDING', 'PENDING_REVIEW']
+        : (statusVal === 'RESOLVED' || statusVal === 'REVIEWED')
+          ? ['REVIEWED', 'RESOLVED']
+          : [statusVal];
+      query.reviewStatus = { $in: normalized };
     }
-    if (filters.riskLevel) {
+    if (filters.riskLevel && filters.riskLevel !== 'ALL') {
       query.riskLevel = filters.riskLevel;
     }
     if (filters.citizenId) {

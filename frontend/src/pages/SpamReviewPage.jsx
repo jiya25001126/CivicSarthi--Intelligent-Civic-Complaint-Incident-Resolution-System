@@ -35,8 +35,10 @@ const RISK_BADGES = {
 
 const STATUS_BADGES = {
   PENDING_REVIEW: { label: 'Pending Review', bg: 'bg-amber-100', text: 'text-amber-800', border: 'border-amber-200' },
+  PENDING: { label: 'Pending Review', bg: 'bg-amber-100', text: 'text-amber-800', border: 'border-amber-200' },
   IN_REVIEW: { label: 'In Review', bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-200' },
-  RESOLVED: { label: 'Resolved', bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-200' }
+  RESOLVED: { label: 'Resolved', bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-200' },
+  REVIEWED: { label: 'Resolved', bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-200' }
 };
 
 const OUTCOME_BADGES = {
@@ -74,7 +76,11 @@ export default function SpamReviewPage() {
       setLoading(true);
       setError(null);
       const params = {};
-      if (statusFilter !== 'ALL') params.status = statusFilter;
+      if (statusFilter !== 'ALL') {
+        const mapped = statusFilter === 'PENDING_REVIEW' ? 'PENDING' : statusFilter === 'RESOLVED' ? 'REVIEWED' : statusFilter;
+        params.reviewStatus = mapped;
+        params.status = mapped;
+      }
       if (riskFilter !== 'ALL') params.riskLevel = riskFilter;
       const res = await fetchSpamReviews(params);
       setReviews(res.data || []);
@@ -165,7 +171,10 @@ export default function SpamReviewPage() {
     );
   });
 
-  const pendingCount = reviews.filter((r) => r.status === 'PENDING_REVIEW').length;
+  const pendingCount = reviews.filter((r) => {
+    const s = r.reviewStatus || r.status;
+    return s === 'PENDING' || s === 'PENDING_REVIEW';
+  }).length;
   const highRiskCount = reviews.filter((r) => r.riskLevel === 'HIGH' || r.riskLevel === 'CRITICAL').length;
   const legitimateCount = reviews.filter((r) => r.decision === 'LEGITIMATE').length;
   const abuseCount = reviews.filter((r) => r.decision === 'CONFIRMED_ABUSE').length;
@@ -332,7 +341,8 @@ export default function SpamReviewPage() {
               <tbody className="divide-y divide-slate-100">
                 {filteredReviews.map((review) => {
                   const riskStyle = RISK_BADGES[review.riskLevel] || RISK_BADGES.MEDIUM;
-                  const statusStyle = STATUS_BADGES[review.status] || STATUS_BADGES.PENDING_REVIEW;
+                  const reviewStatusKey = review.reviewStatus || review.status;
+                  const statusStyle = STATUS_BADGES[reviewStatusKey] || STATUS_BADGES.PENDING_REVIEW;
                   const outcomeStyle = OUTCOME_BADGES[review.decision];
 
                   return (

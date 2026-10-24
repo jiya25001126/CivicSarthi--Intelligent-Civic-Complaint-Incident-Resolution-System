@@ -885,7 +885,7 @@ export default function NeglectRadarPage() {
                               <span
                                 key={signal.code}
                                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-800 border border-slate-200"
-                                title={signal.evidence}
+                                title={signal.message || (typeof signal.evidence === 'object' ? JSON.stringify(signal.evidence) : String(signal.evidence || ''))}
                               >
                                 <span>{signal.name}</span>
                                 <span className="font-bold text-slate-500">+{signal.points}</span>
@@ -1158,40 +1158,69 @@ export default function NeglectRadarPage() {
                     </h3>
 
                     <div className="space-y-2.5">
-                      {itemDetail.signals && itemDetail.signals.map((signal) => (
-                        <div
-                          key={signal.code}
-                          className={`p-3.5 rounded-lg border text-xs transition-colors ${
-                            signal.triggered
-                              ? 'bg-rose-50/40 border-rose-200'
-                              : 'bg-white border-slate-200'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="space-y-0.5">
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-slate-900">{signal.name}</span>
-                                {signal.triggered ? (
-                                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-200">
-                                    Triggered (+{signal.points} pts)
-                                  </span>
-                                ) : (
-                                  <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600">
-                                    Not triggered (0 / {signal.maxPoints} pts)
-                                  </span>
-                                )}
+                      {itemDetail.signals && itemDetail.signals.map((signal) => {
+                        const isTriggered = Boolean(signal.isTriggered || signal.triggered);
+                        return (
+                          <div
+                            key={signal.code}
+                            className={`p-3.5 rounded-lg border text-xs transition-colors ${
+                              isTriggered
+                                ? 'bg-rose-50/40 border-rose-200'
+                                : 'bg-white border-slate-200'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="space-y-0.5">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-slate-900">{signal.name}</span>
+                                  {isTriggered ? (
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-200">
+                                      Triggered (+{signal.points} pts)
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600">
+                                      Not triggered (0 / {signal.maxPoints} pts)
+                                    </span>
+                                  )}
+                                </div>
                               </div>
+                              <span className="font-mono text-xs font-bold text-slate-700">
+                                {signal.points} / {signal.maxPoints}
+                              </span>
                             </div>
-                            <span className="font-mono text-xs font-bold text-slate-700">
-                              {signal.points} / {signal.maxPoints}
-                            </span>
-                          </div>
 
-                          <p className="text-slate-600 text-[11px] mt-1.5 leading-relaxed bg-white/60 p-2 rounded border border-slate-100">
-                            <strong>Evidence:</strong> {signal.evidence}
-                          </p>
-                        </div>
-                      ))}
+                            <div className="text-slate-600 text-[11px] mt-1.5 leading-relaxed bg-white/60 p-2.5 rounded-lg border border-slate-100 space-y-1.5">
+                              {signal.message && (
+                                <p className="text-slate-800 font-medium leading-snug">
+                                  {signal.message}
+                                </p>
+                              )}
+                              {signal.evidence && typeof signal.evidence === 'object' ? (
+                                <div className="pt-1 border-t border-slate-100/80">
+                                  <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                                    Telemetry Evidence Parameters:
+                                  </span>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {Object.entries(signal.evidence).map(([k, v]) => (
+                                      <span
+                                        key={k}
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-mono border border-slate-200"
+                                      >
+                                        <span className="text-slate-500 font-semibold">{k}:</span>
+                                        <span className="font-bold">{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : signal.evidence ? (
+                                <p className="text-slate-700">
+                                  <strong>Evidence:</strong> {String(signal.evidence)}
+                                </p>
+                              ) : null}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -1203,11 +1232,16 @@ export default function NeglectRadarPage() {
                         <span>Unobserved / Non-Applicable Signals</span>
                       </h3>
                       <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-600 space-y-1">
-                        {itemDetail.missingSignals.map((ms) => (
-                          <div key={ms.code} className="text-[11px]">
-                            • <strong className="text-slate-700">{ms.name}:</strong> {ms.missingReason || 'Not applicable for this entity type'}
-                          </div>
-                        ))}
+                        {itemDetail.missingSignals.map((ms, idx) => {
+                          const code = typeof ms === 'object' ? (ms.code || idx) : ms;
+                          const name = typeof ms === 'object' ? (ms.name || ms.code) : ms;
+                          const reason = typeof ms === 'object' ? (ms.missingReason || ms.reason || 'Not applicable for this entity type') : 'Not applicable for this entity type';
+                          return (
+                            <div key={code} className="text-[11px]">
+                              • <strong className="text-slate-700">{name}:</strong> {reason}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}

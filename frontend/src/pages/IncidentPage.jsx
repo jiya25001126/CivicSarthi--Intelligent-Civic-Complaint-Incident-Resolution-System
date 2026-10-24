@@ -5,6 +5,7 @@ import {
   fetchIncidents,
   fetchIncidentById,
   fetchDepartments,
+  createIncident,
   createSubtask,
   updateSubtaskStatus,
   updateIncidentStatus,
@@ -67,6 +68,22 @@ export default function IncidentPage() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [leadDeptFilter, setLeadDeptFilter] = useState('ALL');
   const [priorityFilter, setPriorityFilter] = useState('ALL');
+
+  // Declare Incident Modal State (Problem F)
+  const [isDeclareModalOpen, setIsDeclareModalOpen] = useState(false);
+  const [declareForm, setDeclareForm] = useState({
+    title: '',
+    category: 'roads',
+    leadDepartment: '',
+    description: '',
+    priority: 'MEDIUM',
+    locality: '',
+    district: '',
+    state: 'Maharashtra',
+    participatingDepartments: []
+  });
+  const [declareLoading, setDeclareLoading] = useState(false);
+  const [declareError, setDeclareError] = useState(null);
 
   // Selected Incident Workspace State (Step 3.3)
   const [selectedIncidentId, setSelectedIncidentId] = useState(null);
@@ -216,6 +233,62 @@ export default function IncidentPage() {
     setStatusFilter('ALL');
     setLeadDeptFilter('ALL');
     setPriorityFilter('ALL');
+  };
+
+  const handleDeclareIncidentSubmit = async (e) => {
+    e.preventDefault();
+    if (declareLoading) return;
+    setDeclareError(null);
+
+    const trimmedTitle = declareForm.title.trim();
+    if (!trimmedTitle || trimmedTitle.length < 3) {
+      setDeclareError('Incident title must be at least 3 characters.');
+      return;
+    }
+    const leadDept = declareForm.leadDepartment || departments[0]?.id;
+    if (!leadDept) {
+      setDeclareError('Please select a Lead Department responsible for coordinating this incident.');
+      return;
+    }
+
+    try {
+      setDeclareLoading(true);
+      const payload = {
+        title: trimmedTitle,
+        category: declareForm.category,
+        leadDepartment: leadDept,
+        description: declareForm.description?.trim() || undefined,
+        priority: declareForm.priority,
+        location: {
+          locality: declareForm.locality?.trim() || undefined,
+          district: declareForm.district?.trim() || undefined,
+          state: declareForm.state?.trim() || 'Maharashtra'
+        },
+        participatingDepartments: declareForm.participatingDepartments.length > 0
+          ? declareForm.participatingDepartments
+          : undefined
+      };
+
+      const res = await createIncident(payload);
+      setIsDeclareModalOpen(false);
+      setNotice(`Parent Incident declared successfully: ${res.data?.referenceNumber || res.data?.id}`);
+      setDeclareForm({
+        title: '',
+        category: 'roads',
+        leadDepartment: departments[0]?.id || '',
+        description: '',
+        priority: 'MEDIUM',
+        locality: '',
+        district: '',
+        state: 'Maharashtra',
+        participatingDepartments: []
+      });
+      await loadData();
+    } catch (err) {
+      setDeclareError(err.message || 'Failed to declare parent incident.');
+    } finally {
+      setDeclareLoading(false);
+    }
   };
 
   const hasActiveFilters = search.trim() !== '' || statusFilter !== 'ALL' || leadDeptFilter !== 'ALL' || priorityFilter !== 'ALL';
@@ -2349,7 +2422,14 @@ export default function IncidentPage() {
           {canManageIncidents && (
             <button
               type="button"
-              onClick={() => setNotice('Incident declaration workflow is scheduled for Step 3.3/3.4 implementation.')}
+              onClick={() => {
+                setDeclareError(null);
+                setDeclareForm(prev => ({
+                  ...prev,
+                  leadDepartment: prev.leadDepartment || departments[0]?.id || ''
+                }));
+                setIsDeclareModalOpen(true);
+              }}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition"
               title="Declare new parent incident"
             >
@@ -2734,6 +2814,225 @@ export default function IncidentPage() {
               </div>
             );
           })}
+        </div>
+      )}
+      {/* DECLARE PARENT INCIDENT MODAL (Problem F) */}
+      {isDeclareModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-150">
+            <div className="p-5 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-blue-600 text-white rounded-xl shadow-xs">
+                  <ShieldAlert size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base">
+                    Declare Multi-Agency Incident
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Cluster civic emergencies across municipal departments
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDeclareModalOpen(false)}
+                disabled={declareLoading}
+                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleDeclareIncidentSubmit} className="p-6 space-y-4 text-xs">
+              {declareError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-center gap-2">
+                  <AlertTriangle size={15} className="text-rose-600 shrink-0" />
+                  <span>{declareError}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Incident Title * (Min 3 characters)
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Major Water Pipeline Burst & Road Cavity on MG Road"
+                  value={declareForm.title}
+                  onChange={(e) => setDeclareForm({ ...declareForm, title: e.target.value })}
+                  disabled={declareLoading}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Category *
+                  </label>
+                  <select
+                    value={declareForm.category}
+                    onChange={(e) => setDeclareForm({ ...declareForm, category: e.target.value })}
+                    disabled={declareLoading}
+                    className="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  >
+                    <option value="roads">Roads & Infrastructure</option>
+                    <option value="water">Drinking Water Supply</option>
+                    <option value="electricity">Electricity & Power</option>
+                    <option value="municipal">Municipal Sanitation</option>
+                    <option value="healthcare">Public Health</option>
+                    <option value="flood relief">Flood Relief & Disaster</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Lead Department *
+                  </label>
+                  <select
+                    value={declareForm.leadDepartment}
+                    onChange={(e) => setDeclareForm({ ...declareForm, leadDepartment: e.target.value })}
+                    disabled={declareLoading}
+                    className="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium"
+                  >
+                    {departments.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name || d.id}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Priority Level *
+                  </label>
+                  <select
+                    value={declareForm.priority}
+                    onChange={(e) => setDeclareForm({ ...declareForm, priority: e.target.value })}
+                    disabled={declareLoading}
+                    className="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 font-semibold"
+                  >
+                    <option value="CRITICAL">CRITICAL</option>
+                    <option value="HIGH">HIGH</option>
+                    <option value="MEDIUM">MEDIUM</option>
+                    <option value="LOW">LOW</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Incident Description
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Detailed multi-agency summary, severity assessment, and emergency context..."
+                  value={declareForm.description}
+                  onChange={(e) => setDeclareForm({ ...declareForm, description: e.target.value })}
+                  disabled={declareLoading}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 leading-relaxed"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Locality / Landmark</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Sector 4 Junction"
+                    value={declareForm.locality}
+                    onChange={(e) => setDeclareForm({ ...declareForm, locality: e.target.value })}
+                    disabled={declareLoading}
+                    className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">District</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Pune"
+                    value={declareForm.district}
+                    onChange={(e) => setDeclareForm({ ...declareForm, district: e.target.value })}
+                    disabled={declareLoading}
+                    className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">State</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Maharashtra"
+                    value={declareForm.state}
+                    onChange={(e) => setDeclareForm({ ...declareForm, state: e.target.value })}
+                    disabled={declareLoading}
+                    className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Participating Departments
+                </label>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {departments
+                    .filter(d => d.id !== declareForm.leadDepartment)
+                    .map((dept) => {
+                      const isSelected = declareForm.participatingDepartments.includes(dept.id);
+                      return (
+                        <button
+                          key={dept.id}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              setDeclareForm({
+                                ...declareForm,
+                                participatingDepartments: declareForm.participatingDepartments.filter(id => id !== dept.id)
+                              });
+                            } else {
+                              setDeclareForm({
+                                ...declareForm,
+                                participatingDepartments: [...declareForm.participatingDepartments, dept.id]
+                              });
+                            }
+                          }}
+                          className={`px-2.5 py-1 rounded-lg border text-xs font-semibold transition ${
+                            isSelected
+                              ? 'bg-blue-100 text-blue-800 border-blue-300'
+                              : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                          }`}
+                        >
+                          {isSelected ? '✓ ' : '+ '}
+                          {dept.name || dept.id}
+                        </button>
+                      );
+                    })}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setIsDeclareModalOpen(false)}
+                  disabled={declareLoading}
+                  className="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={declareLoading || declareForm.title.trim().length < 3}
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow transition disabled:opacity-50 flex items-center gap-2"
+                >
+                  {declareLoading && <RefreshCw size={13} className="animate-spin" />}
+                  <span>{declareLoading ? 'Declaring Incident...' : 'Declare Incident'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

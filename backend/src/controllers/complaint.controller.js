@@ -4,6 +4,8 @@ import complaintRepository from '../repositories/complaint.repository.js';
 import aiIntelligenceService from '../services/aiIntelligence.service.js';
 import { validateResolutionQuality } from '../services/resolutionQuality.validator.js';
 import { COMPLAINT_STATUS, validateStatusTransition } from '../constants/status.constants.js';
+import storageService from '../services/storage.service.js';
+import spamReviewService from '../services/spamReview.service.js';
 
 export const listComplaints = async (req, res, next) => {
   try {
@@ -889,6 +891,60 @@ export const linkDuplicateComplaint = async (req, res, next) => {
   }
 };
 
+/**
+ * Uploads a complaint photo/evidence attachment safely.
+ */
+export const uploadComplaintAttachment = async (req, res, next) => {
+  try {
+    const { filename, mimeType, base64Data, data } = req.body;
+    const attachment = await storageService.saveAttachment({
+      filename: filename || 'attachment.jpg',
+      mimeType: mimeType || 'image/jpeg',
+      data: base64Data || data
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Attachment uploaded successfully',
+      data: attachment
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Securely streams an uploaded complaint attachment to authorized users.
+ */
+export const getComplaintAttachment = async (req, res, next) => {
+  try {
+    const file = await storageService.getAttachmentFile(req.params.filename);
+    res.setHeader('Content-Type', file.mimeType);
+    res.setHeader('Content-Length', file.size);
+    res.setHeader('Cache-Control', 'private, max-age=86400');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.sendFile(file.filePath);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Manually flags a complaint for Spam & Abuse investigation.
+ */
+export const flagComplaintForSpam = async (req, res, next) => {
+  try {
+    const result = await spamReviewService.flagComplaintManually(req.params.id, req.body, req.user);
+    res.status(201).json({
+      success: true,
+      message: result.message,
+      data: result.review
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   listComplaints,
   listMyComplaints,
@@ -904,5 +960,8 @@ export default {
   getComplaintIntelligence,
   getComplaintDuplicates,
   updateComplaintPriority,
-  linkDuplicateComplaint
+  linkDuplicateComplaint,
+  uploadComplaintAttachment,
+  getComplaintAttachment,
+  flagComplaintForSpam
 };
