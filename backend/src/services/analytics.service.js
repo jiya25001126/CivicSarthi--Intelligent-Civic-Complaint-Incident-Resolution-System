@@ -1041,24 +1041,24 @@ export class AnalyticsService {
       rows.push(`Status Distribution,REOPENED,${workflowData.statusDistribution.REOPENED || 0}`);
       rows.push(`Workflow Anomalies,Reassignment Loops Count,${workflowData.anomalies.reassignmentLoops.count}`);
       rows.push(`Workflow Anomalies,Stale Complaints Count,${workflowData.anomalies.staleCases.count}`);
-      rows.push(`Clarifications (Phase 12),Total Clarification Requests,${workflowData.clarifications.totalRequests}`);
-      rows.push(`Clarifications (Phase 12),Open Requests,${workflowData.clarifications.openRequests}`);
-      rows.push(`Clarifications (Phase 12),Responded Requests,${workflowData.clarifications.respondedRequests}`);
-      rows.push(`Citizen Reminders (Phase 12),Total Reminders Logged,${workflowData.reminders.totalRemindersLogged}`);
-      rows.push(`Citizen Reminders (Phase 12),Unique Grievances Reminded,${workflowData.reminders.uniqueComplaintsReminded}`);
+      rows.push(`Clarifications,Total Clarification Requests,${workflowData.clarifications.totalRequests}`);
+      rows.push(`Clarifications,Open Requests,${workflowData.clarifications.openRequests}`);
+      rows.push(`Clarifications,Responded Requests,${workflowData.clarifications.respondedRequests}`);
+      rows.push(`Citizen Reminders,Total Reminders Logged,${workflowData.reminders.totalRemindersLogged}`);
+      rows.push(`Citizen Reminders,Unique Grievances Reminded,${workflowData.reminders.uniqueComplaintsReminded}`);
       rows.push(
-        `Citizen Feedback (Phase 10),Average Rating (1-5),${workflowData.satisfactionFeedback.averageRating ?? 'N/A'}`
+        `Citizen Feedback,Average Rating (1-5),${workflowData.satisfactionFeedback.averageRating ?? 'N/A'}`
       );
-      rows.push(`Dispute Appeals (Phase 10),Total Appeals Filed,${workflowData.appeals.totalAppeals}`);
-      rows.push(`Dispute Appeals (Phase 10),Appeals Accepted,${workflowData.appeals.acceptedAppeals}`);
-      rows.push(`Dispute Appeals (Phase 10),Appeals Rejected,${workflowData.appeals.rejectedAppeals}`);
-      rows.push(`Reopening Petitions (Phase 10),Total Reopenings,${workflowData.reopenings.totalPetitions}`);
-      rows.push(`Spam Screening Desk (Phase 11),Automated Flags Count,${workflowData.spamReviewDesk.totalScreeningFlags}`);
+      rows.push(`Dispute Appeals,Total Appeals Filed,${workflowData.appeals.totalAppeals}`);
+      rows.push(`Dispute Appeals,Appeals Accepted,${workflowData.appeals.acceptedAppeals}`);
+      rows.push(`Dispute Appeals,Appeals Rejected,${workflowData.appeals.rejectedAppeals}`);
+      rows.push(`Reopening Petitions,Total Reopenings,${workflowData.reopenings.totalPetitions}`);
+      rows.push(`Spam Screening Desk,Automated Flags Count,${workflowData.spamReviewDesk.totalScreeningFlags}`);
       rows.push(
-        `Spam Screening Desk (Phase 11),Cleared Legitimate Complaints,${workflowData.spamReviewDesk.humanReviewOutcomes.clearedLegitimate}`
+        `Spam Screening Desk,Cleared Legitimate Complaints,${workflowData.spamReviewDesk.humanReviewOutcomes.clearedLegitimate}`
       );
       rows.push(
-        `Spam Screening Desk (Phase 11),Confirmed Abuse Adjudications,${workflowData.spamReviewDesk.humanReviewOutcomes.confirmedAbuse}`
+        `Spam Screening Desk,Confirmed Abuse Adjudications,${workflowData.spamReviewDesk.humanReviewOutcomes.confirmedAbuse}`
       );
       rows.push('');
     }

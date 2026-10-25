@@ -711,7 +711,7 @@ export default function AnalyticsDashboardPage() {
                 <span>Grievance Lifecycle Status Distribution</span>
               </h2>
               <p className="text-[11px] text-slate-500">
-                Breakdown of complaints across all 8 administrative lifecycle phases.
+                Breakdown of complaints across all 8 administrative lifecycle stages.
               </p>
             </div>
             <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full">
@@ -999,7 +999,7 @@ export default function AnalyticsDashboardPage() {
         </div>
       </div>
 
-      {/* 7. Operational Workflow, Quality & Cross-Phase Integrations */}
+      {/* 7. Operational Workflow, Quality & Cross-Functional Integrations */}
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
         <div className="border-b border-slate-100 pb-3">
           <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
@@ -1007,12 +1007,12 @@ export default function AnalyticsDashboardPage() {
             <span>Grievance Quality, Follow-Ups & Workflow Intelligence</span>
           </h2>
           <p className="text-[11px] text-slate-500">
-            Synthesized indicators from Citizen Feedback (Phase 10), Spam Screening (Phase 11), Clarifications & Reminders (Phase 12), and Inter-Agency Subtasks (Phase 7).
+            Synthesized indicators from Citizen Feedback, Spam Screening, Clarifications & Reminders, and Inter-Agency Subtasks.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-          {/* Card A: Clarifications & Reminders (Phase 12) */}
+          {/* Card A: Clarifications & Reminders */}
           <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/50 space-y-2">
             <div className="flex items-center gap-1.5 font-bold text-slate-900 text-xs">
               <MessageSquareQuote size={14} className="text-blue-600" />
@@ -1041,7 +1041,7 @@ export default function AnalyticsDashboardPage() {
             </div>
           </div>
 
-          {/* Card B: Citizen Ratings & Dispute Appeals (Phase 10) */}
+          {/* Card B: Citizen Ratings & Dispute Appeals */}
           <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/50 space-y-2">
             <div className="flex items-center gap-1.5 font-bold text-slate-900 text-xs">
               <Star size={14} className="text-amber-500 fill-amber-500" />
@@ -1071,7 +1071,7 @@ export default function AnalyticsDashboardPage() {
             </div>
           </div>
 
-          {/* Card C: Spam Review Desk (Phase 11) */}
+          {/* Card C: Spam Review Desk */}
           <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/50 space-y-2">
             <div className="flex items-center gap-1.5 font-bold text-slate-900 text-xs">
               <ShieldAlert size={14} className="text-indigo-600" />
@@ -1102,7 +1102,7 @@ export default function AnalyticsDashboardPage() {
             </div>
           </div>
 
-          {/* Card D: Workflow Bottlenecks & Multi-Agency Subtasks (Phase 7 & 8) */}
+          {/* Card D: Workflow Bottlenecks & Multi-Agency Subtasks */}
           <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/50 space-y-2">
             <div className="flex items-center gap-1.5 font-bold text-slate-900 text-xs">
               <RotateCcw size={14} className="text-purple-600" />

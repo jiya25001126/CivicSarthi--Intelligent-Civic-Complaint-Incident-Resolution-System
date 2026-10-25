@@ -284,7 +284,7 @@ export default function ComplaintDetailPage() {
         }
         await loadExplanation(id, translatorLang);
       } catch (p12Err) {
-        console.warn('Phase 12 data load notice:', p12Err.message);
+        console.warn('Clarification and reminder data load notice:', p12Err.message);
       }
     } catch (err) {
       setError(err.message);
@@ -302,8 +302,13 @@ export default function ComplaintDetailPage() {
         rating: Number(feedbackRating),
         comments: feedbackComments.trim()
       });
-      setFeedbackMessage({ type: 'success', text: 'Thank you! Your resolution feedback has been recorded.' });
-      setFeedbackList(prev => [...prev, res.data]);
+      if (res && res.success && res.data) {
+        setFeedbackMessage({ type: 'success', text: 'Thank you! Your resolution feedback has been recorded.' });
+        setFeedbackList(prev => [...prev, res.data]);
+        setFeedbackComments('');
+      } else {
+        throw new Error(res?.message || 'Failed to record resolution feedback.');
+      }
     } catch (err) {
       setFeedbackMessage({ type: 'error', text: err.message });
     } finally {
@@ -1004,7 +1009,7 @@ export default function ComplaintDetailPage() {
                   Official Resolution & Quality Verification Record
                 </h2>
                 <p className="text-xs text-slate-500">
-                  Validated under CivicSarthi Phase 9 Resolution Standards
+                  Validated under CivicSarthi Resolution Quality Standards
                 </p>
               </div>
             </div>
@@ -1115,11 +1120,11 @@ export default function ComplaintDetailPage() {
           </div>
           <p className="text-xs text-amber-800 leading-relaxed">
             This grievance was reopened following an approved citizen review petition. The assigned department is actively re-investigating the reported civic issue.
-            Under CivicSarthi Phase 9 standards, a subsequent closure will require a complete re-verification pass.
+            Under CivicSarthi quality verification standards, subsequent closure will require a complete re-verification pass.
           </p>
           {complaint.previousResolutionDetails && (
             <div className="pt-2 border-t border-amber-200/80 text-[11px] text-amber-900">
-              <span className="font-semibold">Previous Milestone #{complaint.reopenedCount || 1} Outcome: </span>
+              <span className="font-semibold">Previous Resolution Outcome (Cycle #{complaint.reopenedCount || 1}): </span>
               <span>
                 {formatOutcomeType(complaint.previousResolutionDetails.outcomeType)} ({formatVerificationMethod(complaint.previousResolutionDetails.verificationMethod)})
               </span>
@@ -1518,7 +1523,7 @@ export default function ComplaintDetailPage() {
               </h2>
             </div>
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800">
-              Phase 10 Feedback
+              Resolution Feedback
             </span>
           </div>
 
@@ -1543,7 +1548,7 @@ export default function ComplaintDetailPage() {
                       </span>
                     </div>
                     <span className="text-[11px] text-slate-500">
-                      Milestone #{fb.resolutionMilestone || 1} • {new Date(fb.createdAt).toLocaleDateString('en-IN', {
+                      Resolution Cycle #{fb.resolutionMilestone || 1} • {new Date(fb.createdAt).toLocaleDateString('en-IN', {
                         day: '2-digit',
                         month: 'short',
                         year: 'numeric'
@@ -1559,16 +1564,24 @@ export default function ComplaintDetailPage() {
               ))}
             </div>
           ) : (
-            <p className="text-xs text-slate-500 italic">No citizen satisfaction ratings recorded yet for this resolution milestone.</p>
+            <p className="text-xs text-slate-500 italic">No citizen satisfaction ratings recorded yet for this resolution.</p>
+          )}
+
+          {feedbackMessage && (
+            <div className={`p-3 rounded-lg text-xs ${
+              feedbackMessage.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'
+            }`}>
+              {feedbackMessage.text}
+            </div>
           )}
 
           {/* Citizen Feedback Submission Form (Only shown if owner or citizen and no feedback for current milestone) */}
           {(!isOfficerMode || (user && user.id === complaint.citizenId)) &&
             (complaint.status === 'RESOLVED' || complaint.status === 'CLOSED') &&
-            !feedbackList.some(f => f.resolutionMilestone === (complaint.resolutionMilestone || '1')) && (
+            !feedbackList.some(f => String(f.resolutionMilestone || '1') === String(complaint.resolutionMilestone || '1')) && (
               <form onSubmit={handleFeedbackSubmit} className="pt-3 border-t border-slate-200 space-y-3">
                 <span className="text-xs font-bold text-slate-800 block">
-                  Rate Your Experience with this Resolution (Milestone #{complaint.resolutionMilestone || '1'})
+                  Rate Your Resolution Experience
                 </span>
 
                 <div className="flex items-center gap-3">
@@ -1606,14 +1619,6 @@ export default function ComplaintDetailPage() {
                     className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
-
-                {feedbackMessage && (
-                  <div className={`p-3 rounded-lg text-xs ${
-                    feedbackMessage.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'
-                  }`}>
-                    {feedbackMessage.text}
-                  </div>
-                )}
 
                 <button
                   type="submit"
@@ -2187,7 +2192,7 @@ export default function ComplaintDetailPage() {
                 <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-lg text-blue-900 text-xs space-y-1">
                   <div className="flex items-center gap-1.5 font-bold">
                     <ShieldCheck size={14} className="text-blue-700" />
-                    <span>Phase 9 Resolution Quality Verification Required</span>
+                    <span>Resolution Quality Verification Required</span>
                   </div>
                   <p className="text-[11px] text-blue-800 leading-snug">
                     Transitioning to <strong>{newStatus}</strong> enforces verifiable checklist criteria: verified outcome type, inspection method, remediation remarks (&ge;25 chars), and supporting evidence or supervisory exception.
@@ -2356,7 +2361,7 @@ export default function ComplaintDetailPage() {
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Objective, verifiable resolution standards required before grievance closure (Phase 9)
+                  Objective, verifiable resolution standards required before grievance closure
                 </p>
               </div>
               <button

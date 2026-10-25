@@ -161,7 +161,7 @@ export default function AppealManagementPage() {
               Resolution Appeals Desk
             </h1>
             <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-xs font-semibold">
-              Phase 10 Desk
+              Appeals Review Desk
             </span>
           </div>
           <p className="text-sm text-slate-600 mt-1">
@@ -284,7 +284,7 @@ export default function AppealManagementPage() {
                           <span>{appeal.complaintReference || appeal.complaintId}</span>
                           <ExternalLink size={11} className="text-slate-400" />
                         </Link>
-                        <span className="text-[10px] text-slate-400 block">Milestone #{appeal.resolutionMilestone || 1}</span>
+                        <span className="text-[10px] text-slate-400 block">Cycle #{appeal.resolutionMilestone || 1}</span>
                       </td>
                       <td className="p-3.5">
                         <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">

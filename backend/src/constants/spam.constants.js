@@ -62,7 +62,7 @@ export const SPAM_REASON_DESCRIPTIONS = Object.freeze({
   BURST_FREQUENCY: 'Unusually high submission volume from this citizen account in a narrow time window',
   DUPLICATE_TEXT_EXACT: 'Exact duplicate text matching previously submitted grievances',
   DUPLICATE_TEXT_SIMILAR: 'High textual and contextual similarity to existing grievances from same user',
-  PHASE6_DUPLICATE_MATCH: 'Phase 6 AI duplicate detection identified high-confidence duplicate candidate',
+  PHASE6_DUPLICATE_MATCH: 'Automated duplicate detection identified high-confidence duplicate candidate',
   REPETITIVE_CHARACTERS: 'Repetitive keyboard patterns, character mash, or automated nonsensical strings',
   LOW_INFORMATION_DENSITY: 'Extremely sparse or uninformative text failing to describe actionable civic defect',
   RAPID_CATEGORY_CYCLING: 'Multiple distinct departments targeted with identical metadata within minutes'

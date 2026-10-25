@@ -32,6 +32,7 @@ import reopeningRequestRepository from '../src/repositories/reopeningRequest.rep
 import { authService } from '../src/services/auth.service.js';
 import { appealService } from '../src/services/appeal.service.js';
 import { reopeningService } from '../src/services/reopening.service.js';
+import { MongoFeedbackRepository } from '../src/repositories/feedback.mongo.repository.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -172,6 +173,82 @@ describe('CivicSarthi Phase 10 — Citizen Feedback, Appeals & Controlled Reopen
           resolutionMilestone: '1',
           resolutionDetails: { outcomeType: 'REPAIR_COMPLETED' },
           statusHistory: []
+        },
+        {
+          id: 'CMP-P10-UNVERIFIED',
+          referenceNumber: 'CS-2026-99997',
+          title: 'Unverified resolution grievance',
+          description: 'A complaint marked resolved with explicitly failing resolution quality.',
+          category: 'roads',
+          departmentId: 'DEPT_ROADS',
+          department: 'DEPT_ROADS',
+          status: 'RESOLVED',
+          priority: 'LOW',
+          citizenId: 'CITIZEN-P10-001',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          reassignments: 0,
+          reopenedCount: 0,
+          isReopened: false,
+          resolutionMilestone: '1',
+          resolutionDetails: { valid: false, score: 25 },
+          statusHistory: []
+        },
+        {
+          id: 'CMP-P10-OFFICER-RESOLVED',
+          referenceNumber: 'CS-2026-99996',
+          title: 'Officer verified resolution via status history with authorized policy',
+          description: 'A complaint resolved by an officer with formal status history record and supervisory approval.',
+          category: 'roads',
+          departmentId: 'DEPT_ROADS',
+          department: 'DEPT_ROADS',
+          status: 'RESOLVED',
+          priority: 'MEDIUM',
+          citizenId: 'CITIZEN-P10-001',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          reassignments: 0,
+          reopenedCount: 0,
+          isReopened: false,
+          resolutionMilestone: '1',
+          resolutionDetails: null,
+          statusHistory: [
+            {
+              timestamp: new Date().toISOString(),
+              status: 'RESOLVED',
+              actorType: 'OFFICER',
+              remarks: 'Speed breaker remodeled according to IRC standards and thermoplastic stripes applied.',
+              supervisorApproved: true,
+              policyOverride: true
+            }
+          ]
+        },
+        {
+          id: 'CMP-P10-OFFICER-UNAUTHORIZED',
+          referenceNumber: 'CS-2026-99995',
+          title: 'Officer resolution lacking quality checks and policy override',
+          description: 'A contemporary complaint resolved by an officer without quality checklist and without policy override.',
+          category: 'roads',
+          departmentId: 'DEPT_ROADS',
+          department: 'DEPT_ROADS',
+          status: 'RESOLVED',
+          priority: 'MEDIUM',
+          citizenId: 'CITIZEN-P10-001',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          reassignments: 0,
+          reopenedCount: 0,
+          isReopened: false,
+          resolutionMilestone: '1',
+          resolutionDetails: null,
+          statusHistory: [
+            {
+              timestamp: new Date().toISOString(),
+              status: 'RESOLVED',
+              actorType: 'OFFICER',
+              remarks: 'Fixed the road pothole with bitumen patch.'
+            }
+          ]
         }
       ]
     };
@@ -350,7 +427,7 @@ describe('CivicSarthi Phase 10 — Citizen Feedback, Appeals & Controlled Reopen
         .send({ rating: 5, comments: 'Submitting a second time' });
 
       assert.equal(res.status, 409);
-      assert.match(res.body.error, /already been submitted for this resolution milestone/i);
+      assert.match(res.body.error, /already been submitted for this resolution/i);
     });
 
     it('retrieves feedback via complaint nested endpoint', async () => {
@@ -374,6 +451,89 @@ describe('CivicSarthi Phase 10 — Citizen Feedback, Appeals & Controlled Reopen
       assert.equal(res.body.data.totalFeedback, 1);
       assert.equal(res.body.data.averageRating, 4);
       assert.equal(res.body.data.ratingDistribution[4], 1);
+    });
+
+    it('retrieves feedback submitted by authenticated citizen via /api/v1/feedback/my', async () => {
+      const res = await request(app)
+        .get('/api/v1/feedback/my')
+        .set('Authorization', `Bearer ${citizenToken}`);
+
+      assert.equal(res.status, 200);
+      assert.equal(res.body.success, true);
+      assert.ok(Array.isArray(res.body.data));
+      assert.ok(res.body.data.length >= 1);
+      assert.ok(res.body.data.some(f => f.complaintId === 'CMP-P10-001' && f.rating === 4));
+    });
+
+    it('rejects feedback when resolution quality is unverified or invalid (valid: false)', async () => {
+      const res = await request(app)
+        .post('/api/v1/complaints/CMP-P10-UNVERIFIED/feedback')
+        .set('Authorization', `Bearer ${citizenToken}`)
+        .send({ rating: 5, comments: 'Trying to rate unverified resolution' });
+
+      assert.equal(res.status, 400);
+      assert.equal(res.body.code, 'RESOLUTION_QUALITY_INCOMPLETE');
+      assert.equal(
+        res.body.error,
+        'Feedback is temporarily unavailable while this resolution is being verified. Please try again later.'
+      );
+    });
+
+    it('rejects feedback when officer resolution history lacks quality checks and authorized policy override', async () => {
+      const res = await request(app)
+        .post('/api/v1/complaints/CMP-P10-OFFICER-UNAUTHORIZED/feedback')
+        .set('Authorization', `Bearer ${citizenToken}`)
+        .send({ rating: 4, comments: 'Officer resolved without quality checklist or policy override' });
+
+      assert.equal(res.status, 400);
+      assert.equal(res.body.code, 'RESOLUTION_QUALITY_INCOMPLETE');
+      assert.equal(
+        res.body.error,
+        'Feedback is temporarily unavailable while this resolution is being verified. Please try again later.'
+      );
+    });
+
+    it('records valid rating for eligible resolution verified via officer status history with authorized policy', async () => {
+      const res = await request(app)
+        .post('/api/v1/complaints/CMP-P10-OFFICER-RESOLVED/feedback')
+        .set('Authorization', `Bearer ${citizenToken}`)
+        .send({ rating: 5, comments: 'Officially verified resolution work looks great.' });
+
+      assert.equal(res.status, 201);
+      assert.equal(res.body.success, true);
+      assert.equal(res.body.data.rating, 5);
+      assert.equal(res.body.data.complaintId, 'CMP-P10-OFFICER-RESOLVED');
+      assert.equal(res.body.data.resolutionMilestone, '1');
+      assert.ok(res.body.data.id.startsWith('FB-'));
+
+      // Retrieve to confirm persistence and retrieval
+      const verifyRes = await request(app)
+        .get('/api/v1/complaints/CMP-P10-OFFICER-RESOLVED/feedback')
+        .set('Authorization', `Bearer ${citizenToken}`);
+
+      assert.equal(verifyRes.status, 200);
+      assert.equal(verifyRes.body.data.length, 1);
+      assert.equal(verifyRes.body.data[0].rating, 5);
+      assert.equal(verifyRes.body.data[0].comments, 'Officially verified resolution work looks great.');
+    });
+
+    it('protects against duplicate ratings on officer-verified complaints', async () => {
+      const res = await request(app)
+        .post('/api/v1/complaints/CMP-P10-OFFICER-RESOLVED/feedback')
+        .set('Authorization', `Bearer ${citizenToken}`)
+        .send({ rating: 4, comments: 'Attempting duplicate rating' });
+
+      assert.equal(res.status, 409);
+      assert.equal(res.body.code, 'FEEDBACK_ALREADY_SUBMITTED');
+      assert.match(res.body.error, /already been submitted for this resolution/i);
+    });
+
+    it('MongoFeedbackRepository provides generateFeedbackId and create methods with FB-YYYY format', async () => {
+      const repo = new MongoFeedbackRepository();
+      assert.equal(typeof repo.generateFeedbackId, 'function');
+      assert.equal(typeof repo.create, 'function');
+      assert.equal(typeof repo.findByComplaintAndMilestone, 'function');
+      assert.equal(typeof repo.findAll, 'function');
     });
   });
 

@@ -32,6 +32,11 @@ const feedbackSchema = new mongoose.Schema(
       index: true,
       trim: true
     },
+    referenceNumber: {
+      type: String,
+      trim: true,
+      index: true
+    },
     citizenId: {
       type: String,
       required: [true, 'Citizen ID is required'],
@@ -52,7 +57,7 @@ const feedbackSchema = new mongoose.Schema(
     },
     resolutionMilestone: {
       type: String,
-      required: [true, 'Resolution milestone is required'],
+      required: [true, 'Resolution cycle identifier is required'],
       trim: true,
       default: '1'
     },
@@ -81,6 +86,23 @@ const feedbackSchema = new mongoose.Schema(
     timestamps: true
   }
 );
+
+// Pre-validate hook to synchronize referenceNumber and guarantee a unique ID if omitted
+feedbackSchema.pre('validate', async function (next) {
+  if (!this.complaintReference && this.referenceNumber) {
+    this.complaintReference = this.referenceNumber;
+  }
+  if (!this.referenceNumber && this.complaintReference) {
+    this.referenceNumber = this.complaintReference;
+  }
+  if (!this.id) {
+    const year = new Date().getFullYear();
+    const count = (await mongoose.models.Feedback?.countDocuments?.()) || 0;
+    const seq = String(count + 1).padStart(4, '0');
+    this.id = `FB-${year}-${seq}`;
+  }
+  next();
+});
 
 // Compound index to ensure uniqueness per complaint, citizen, and milestone
 feedbackSchema.index({ complaintId: 1, citizenId: 1, resolutionMilestone: 1 }, { unique: true });
