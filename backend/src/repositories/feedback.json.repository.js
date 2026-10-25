@@ -114,9 +114,13 @@ export class JsonFeedbackRepository {
     const fileData = await this._readFile();
     const list = fileData.feedback || [];
     const strMilestone = String(milestone || '1');
+    const target = String(complaintId || '').toLowerCase().trim();
     const found = list.find(
-      (f) => (f.complaintId === complaintId || f.complaintReference === complaintId) &&
-             String(f.resolutionMilestone || '1') === strMilestone
+      (f) =>
+        (String(f.complaintId || '').toLowerCase().trim() === target ||
+         String(f.complaintReference || '').toLowerCase().trim() === target ||
+         String(f.referenceNumber || '').toLowerCase().trim() === target) &&
+        String(f.resolutionMilestone || '1') === strMilestone
     );
     return found ? { ...found } : null;
   }
@@ -126,8 +130,12 @@ export class JsonFeedbackRepository {
     let list = fileData.feedback || [];
 
     if (filters.complaintId) {
+      const target = String(filters.complaintId).toLowerCase().trim();
       list = list.filter(
-        (f) => f.complaintId === filters.complaintId || f.complaintReference === filters.complaintId
+        (f) =>
+          String(f.complaintId || '').toLowerCase().trim() === target ||
+          String(f.complaintReference || '').toLowerCase().trim() === target ||
+          String(f.referenceNumber || '').toLowerCase().trim() === target
       );
     }
     if (filters.citizenId) {

@@ -69,7 +69,7 @@ export const METRIC_DEFINITIONS = {
   SPAM_FLAG_VS_ABUSE: {
     name: 'Screening Flag vs Confirmed Abuse',
     code: 'SPAM_FLAG_VS_ABUSE',
-    interpretation: 'Automated heuristic risk flags (Phase 11) are distinctly separated from human-confirmed abuse decisions. Unconfirmed flags never penalize citizens.'
+    interpretation: 'Automated heuristic risk flags from initial screening are distinctly separated from human-confirmed abuse decisions. Unconfirmed flags never penalize citizens.'
   }
 };
 

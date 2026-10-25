@@ -245,7 +245,7 @@ export class SpamScreeningService {
         if (!reasons.includes(SPAM_REASON_CODES.PHASE6_DUPLICATE_MATCH)) {
           reasons.push(SPAM_REASON_CODES.PHASE6_DUPLICATE_MATCH);
           explanations.push(
-            `Phase 6 AI duplicate engine identified high-confidence duplicate (${Math.round(matchScore * 100)}%) with case ${topMatch.referenceNumber || topMatch.referenceId || topMatch.complaintReference || topMatch.id}.`
+            `Automated duplicate detection engine identified high-confidence duplicate (${Math.round(matchScore * 100)}%) with case ${topMatch.referenceNumber || topMatch.referenceId || topMatch.complaintReference || topMatch.id}.`
           );
         }
       }

@@ -107,11 +107,11 @@ export default function ReopeningManagementPage() {
               Controlled Grievance Reopening Desk
             </h1>
             <span className="px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 text-xs font-semibold">
-              Phase 10 Desk
+              Supervisory Review Desk
             </span>
           </div>
           <p className="text-sm text-slate-600 mt-1">
-            Supervisory desk for citizen reopening petitions. Approving a request resets the complaint status to REOPENED and enforces full Phase 9 re-verification.
+            Supervisory desk for citizen reopening petitions. Approving a request resets the complaint status to REOPENED and enforces full resolution quality re-verification.
           </p>
         </div>
         <div className="flex items-center gap-2.5">
@@ -227,7 +227,7 @@ export default function ReopeningManagementPage() {
                           <span>{req.complaintReference || req.complaintId}</span>
                           <ExternalLink size={11} className="text-slate-400" />
                         </Link>
-                        <span className="text-[10px] text-slate-400 block">Milestone #{req.resolutionMilestone || 1}</span>
+                        <span className="text-[10px] text-slate-400 block">Cycle #{req.resolutionMilestone || 1}</span>
                       </td>
                       <td className="p-3.5">
                         <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">
@@ -351,7 +351,7 @@ export default function ReopeningManagementPage() {
                   <ul className="list-disc pl-4 space-y-0.5 text-[11px] text-rose-800">
                     <li>Complaint status will transition from RESOLVED/CLOSED to <strong>REOPENED</strong>.</li>
                     <li>Reopening count increments and Neglect Radar signal E triggers.</li>
-                    <li>The case <strong>cannot be re-resolved</strong> without satisfying all Phase 9 Resolution Quality standards.</li>
+                    <li>The case <strong>cannot be re-resolved</strong> without satisfying all required resolution quality checks.</li>
                   </ul>
                 </div>
               ) : (

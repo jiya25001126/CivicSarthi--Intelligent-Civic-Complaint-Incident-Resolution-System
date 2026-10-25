@@ -193,7 +193,7 @@ export default function SpamReviewPage() {
             </h1>
           </div>
           <p className="text-sm text-slate-500 mt-1 max-w-3xl">
-            Phase 11 Human-in-the-Loop Screening. Deterministic heuristic signals evaluate complaints without external black-box models. Authorized officers verify genuine civic complaints and prevent malicious automated flooding.
+            Human-in-the-loop screening desk. Automated heuristic signals evaluate potential anomalies while authorized officers verify genuine civic complaints to prevent duplicate or malicious flooding.
           </p>
           <div className="mt-3 flex items-center gap-3 text-xs text-slate-600">
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 border border-slate-200 font-medium">
@@ -574,7 +574,7 @@ export default function SpamReviewPage() {
               {selectedReview.duplicateCandidates && selectedReview.duplicateCandidates.length > 0 && (
                 <div className="p-4 rounded-xl border border-slate-200 bg-slate-50">
                   <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                    Correlated Existing Submissions (Phase 6 Duplicate Detector)
+                    Correlated Existing Submissions (Automated Duplicate Detection)
                   </h4>
                   <div className="space-y-1.5">
                     {selectedReview.duplicateCandidates.map((cand, idx) => (

@@ -408,7 +408,7 @@ export default function NeglectRadarPage() {
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Neglect Radar & Supervisory Monitoring</h1>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                Phase 8 Early-Warning
+                Supervisory Early-Warning
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-600 mt-0.5">

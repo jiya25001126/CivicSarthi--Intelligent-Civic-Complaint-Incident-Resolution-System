@@ -303,7 +303,7 @@ export default function TrackComplaintPage() {
                       Official Resolution Verification Record
                     </h3>
                     <p className="text-xs text-slate-500">
-                      Procedural quality criteria verified under Phase 9 Resolution Standards
+                      Procedural quality criteria verified under CivicSarthi Resolution Standards
                     </p>
                   </div>
                 </div>
