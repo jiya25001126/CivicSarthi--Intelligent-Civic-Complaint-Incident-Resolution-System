@@ -3,7 +3,19 @@
  */
 export const errorHandler = (err, req, res, next) => {
   const isProduction = process.env.NODE_ENV === 'production';
-  const statusCode = err.status || err.statusCode || 500;
+  let statusCode = err.status || err.statusCode || 500;
+
+  // Mongoose / Schema validation errors default to 400 Bad Request instead of 500 Internal Server Error
+  if (err.name === 'ValidationError' && !err.status && !err.statusCode) {
+    statusCode = 400;
+    if (!err.code) err.code = 'VALIDATION_ERROR';
+    if (!err.details && err.errors) {
+      err.details = Object.values(err.errors).map((e) => e.message || String(e));
+    }
+  } else if (err.name === 'CastError' && !err.status && !err.statusCode) {
+    statusCode = 400;
+    if (!err.code) err.code = 'INVALID_IDENTIFIER';
+  }
 
   // Internal server error log
   // eslint-disable-next-line no-console

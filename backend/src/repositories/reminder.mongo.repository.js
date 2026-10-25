@@ -1,9 +1,23 @@
 import { ReminderModel } from '../models/reminder.model.js';
 
 export class MongoReminderRepository {
+  async generateReminderId() {
+    const year = new Date().getFullYear();
+    const count = await ReminderModel.countDocuments();
+    const seq = String(count + 1).padStart(4, '0');
+    let candidate = `REM-${year}-${seq}`;
+    const exists = await ReminderModel.findOne({ id: candidate }).lean();
+    if (exists) {
+      const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+      candidate = `REM-${year}-${Date.now().toString().slice(-4)}${rand}`;
+    }
+    return candidate;
+  }
+
   async create(data) {
-    const record = await ReminderModel.create(data);
-    return record.toObject();
+    const id = data.id || (await this.generateReminderId());
+    const record = await ReminderModel.create({ ...data, id });
+    return record.toObject ? record.toObject() : record;
   }
 
   async findById(id) {
@@ -38,7 +52,8 @@ export class MongoReminderRepository {
     }
 
     if (filters.citizenId) {
-      query.citizenId = filters.citizenId;
+      const esc = String(filters.citizenId).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      query.citizenId = { $regex: new RegExp(`^${esc}$`, 'i') };
     }
 
     if (filters.departmentId) {

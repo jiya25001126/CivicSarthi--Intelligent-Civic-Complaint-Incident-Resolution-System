@@ -73,6 +73,21 @@ const reminderSchema = new mongoose.Schema(
   }
 );
 
+reminderSchema.pre('validate', function (next) {
+  if (!this.id) {
+    const year = new Date().getFullYear();
+    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    this.id = `REM-${year}-${Date.now().toString().slice(-4)}${rand}`;
+  }
+  if (!this.complaintReference && this.complaintId) {
+    this.complaintReference = this.complaintId;
+  }
+  if (!this.cooldownExpiresAt) {
+    this.cooldownExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  }
+  next();
+});
+
 export const ReminderModel =
   mongoose.models.Reminder || mongoose.model('Reminder', reminderSchema);
 export default ReminderModel;

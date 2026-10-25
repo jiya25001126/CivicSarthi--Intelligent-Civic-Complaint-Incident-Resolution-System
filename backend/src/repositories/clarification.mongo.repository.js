@@ -2,9 +2,23 @@ import { ClarificationModel } from '../models/clarification.model.js';
 import { CLARIFICATION_STATUS } from '../constants/clarification.constants.js';
 
 export class MongoClarificationRepository {
+  async generateClarificationId() {
+    const year = new Date().getFullYear();
+    const count = await ClarificationModel.countDocuments();
+    const seq = String(count + 1).padStart(4, '0');
+    let candidate = `CLR-${year}-${seq}`;
+    const exists = await ClarificationModel.findOne({ id: candidate }).lean();
+    if (exists) {
+      const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+      candidate = `CLR-${year}-${Date.now().toString().slice(-4)}${rand}`;
+    }
+    return candidate;
+  }
+
   async create(data) {
-    const record = await ClarificationModel.create(data);
-    return record.toObject();
+    const id = data.id || (await this.generateClarificationId());
+    const record = await ClarificationModel.create({ ...data, id });
+    return record.toObject ? record.toObject() : record;
   }
 
   async findById(id) {
@@ -26,7 +40,8 @@ export class MongoClarificationRepository {
     }
 
     if (filters.citizenId) {
-      query.citizenId = filters.citizenId;
+      const esc = String(filters.citizenId).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      query.citizenId = { $regex: new RegExp(`^${esc}$`, 'i') };
     }
 
     if (filters.departmentId) {

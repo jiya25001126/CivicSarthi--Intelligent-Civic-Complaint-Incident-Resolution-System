@@ -108,6 +108,18 @@ const clarificationSchema = new mongoose.Schema(
   }
 );
 
+clarificationSchema.pre('validate', function (next) {
+  if (!this.id) {
+    const year = new Date().getFullYear();
+    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    this.id = `CLR-${year}-${Date.now().toString().slice(-4)}${rand}`;
+  }
+  if (!this.complaintReference && this.complaintId) {
+    this.complaintReference = this.complaintId;
+  }
+  next();
+});
+
 export const ClarificationModel =
   mongoose.models.Clarification || mongoose.model('Clarification', clarificationSchema);
 export default ClarificationModel;

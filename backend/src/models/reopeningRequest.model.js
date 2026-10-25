@@ -69,6 +69,10 @@ const reopeningRequestSchema = new mongoose.Schema(
       minlength: [10, 'Explanation must be at least 10 characters'],
       maxlength: [3000, 'Explanation cannot exceed 3000 characters']
     },
+    citizenExplanation: {
+      type: String,
+      trim: true
+    },
     evidence: {
       type: [String],
       default: []
@@ -110,6 +114,22 @@ reopeningRequestSchema.pre('validate', function (next) {
   }
   if (!this.complaintReference && this.complaintId) {
     this.complaintReference = this.complaintId;
+  }
+  if (!this.explanation && this.citizenExplanation) {
+    this.explanation = this.citizenExplanation;
+  }
+  if (!this.citizenExplanation && this.explanation) {
+    this.citizenExplanation = this.explanation;
+  }
+  if (!this.id) {
+    const year = new Date().getFullYear();
+    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    this.id = `REOPEN-${year}-${Date.now().toString().slice(-4)}${rand}`;
+  }
+  if (!this.referenceNumber) {
+    const year = new Date().getFullYear();
+    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    this.referenceNumber = `REQ-${year}-${Date.now().toString().slice(-4)}${rand}`;
   }
   next();
 });
