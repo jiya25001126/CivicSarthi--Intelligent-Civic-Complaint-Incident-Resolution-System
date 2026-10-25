@@ -646,7 +646,9 @@ export class IncidentService {
         : `Resolved via parent incident ${incident.id}`
     );
 
-    const actorType = actor?.role === 'admin' ? 'ADMIN' : 'OFFICER';
+    // Canonicalize to the statusHistory enum ['CITIZEN', 'OFFICER', 'SYSTEM'].
+    // Admin actors performing resolution cascade are privileged humans → 'OFFICER'.
+    const actorType = 'OFFICER';
 
     for (const rawId of linkedIds) {
       const complaintId = typeof rawId === 'string' ? rawId.trim() : String(rawId);
@@ -1221,9 +1223,15 @@ export class IncidentService {
       : `Linked to parent incident ${incident.id}`;
 
     try {
+      // Canonicalize actorType to the statusHistory enum ['CITIZEN', 'OFFICER', 'SYSTEM'].
+      // Admin and officer roles are both privileged human actors → 'OFFICER'.
+      // Raw role strings such as 'admin' or 'officer' must never be persisted directly.
+      const linkActorType = (actor?.role === 'citizen') ? 'CITIZEN'
+        : (actor?.role === 'SYSTEM' || !actor) ? 'SYSTEM'
+        : 'OFFICER';
       updatedComplaint = await this.complaintRepo.linkIncident(canonicalComplaintId, {
         incidentId: incident.id,
-        actorType: actor?.role || 'OFFICER',
+        actorType: linkActorType,
         remarks: linkRemarks
       });
     } catch (complaintError) {
@@ -1360,8 +1368,12 @@ export class IncidentService {
       : `Unlinked from parent incident ${incident.id}`;
 
     try {
+      // Canonicalize actorType to the statusHistory enum ['CITIZEN', 'OFFICER', 'SYSTEM'].
+      const unlinkActorType = (actor?.role === 'citizen') ? 'CITIZEN'
+        : (actor?.role === 'SYSTEM' || !actor) ? 'SYSTEM'
+        : 'OFFICER';
       updatedComplaint = await this.complaintRepo.unlinkIncident(canonicalComplaintId, {
-        actorType: actor?.role || 'OFFICER',
+        actorType: unlinkActorType,
         remarks: unlinkRemarks
       });
     } catch (complaintError) {

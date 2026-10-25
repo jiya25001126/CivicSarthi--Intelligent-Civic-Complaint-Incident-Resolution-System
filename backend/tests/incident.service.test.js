@@ -164,6 +164,22 @@ describe('CivicSarthi Phase 7 Step 2A.1: Incident & Subtask Security & Consisten
             status: 'IN_PROGRESS',
             incidentId: null,
             statusHistory: []
+          },
+          {
+            id: 'CMP-2026-0045',
+            referenceNumber: 'CS-2026-0045',
+            title: 'Waterlogging near the school entrance',
+            departmentId: 'DEPT_WATER',
+            status: 'SUBMITTED',
+            incidentId: null,
+            statusHistory: [
+              {
+                timestamp: new Date().toISOString(),
+                status: 'SUBMITTED',
+                actorType: 'CITIZEN',
+                remarks: 'Initial submission'
+              }
+            ]
           }
         ]
       }, null, 2),
@@ -1015,6 +1031,228 @@ describe('CivicSarthi Phase 7 Step 2A.1: Incident & Subtask Security & Consisten
       assert.ok(citizenView.parentIncident);
       assert.strictEqual(citizenView.parentIncident.id, incident.id);
       assert.strictEqual(citizenView.officerNotes, undefined);
+    });
+  });
+  // =========================================================================
+  // REGRESSION: actorType enum validation bug (Bug: 'admin' / 'ADMIN' not
+  // valid statusHistory actorType values — canonical set is CITIZEN, OFFICER, SYSTEM)
+  // =========================================================================
+
+  describe('Regression: Link Grievance actorType enum validation fix', () => {
+    it('admin actor can link a complaint without a statusHistory actorType validation error', async () => {
+      // Arrange
+      const incident = await service.createIncident({
+        title: 'Waterlogging near the school entrance cluster',
+        category: 'water',
+        leadDepartment: 'DEPT_WATER'
+      }, adminActor);
+
+      // Act – this call previously threw:
+      //   "Complaint validation failed: statusHistory.1.actorType: 'admin' is not a valid enum value"
+      const result = await service.linkComplaintToIncident(
+        incident.id,
+        'CMP-2026-0045',
+        adminActor,
+        'Admin-initiated link for multi-agency coordination'
+      );
+
+      // Assert – link succeeded without throwing
+      assert.ok(result, 'linkComplaintToIncident should return a result');
+      assert.strictEqual(result.alreadyLinked, false);
+    });
+
+    it('statusHistory entry created by admin link has a valid canonical actorType', async () => {
+      const incident = await service.createIncident({
+        title: 'Admin-linked cluster test',
+        category: 'water',
+        leadDepartment: 'DEPT_WATER'
+      }, adminActor);
+
+      await service.linkComplaintToIncident(incident.id, 'CMP-2026-0001', adminActor);
+
+      // Read back the complaint from the fixture to inspect persisted statusHistory
+      const updated = await testComplaintRepo.findById('CMP-2026-0001');
+      assert.ok(updated, 'complaint should exist after linking');
+
+      const VALID_ACTOR_TYPES = ['CITIZEN', 'OFFICER', 'SYSTEM'];
+      for (const entry of (updated.statusHistory || [])) {
+        assert.ok(
+          VALID_ACTOR_TYPES.includes(entry.actorType),
+          `statusHistory entry has invalid actorType: '${entry.actorType}'. Must be one of ${VALID_ACTOR_TYPES.join(', ')}`
+        );
+      }
+    });
+
+    it('officer actor link also produces a valid actorType in statusHistory', async () => {
+      const incident = await service.createIncident({
+        title: 'Officer-linked cluster test',
+        category: 'water',
+        leadDepartment: 'DEPT_WATER'
+      }, waterOfficer);
+
+      await service.linkComplaintToIncident(incident.id, 'CMP-2026-0001', waterOfficer);
+
+      const updated = await testComplaintRepo.findById('CMP-2026-0001');
+      const VALID_ACTOR_TYPES = ['CITIZEN', 'OFFICER', 'SYSTEM'];
+      for (const entry of (updated.statusHistory || [])) {
+        assert.ok(
+          VALID_ACTOR_TYPES.includes(entry.actorType),
+          `statusHistory entry has invalid actorType: '${entry.actorType}'`
+        );
+      }
+    });
+
+    it('complaint status is NOT changed during a link operation', async () => {
+      const incident = await service.createIncident({
+        title: 'Status preservation test',
+        category: 'water',
+        leadDepartment: 'DEPT_WATER'
+      }, adminActor);
+
+      const before = await testComplaintRepo.findById('CMP-2026-0001');
+      const statusBefore = before.status;
+
+      await service.linkComplaintToIncident(incident.id, 'CMP-2026-0001', adminActor);
+
+      const after = await testComplaintRepo.findById('CMP-2026-0001');
+      assert.strictEqual(
+        after.status,
+        statusBefore,
+        'complaint status must not change during a plain link operation'
+      );
+    });
+
+    it('complaint incidentId is correctly set after linking', async () => {
+      const incident = await service.createIncident({
+        title: 'Persistence test',
+        category: 'water',
+        leadDepartment: 'DEPT_WATER'
+      }, adminActor);
+
+      await service.linkComplaintToIncident(incident.id, 'CMP-2026-0001', adminActor);
+
+      const updated = await testComplaintRepo.findById('CMP-2026-0001');
+      assert.strictEqual(
+        updated.incidentId,
+        incident.id,
+        'incidentId on complaint must match the parent incident after linking'
+      );
+    });
+
+    it('incident linkedComplaints list includes the newly linked complaint', async () => {
+      const incident = await service.createIncident({
+        title: 'Linked complaints list test',
+        category: 'water',
+        leadDepartment: 'DEPT_WATER'
+      }, adminActor);
+
+      const result = await service.linkComplaintToIncident(incident.id, 'CMP-2026-0001', adminActor);
+
+      const incidentAfter = result.incident || await service.getIncidentById(incident.id, {}, adminActor);
+      assert.ok(
+        Array.isArray(incidentAfter.linkedComplaints) &&
+        incidentAfter.linkedComplaints.some(c => String(c).toLowerCase() === 'cmp-2026-0001'),
+        'incident.linkedComplaints should contain the linked complaint ID'
+      );
+    });
+
+    it('duplicate link is idempotent and returns alreadyLinked: true', async () => {
+      const incident = await service.createIncident({
+        title: 'Idempotency test',
+        category: 'water',
+        leadDepartment: 'DEPT_WATER'
+      }, adminActor);
+
+      await service.linkComplaintToIncident(incident.id, 'CMP-2026-0001', adminActor);
+      const secondResult = await service.linkComplaintToIncident(incident.id, 'CMP-2026-0001', adminActor);
+
+      assert.strictEqual(secondResult.alreadyLinked, true, 'second link should be idempotent');
+    });
+
+    it('link with invalid incident ID returns a 404 error', async () => {
+      await assert.rejects(
+        () => service.linkComplaintToIncident('INC-DOES-NOT-EXIST', 'CMP-2026-0001', adminActor),
+        err => err.status === 404 && err.code === 'NOT_FOUND'
+      );
+    });
+
+    it('link with invalid complaint ID returns a 404 error', async () => {
+      const incident = await service.createIncident({
+        title: 'Invalid complaint test',
+        category: 'water',
+        leadDepartment: 'DEPT_WATER'
+      }, adminActor);
+
+      await assert.rejects(
+        () => service.linkComplaintToIncident(incident.id, 'CS-2026-DOES-NOT-EXIST', adminActor),
+        err => err.status === 404 && err.code === 'NOT_FOUND'
+      );
+    });
+
+    it('citizen actor is rejected with 403 when attempting to link', async () => {
+      const incident = await service.createIncident({
+        title: 'Authorization rejection test',
+        category: 'water',
+        leadDepartment: 'DEPT_WATER'
+      }, adminActor);
+
+      await assert.rejects(
+        () => service.linkComplaintToIncident(incident.id, 'CMP-2026-0001', citizenActor),
+        err => err.status === 403 && err.code === 'FORBIDDEN'
+      );
+    });
+
+    it('failed secondary complaint write is compensated — incident link is rolled back', async () => {
+      const incident = await service.createIncident({
+        title: 'Compensation rollback test',
+        category: 'water',
+        leadDepartment: 'DEPT_WATER'
+      }, adminActor);
+
+      // Inject a temporary fault into the complaint repo linkIncident
+      const originalLinkIncident = testComplaintRepo.linkIncident.bind(testComplaintRepo);
+      testComplaintRepo.linkIncident = async () => {
+        throw Object.assign(new Error('Simulated DB write failure'), { status: 500 });
+      };
+
+      try {
+        await assert.rejects(
+          () => service.linkComplaintToIncident(incident.id, 'CMP-2026-0001', adminActor),
+          err => err.status === 500
+        );
+
+        // After rollback, the incident should NOT contain the complaint
+        const incidentAfter = await testIncidentRepo.findById(incident.id);
+        const linkedAfter = Array.isArray(incidentAfter?.linkedComplaints) ? incidentAfter.linkedComplaints : [];
+        assert.ok(
+          !linkedAfter.some(c => String(c).toLowerCase() === 'cmp-2026-0001'),
+          'incident.linkedComplaints should be rolled back after secondary write failure'
+        );
+      } finally {
+        // Restore the original method
+        testComplaintRepo.linkIncident = originalLinkIncident;
+      }
+    });
+
+    it('unlink via admin actor produces a valid canonical actorType in statusHistory', async () => {
+      const incident = await service.createIncident({
+        title: 'Unlink actorType test',
+        category: 'water',
+        leadDepartment: 'DEPT_WATER'
+      }, adminActor);
+
+      await service.linkComplaintToIncident(incident.id, 'CMP-2026-0001', adminActor);
+
+      await service.unlinkComplaintFromIncident(incident.id, 'CMP-2026-0001', adminActor, 'Correction');
+
+      const updated = await testComplaintRepo.findById('CMP-2026-0001');
+      const VALID_ACTOR_TYPES = ['CITIZEN', 'OFFICER', 'SYSTEM'];
+      for (const entry of (updated.statusHistory || [])) {
+        assert.ok(
+          VALID_ACTOR_TYPES.includes(entry.actorType),
+          `unlink left invalid actorType '${entry.actorType}' in statusHistory`
+        );
+      }
     });
   });
 });
