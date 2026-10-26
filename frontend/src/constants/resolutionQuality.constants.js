@@ -195,6 +195,8 @@ export function isSafeEvidenceReference(item) {
 }
 
 /**
+ * Hindi resolution outcome labels.
+ */
 export const HINDI_RESOLUTION_OUTCOMES = Object.freeze({
   REPAIR_COMPLETED: 'मरम्मत पूर्ण हुई',
   SERVICE_RESTORED: 'सेवा बहाल की गई',
