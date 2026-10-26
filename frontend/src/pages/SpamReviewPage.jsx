@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import {
   fetchSpamReviews,
   fetchSpamReviewById,
@@ -50,6 +51,7 @@ const OUTCOME_BADGES = {
 
 export default function SpamReviewPage() {
   const { user, isOfficer, isAdmin } = useAuth();
+  const { t, lang, formatDate } = useLanguage();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -179,6 +181,29 @@ export default function SpamReviewPage() {
   const legitimateCount = reviews.filter((r) => r.decision === 'LEGITIMATE').length;
   const abuseCount = reviews.filter((r) => r.decision === 'CONFIRMED_ABUSE').length;
 
+  const getRiskLabel = (level) => {
+    if (level === 'LOW') return t.spamReview.lowRisk || 'Low';
+    if (level === 'MEDIUM') return t.spamReview.mediumRisk || 'Medium';
+    if (level === 'HIGH') return t.spamReview.highRisk || 'High';
+    if (level === 'CRITICAL') return t.spamReview.criticalRisk || 'Critical';
+    return level;
+  };
+
+  const getReviewStatusLabel = (statusKey) => {
+    if (statusKey === 'PENDING_REVIEW' || statusKey === 'PENDING') return t.spamReview.pendingReview || 'Pending Review';
+    if (statusKey === 'IN_REVIEW') return t.spamReview.inReview || 'In Review';
+    if (statusKey === 'RESOLVED' || statusKey === 'REVIEWED') return t.common.resolved || 'Resolved';
+    return statusKey;
+  };
+
+  const getOutcomeLabel = (outcome) => {
+    if (outcome === 'LEGITIMATE') return t.spamReview.outcomeLegitimate || 'Legitimate';
+    if (outcome === 'NEEDS_MORE_INFORMATION') return t.spamReview.outcomeNeedsInfo || 'Needs Info';
+    if (outcome === 'CONFIRMED_ABUSE') return t.spamReview.outcomeConfirmedAbuse || 'Confirmed Abuse';
+    if (outcome === 'ESCALATED') return t.spamReview.outcomeEscalate || 'Escalated';
+    return outcome;
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Banner */}
@@ -189,20 +214,20 @@ export default function SpamReviewPage() {
               <ShieldAlert size={22} />
             </span>
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-              Spam & Suspicious Complaint Review Desk
+              {t.spamReview.deskTitle || 'Spam & Content Screening Review Desk'}
             </h1>
           </div>
           <p className="text-sm text-slate-500 mt-1 max-w-3xl">
-            Human-in-the-loop screening desk. Automated heuristic signals evaluate potential anomalies while authorized officers verify genuine civic complaints to prevent duplicate or malicious flooding.
+            {t.spamReview.subtitle || 'Human-in-the-loop review queue for grievances flagged by automated content & fraud heuristics.'}
           </p>
           <div className="mt-3 flex items-center gap-3 text-xs text-slate-600">
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 border border-slate-200 font-medium">
               <Building2 size={13} className="text-slate-500" />
-              Scope: {user?.departmentId ? `Department ${user.departmentId}` : 'All Departments (System Admin)'}
+              {t.spamReview.scopeLabel || 'Scope:'} {user?.departmentId ? (t.spamReview.deptScope ? t.spamReview.deptScope.replace('{id}', user.departmentId) : `Department ${user.departmentId}`) : (t.spamReview.allDeptScope || 'All Departments (System Admin)')}
             </span>
             <span className="inline-flex items-center gap-1 text-slate-500">
               <Info size={13} />
-              Fairness: Civic criticism and regional languages are protected.
+              {t.spamReview.fairnessNote || 'Fairness: Civic criticism and regional languages are protected.'}
             </span>
           </div>
         </div>
@@ -213,7 +238,7 @@ export default function SpamReviewPage() {
           className="self-start md:self-center px-4 py-2 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-sm transition flex items-center gap-2"
         >
           <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
-          Refresh Queue
+          {t.spamReview.refreshBtn || 'Refresh Queue'}
         </button>
       </div>
 
@@ -221,38 +246,38 @@ export default function SpamReviewPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 text-xs font-semibold uppercase">
-            <span>Pending Review</span>
+            <span>{t.spamReview.pendingReview || 'Pending Review'}</span>
             <Clock size={16} className="text-amber-500" />
           </div>
           <div className="text-2xl font-bold text-slate-900 mt-2">{pendingCount}</div>
-          <div className="text-[11px] text-slate-400 mt-1">Awaiting officer determination</div>
+          <div className="text-[11px] text-slate-400 mt-1">{t.spamReview.awaitingOfficer || 'Awaiting officer determination'}</div>
         </div>
 
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 text-xs font-semibold uppercase">
-            <span>High/Critical Risk</span>
+            <span>{t.spamReview.highCriticalRisk || 'High/Critical Risk'}</span>
             <AlertTriangle size={16} className="text-rose-500" />
           </div>
           <div className="text-2xl font-bold text-rose-600 mt-2">{highRiskCount}</div>
-          <div className="text-[11px] text-slate-400 mt-1">Score &ge; 60/100 threshold</div>
+          <div className="text-[11px] text-slate-400 mt-1">{t.spamReview.riskThreshold || 'Score ≥ 60/100 threshold'}</div>
         </div>
 
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 text-xs font-semibold uppercase">
-            <span>Verified Legitimate</span>
+            <span>{t.spamReview.verifiedLegitimate || 'Verified Legitimate'}</span>
             <ShieldCheck size={16} className="text-emerald-500" />
           </div>
           <div className="text-2xl font-bold text-emerald-600 mt-2">{legitimateCount}</div>
-          <div className="text-[11px] text-slate-400 mt-1">Cleared for standard resolution</div>
+          <div className="text-[11px] text-slate-400 mt-1">{t.spamReview.clearedStandard || 'Cleared for standard resolution'}</div>
         </div>
 
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 text-xs font-semibold uppercase">
-            <span>Confirmed Abuse</span>
+            <span>{t.spamReview.confirmedAbuse || 'Confirmed Abuse'}</span>
             <XCircle size={16} className="text-slate-500" />
           </div>
           <div className="text-2xl font-bold text-slate-800 mt-2">{abuseCount}</div>
-          <div className="text-[11px] text-slate-400 mt-1">Human-confirmed spam/fake</div>
+          <div className="text-[11px] text-slate-400 mt-1">{t.spamReview.humanConfirmed || 'Human-confirmed spam/fake'}</div>
         </div>
       </div>
 
@@ -262,7 +287,7 @@ export default function SpamReviewPage() {
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Search by complaint ref, review ID, reason..."
+            placeholder={t.spamReview.searchPlaceholder || 'Search by complaint ref, review ID, reason...'}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -272,31 +297,31 @@ export default function SpamReviewPage() {
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
             <Filter size={14} />
-            <span>Status:</span>
+            <span>{t.spamReview.statusLabel || 'Status:'}</span>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="text-xs py-1.5 px-2.5 rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
-              <option value="ALL">All Statuses</option>
-              <option value="PENDING_REVIEW">Pending Review</option>
-              <option value="IN_REVIEW">In Review</option>
-              <option value="RESOLVED">Resolved</option>
+              <option value="ALL">{t.spamReview.allStatuses || 'All Statuses'}</option>
+              <option value="PENDING_REVIEW">{t.spamReview.pendingReview || 'Pending Review'}</option>
+              <option value="IN_REVIEW">{t.spamReview.inReview || 'In Review'}</option>
+              <option value="RESOLVED">{t.common.resolved || 'Resolved'}</option>
             </select>
           </div>
 
           <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
-            <span>Risk:</span>
+            <span>{t.spamReview.riskLabel || 'Risk:'}</span>
             <select
               value={riskFilter}
               onChange={(e) => setRiskFilter(e.target.value)}
               className="text-xs py-1.5 px-2.5 rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
-              <option value="ALL">All Risk Levels</option>
-              <option value="LOW">Low</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="HIGH">High</option>
-              <option value="CRITICAL">Critical</option>
+              <option value="ALL">{t.spamReview.allRisks || 'All Risk Levels'}</option>
+              <option value="LOW">{t.spamReview.lowRisk || 'Low'}</option>
+              <option value="MEDIUM">{t.spamReview.mediumRisk || 'Medium'}</option>
+              <option value="HIGH">{t.spamReview.highRisk || 'High'}</option>
+              <option value="CRITICAL">{t.spamReview.criticalRisk || 'Critical'}</option>
             </select>
           </div>
         </div>
@@ -313,14 +338,14 @@ export default function SpamReviewPage() {
       {loading ? (
         <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-500">
           <RefreshCw size={24} className="animate-spin mx-auto mb-3 text-blue-600" />
-          <p className="text-sm font-medium">Loading flagged review queue...</p>
+          <p className="text-sm font-medium">{t.spamReview.loadingQueue || 'Loading flagged review queue...'}</p>
         </div>
       ) : filteredReviews.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-500">
           <ShieldCheck size={36} className="mx-auto mb-3 text-emerald-500" />
-          <p className="text-base font-semibold text-slate-700">No flagged complaints found</p>
+          <p className="text-base font-semibold text-slate-700">{t.spamReview.noFlaggedFound || 'No flagged complaints found'}</p>
           <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
-            All submitted grievances in your authorized scope are either clean or have already been reviewed by an officer.
+            {t.spamReview.noFlaggedDesc || 'All submitted grievances in your authorized scope are either clean or have already been reviewed by an officer.'}
           </p>
         </div>
       ) : (
@@ -329,13 +354,13 @@ export default function SpamReviewPage() {
             <table className="w-full text-left text-sm text-slate-600">
               <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-500 border-b border-slate-200">
                 <tr>
-                  <th className="py-3.5 px-4">Complaint Reference</th>
-                  <th className="py-3.5 px-4">Department</th>
-                  <th className="py-3.5 px-4">Risk Level & Score</th>
-                  <th className="py-3.5 px-4">Screening Signals</th>
-                  <th className="py-3.5 px-4">Status & Decision</th>
-                  <th className="py-3.5 px-4">Created</th>
-                  <th className="py-3.5 px-4 text-right">Action</th>
+                  <th className="py-3.5 px-4">{t.spamReview.thComplaintRef || 'Complaint Reference'}</th>
+                  <th className="py-3.5 px-4">{t.spamReview.thDepartment || 'Department'}</th>
+                  <th className="py-3.5 px-4">{t.spamReview.thRiskLevel || 'Risk Level & Score'}</th>
+                  <th className="py-3.5 px-4">{t.spamReview.thScreeningSignals || 'Screening Signals'}</th>
+                  <th className="py-3.5 px-4">{t.spamReview.thStatusDecision || 'Status & Decision'}</th>
+                  <th className="py-3.5 px-4">{t.spamReview.thCreated || 'Created'}</th>
+                  <th className="py-3.5 px-4 text-right">{t.spamReview.thAction || 'Action'}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -365,7 +390,7 @@ export default function SpamReviewPage() {
 
                       <td className="py-3.5 px-4">
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700">
-                          {review.departmentId || 'Unassigned'}
+                          {review.departmentId || t.spamReview.unassigned || 'Unassigned'}
                         </span>
                       </td>
 
@@ -374,7 +399,7 @@ export default function SpamReviewPage() {
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border ${riskStyle.bg} ${riskStyle.text} ${riskStyle.border}`}
                           >
-                            {riskStyle.label}
+                            {getRiskLabel(review.riskLevel)}
                           </span>
                           <span className="text-xs font-mono font-bold text-slate-700">
                             {review.score}/100
@@ -396,11 +421,11 @@ export default function SpamReviewPage() {
                               </div>
                             ))
                           ) : (
-                            <span className="text-xs text-slate-400 italic">No explicit signals</span>
+                            <span className="text-xs text-slate-400 italic">{t.spamReview.noSignals || 'No explicit signals'}</span>
                           )}
                           {review.reasons && review.reasons.length > 2 && (
                             <span className="text-[11px] text-slate-400 font-medium">
-                              +{review.reasons.length - 2} more signals
+                              {t.spamReview.moreSignals ? t.spamReview.moreSignals.replace('{count}', review.reasons.length - 2) : `+${review.reasons.length - 2} more signals`}
                             </span>
                           )}
                         </div>
@@ -411,20 +436,20 @@ export default function SpamReviewPage() {
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ${statusStyle.bg} ${statusStyle.text} ${statusStyle.border}`}
                           >
-                            {statusStyle.label}
+                            {getReviewStatusLabel(reviewStatusKey)}
                           </span>
                           {outcomeStyle && (
                             <span
                               className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${outcomeStyle.bg} ${outcomeStyle.text} ${outcomeStyle.border}`}
                             >
-                              {outcomeStyle.label}
+                              {getOutcomeLabel(review.decision)}
                             </span>
                           )}
                         </div>
                       </td>
 
                       <td className="py-3.5 px-4 text-xs text-slate-500 whitespace-nowrap">
-                        {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : 'N/A'}
+                        {review.createdAt ? formatDate(review.createdAt) : 'N/A'}
                       </td>
 
                       <td className="py-3.5 px-4 text-right">
@@ -432,7 +457,7 @@ export default function SpamReviewPage() {
                           onClick={() => handleOpenReview(review)}
                           className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition inline-flex items-center gap-1.5"
                         >
-                          Review Desk
+                          {t.spamReview.reviewDeskBtn || 'Review Desk'}
                           <ChevronRight size={13} />
                         </button>
                       </td>
@@ -457,12 +482,12 @@ export default function SpamReviewPage() {
                 </span>
                 <div>
                   <h2 className="text-lg font-bold text-slate-900">
-                    Flagged Complaint Review: {selectedReview.complaintReference || selectedReview.complaintId}
+                    {t.spamReview.modalHeaderTitle ? t.spamReview.modalHeaderTitle.replace('{ref}', selectedReview.complaintReference || selectedReview.complaintId) : `Flagged Complaint Review: ${selectedReview.complaintReference || selectedReview.complaintId}`}
                   </h2>
                   <div className="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
-                    <span>Review ID: {selectedReview.id}</span>
+                    <span>{t.spamReview.thReviewId || 'Review ID'}: {selectedReview.id}</span>
                     <span>•</span>
-                    <span>Dept: {selectedReview.departmentId}</span>
+                    <span>{t.spamReview.thDepartment || 'Dept'}: {selectedReview.departmentId}</span>
                   </div>
                 </div>
               </div>
@@ -479,7 +504,7 @@ export default function SpamReviewPage() {
               {/* Screening Overview Banner */}
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
                 <div>
-                  <div className="text-xs font-medium text-slate-500">Heuristic Risk Level</div>
+                  <div className="text-xs font-medium text-slate-500">{t.spamReview.heuristicRisk || 'Heuristic Risk Level'}</div>
                   <div className="flex items-center gap-2 mt-1">
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
@@ -488,24 +513,24 @@ export default function SpamReviewPage() {
                         RISK_BADGES[selectedReview.riskLevel]?.border
                       }`}
                     >
-                      {selectedReview.riskLevel}
+                      {getRiskLabel(selectedReview.riskLevel)}
                     </span>
                     <span className="text-lg font-bold text-slate-900">{selectedReview.score}/100</span>
                   </div>
                 </div>
 
                 <div>
-                  <div className="text-xs font-medium text-slate-500">Rule Engine Version</div>
+                  <div className="text-xs font-medium text-slate-500">{t.spamReview.ruleEngineVersion || 'Rule Engine Version'}</div>
                   <div className="text-sm font-semibold text-slate-800 mt-1">
                     {selectedReview.ruleVersion || 'v1.0.0-deterministic'}
                   </div>
                 </div>
 
                 <div>
-                  <div className="text-xs font-medium text-slate-500">Current Review Status</div>
+                  <div className="text-xs font-medium text-slate-500">{t.spamReview.currentReviewStatus || 'Current Review Status'}</div>
                   <div className="text-sm font-semibold text-slate-800 mt-1 flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                    {selectedReview.status}
+                    {getReviewStatusLabel(selectedReview.status)}
                   </div>
                 </div>
               </div>
@@ -516,30 +541,30 @@ export default function SpamReviewPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-900">
                       <UserCheck size={15} className="text-blue-600" />
-                      Citizen Reputation Standing
+                      {t.spamReview.citizenReputationTitle || 'Citizen Reputation Standing'}
                     </div>
                     <span className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-300">
-                      Status: {citizenReputation.status}
+                      {t.spamReview.reputationStatus ? t.spamReview.reputationStatus.replace('{status}', citizenReputation.status) : `Status: ${citizenReputation.status}`}
                     </span>
                   </div>
                   <div className="grid grid-cols-3 gap-3 mt-3 text-xs text-slate-700">
                     <div>
-                      <span className="text-slate-500">Trust Score:</span>{' '}
+                      <span className="text-slate-500">{t.spamReview.trustScore || 'Trust Score:'}</span>{' '}
                       <span className="font-bold">{citizenReputation.reputationScore}/100</span>
                     </div>
                     <div>
-                      <span className="text-slate-500">Total Grievances:</span>{' '}
+                      <span className="text-slate-500">{t.spamReview.totalGrievances || 'Total Grievances:'}</span>{' '}
                       <span className="font-bold">{citizenReputation.metrics?.totalSubmissions || 0}</span>
                     </div>
                     <div>
-                      <span className="text-slate-500">Confirmed Abuse:</span>{' '}
+                      <span className="text-slate-500">{t.spamReview.confirmedAbuse || 'Confirmed Abuse:'}</span>{' '}
                       <span className="font-bold text-rose-600">
                         {citizenReputation.metrics?.confirmedAbuseCount || 0}
                       </span>
                     </div>
                   </div>
                   <p className="text-[11px] text-blue-800/80 mt-2 italic">
-                    * Reputation is auditable. Unconfirmed flags never penalize a citizen. Only human-verified abuse modifies standing.
+                    {t.spamReview.reputationAuditable || '* Reputation is auditable. Unconfirmed flags never penalize a citizen. Only human-verified abuse modifies standing.'}
                   </p>
                 </div>
               )}
@@ -548,7 +573,7 @@ export default function SpamReviewPage() {
               <div className="space-y-3">
                 <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                   <FileText size={16} className="text-slate-600" />
-                  Screening Signals & Evidence Factors
+                  {t.spamReview.signalsEvidenceTitle || 'Screening Signals & Evidence Factors'}
                 </h3>
 
                 {selectedReview.reasons && selectedReview.reasons.length > 0 ? (
@@ -566,7 +591,7 @@ export default function SpamReviewPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-500 italic">No triggered reason codes available.</p>
+                  <p className="text-xs text-slate-500 italic">{t.spamReview.noReasons || 'No triggered reason codes available.'}</p>
                 )}
               </div>
 
@@ -574,7 +599,7 @@ export default function SpamReviewPage() {
               {selectedReview.duplicateCandidates && selectedReview.duplicateCandidates.length > 0 && (
                 <div className="p-4 rounded-xl border border-slate-200 bg-slate-50">
                   <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                    Correlated Existing Submissions (Automated Duplicate Detection)
+                    {t.spamReview.correlatedSubmissions || 'Correlated Existing Submissions (Automated Duplicate Detection)'}
                   </h4>
                   <div className="space-y-1.5">
                     {selectedReview.duplicateCandidates.map((cand, idx) => (
@@ -586,7 +611,7 @@ export default function SpamReviewPage() {
                           {cand.complaintReference || cand.complaintId}
                         </span>
                         <span className="text-slate-500">
-                          Similarity: {(cand.similarityScore * 100).toFixed(0)}%
+                          {t.spamReview.similarity ? t.spamReview.similarity.replace('{pct}', (cand.similarityScore * 100).toFixed(0)) : `Similarity: ${(cand.similarityScore * 100).toFixed(0)}%`}
                         </span>
                       </div>
                     ))}
@@ -598,19 +623,19 @@ export default function SpamReviewPage() {
               {selectedReview.auditTrail && selectedReview.auditTrail.length > 0 && (
                 <div className="border-t border-slate-200 pt-4">
                   <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                    Prior Review Determinations
+                    {t.spamReview.priorDeterminations || 'Prior Review Determinations'}
                   </h4>
                   <div className="space-y-2">
                     {selectedReview.auditTrail.map((ev, idx) => (
                       <div key={idx} className="p-3 rounded-lg bg-slate-100 text-xs text-slate-700 border border-slate-200">
                         <div className="flex items-center justify-between font-semibold">
-                          <span className="text-slate-900">Outcome: {ev.decision}</span>
+                          <span className="text-slate-900">{t.spamReview.thStatusDecision || 'Outcome'}: {getOutcomeLabel(ev.decision)}</span>
                           <span className="text-[11px] text-slate-500">
-                            {ev.reviewedAt ? new Date(ev.reviewedAt).toLocaleString() : ''}
+                            {ev.reviewedAt ? formatDate(ev.reviewedAt) : ''}
                           </span>
                         </div>
-                        <p className="mt-1 text-slate-600 font-medium">Reason: {ev.decisionReason}</p>
-                        {ev.notes && <p className="text-[11px] text-slate-500 mt-0.5">Notes: {ev.notes}</p>}
+                        <p className="mt-1 text-slate-600 font-medium">{t.common.reason || 'Reason'}: {ev.decisionReason}</p>
+                        {ev.notes && <p className="text-[11px] text-slate-500 mt-0.5">{t.spamReview.notesLabel || 'Notes'}: {ev.notes}</p>}
                       </div>
                     ))}
                   </div>
@@ -621,7 +646,7 @@ export default function SpamReviewPage() {
               <form onSubmit={handleRecordDecision} className="border-t border-slate-200 pt-4 space-y-4">
                 <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                   <ShieldCheck size={16} className="text-blue-600" />
-                  Record Officer Review Determination
+                  {t.spamReview.recordDeterminationTitle || 'Record Officer Review Determination'}
                 </h3>
 
                 {decisionError && (
@@ -633,7 +658,7 @@ export default function SpamReviewPage() {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Determination Outcome *
+                    {t.spamReview.outcomeLabel || 'Determination Outcome *'}
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <button
@@ -646,7 +671,7 @@ export default function SpamReviewPage() {
                       }`}
                     >
                       <CheckCircle2 size={16} className="text-emerald-600" />
-                      Legitimate
+                      {t.spamReview.outcomeLegitimate || 'Legitimate'}
                     </button>
 
                     <button
@@ -659,7 +684,7 @@ export default function SpamReviewPage() {
                       }`}
                     >
                       <Info size={16} className="text-blue-600" />
-                      Needs More Info
+                      {t.spamReview.outcomeNeedsInfo || 'Needs More Info'}
                     </button>
 
                     <button
@@ -672,7 +697,7 @@ export default function SpamReviewPage() {
                       }`}
                     >
                       <XCircle size={16} className="text-rose-600" />
-                      Confirmed Abuse
+                      {t.spamReview.outcomeConfirmedAbuse || 'Confirmed Abuse'}
                     </button>
 
                     <button
@@ -685,7 +710,7 @@ export default function SpamReviewPage() {
                       }`}
                     >
                       <AlertTriangle size={16} className="text-purple-600" />
-                      Escalate
+                      {t.spamReview.outcomeEscalate || 'Escalate'}
                     </button>
                   </div>
                 </div>
@@ -694,53 +719,53 @@ export default function SpamReviewPage() {
                 <div className="p-3 rounded-lg text-xs bg-slate-50 border border-slate-200 text-slate-600">
                   {decisionOutcome === 'LEGITIMATE' && (
                     <span>
-                      ✓ <strong>Legitimate:</strong> Clears the automated screening flag, marks the complaint safe, and preserves standard grievance resolution workflow.
+                      {t.spamReview.descLegitimate || '✓ Legitimate: Clears the automated screening flag, marks the complaint safe, and preserves standard grievance resolution workflow.'}
                     </span>
                   )}
                   {decisionOutcome === 'NEEDS_MORE_INFORMATION' && (
                     <span>
-                      ℹ <strong>Needs More Information:</strong> Keeps complaint on hold pending citizen clarification without penalizing reputation.
+                      {t.spamReview.descNeedsInfo || 'ℹ Needs More Information: Keeps complaint on hold pending citizen clarification without penalizing reputation.'}
                     </span>
                   )}
                   {decisionOutcome === 'CONFIRMED_ABUSE' && (
                     <span className="text-rose-700 font-medium">
-                      ⚠ <strong>Confirmed Abuse:</strong> Explicit human determination of intentional spam/fake grievance. This decision is auditable and updates the citizen reputation ledger.
+                      {t.spamReview.descAbuse || '⚠ Confirmed Abuse: Explicit human determination of intentional spam/fake grievance. This decision is auditable and updates the citizen reputation ledger.'}
                     </span>
                   )}
                   {decisionOutcome === 'ESCALATED' && (
                     <span>
-                      ⬆ <strong>Escalated:</strong> Forwards the suspicious pattern to departmental executive review.
+                      {t.spamReview.descEscalate || '⬆ Escalated: Forwards the suspicious pattern to departmental executive review.'}
                     </span>
                   )}
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Mandatory Officer Justification * (minimum 10 characters)
+                    {t.spamReview.justificationLabel || 'Mandatory Officer Justification * (minimum 10 characters)'}
                   </label>
                   <textarea
                     rows={3}
                     value={decisionReason}
                     onChange={(e) => setDecisionReason(e.target.value)}
-                    placeholder="Provide specific justification for this determination (e.g. Ground inspection verified public pothole exists; automated burst flag was caused by weak cellular connection retry)."
+                    placeholder={t.spamReview.justificationPlaceholder || 'Provide specific justification for this determination (e.g. Ground inspection verified public pothole exists; automated burst flag was caused by weak cellular connection retry).'}
                     className="w-full p-2.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   />
                   <div className="text-[11px] text-slate-400 mt-1 flex justify-between">
-                    <span>Explainable audit requirement</span>
-                    <span>{decisionReason.length} characters</span>
+                    <span>{t.spamReview.auditRequirement || 'Explainable audit requirement'}</span>
+                    <span>{t.spamReview.charCount ? t.spamReview.charCount.replace('{count}', decisionReason.length) : `${decisionReason.length} characters`}</span>
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Internal Officer Notes (Optional)
+                    {t.spamReview.notesLabel || 'Internal Officer Notes (Optional)'}
                   </label>
                   <input
                     type="text"
                     value={reviewNotes}
                     onChange={(e) => setReviewNotes(e.target.value)}
-                    placeholder="Optional internal notes for audit records"
+                    placeholder={t.spamReview.notesPlaceholder || 'Optional internal notes for audit records'}
                     className="w-full p-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -751,7 +776,7 @@ export default function SpamReviewPage() {
                     onClick={() => setSelectedReview(null)}
                     className="px-4 py-2 text-xs font-semibold rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition"
                   >
-                    Cancel
+                    {t.common.cancel || 'Cancel'}
                   </button>
                   <button
                     type="submit"
@@ -761,10 +786,10 @@ export default function SpamReviewPage() {
                     {submittingDecision ? (
                       <>
                         <RefreshCw size={13} className="animate-spin" />
-                        Saving Decision...
+                        {t.spamReview.savingDecision || 'Saving Decision...'}
                       </>
                     ) : (
-                      'Submit Determination'
+                      t.spamReview.submitDetermination || 'Submit Determination'
                     )}
                   </button>
                 </div>

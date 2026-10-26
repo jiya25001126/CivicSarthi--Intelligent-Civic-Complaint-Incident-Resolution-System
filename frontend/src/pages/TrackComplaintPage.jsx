@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { fetchComplaintTracking, fetchComplaintStatusExplanation } from '../api/client';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
+import { useLanguage } from '../context/LanguageContext';
 import {
   Search,
   CheckCircle2,
@@ -29,18 +30,23 @@ import {
 export default function TrackComplaintPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t, lang, formatDate, tDepartment, tStatus } = useLanguage();
 
   const [inputQuery, setInputQuery] = useState(id || '');
   const [complaint, setComplaint] = useState(null);
   const [history, setHistory] = useState([]);
   const [statusExplanation, setStatusExplanation] = useState(null);
-  const [translatorLang, setTranslatorLang] = useState('en');
+  const [translatorLang, setTranslatorLang] = useState(lang || 'en');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchExplanation = async (searchId, lang) => {
+  useEffect(() => {
+    setTranslatorLang(lang);
+  }, [lang]);
+
+  const fetchExplanation = async (searchId, l = lang) => {
     try {
-      const expRes = await fetchComplaintStatusExplanation(searchId, { lang });
+      const expRes = await fetchComplaintStatusExplanation(searchId, { lang: l });
       if (expRes?.data) {
         setStatusExplanation(expRes.data);
       }
@@ -49,7 +55,7 @@ export default function TrackComplaintPage() {
     }
   };
 
-  const performSearch = async (searchId, lang = translatorLang) => {
+  const performSearch = async (searchId, l = lang) => {
     if (!searchId || !searchId.trim()) return;
     try {
       setLoading(true);
@@ -57,9 +63,9 @@ export default function TrackComplaintPage() {
       const res = await fetchComplaintTracking(searchId.trim());
       setComplaint(res.data);
       setHistory(res.data?.statusHistory || []);
-      await fetchExplanation(searchId.trim(), lang);
+      await fetchExplanation(searchId.trim(), l);
     } catch (err) {
-      setError(err.message || 'Grievance reference not found. Please verify the reference number.');
+      setError(err.message || t('trackComplaint.notFoundError'));
       setComplaint(null);
       setHistory([]);
       setStatusExplanation(null);
@@ -71,15 +77,15 @@ export default function TrackComplaintPage() {
   useEffect(() => {
     if (id) {
       setInputQuery(id);
-      performSearch(id);
+      performSearch(id, lang);
     }
-  }, [id]);
+  }, [id, lang]);
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
     if (inputQuery.trim()) {
       navigate(`/citizen/track/${encodeURIComponent(inputQuery.trim())}`);
-      performSearch(inputQuery.trim());
+      performSearch(inputQuery.trim(), translatorLang);
     }
   };
 
@@ -90,16 +96,16 @@ export default function TrackComplaintPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
             <Search size={24} className="text-blue-600" />
-            Track Grievance Progression
+            {t('trackComplaint.title')}
           </h1>
           <p className="text-sm text-slate-600 mt-1">
-            Enter your unique reference number (e.g. <span className="font-mono font-semibold">CS-2026-0001</span> or <span className="font-mono font-semibold">CPG-2026-00101</span>) to see the live status audit trail.
+            {t('trackComplaint.subtitle')}
           </p>
         </div>
 
         <form onSubmit={handleFormSubmit} className="flex gap-2">
           <div className="relative flex-1">
-            <label htmlFor="track-search-input" className="sr-only">Reference Number</label>
+            <label htmlFor="track-search-input" className="sr-only">{t('common.referenceNo')}</label>
             <Search size={18} className="absolute left-3.5 top-3.5 text-slate-400" aria-hidden="true" />
             <input
               id="track-search-input"
@@ -107,7 +113,7 @@ export default function TrackComplaintPage() {
               required
               aria-required="true"
               aria-invalid={Boolean(error)}
-              placeholder="Enter reference number (e.g. CS-2026-0001)..."
+              placeholder={t('trackComplaint.inputPlaceholder')}
               value={inputQuery}
               onChange={(e) => setInputQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 font-mono font-semibold"
@@ -119,7 +125,7 @@ export default function TrackComplaintPage() {
             aria-busy={loading}
             className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-sm transition disabled:opacity-50"
           >
-            {loading ? 'Searching...' : 'Track Status'}
+            {loading ? t('trackComplaint.searchingButton') : t('trackComplaint.trackButton')}
           </button>
         </form>
       </div>
@@ -155,7 +161,7 @@ export default function TrackComplaintPage() {
                 </h2>
                 {complaint.statusDescription && (
                   <p className="text-xs text-blue-800 bg-blue-50/80 p-2.5 rounded-lg border border-blue-200 mt-2">
-                    <span className="font-semibold">Current Status Meaning: </span>
+                    <span className="font-semibold">{lang === 'hi' ? 'वर्तमान स्थिति का अर्थ: ' : 'Current Status Meaning: '}</span>
                     {complaint.statusDescription}
                   </p>
                 )}
@@ -164,44 +170,46 @@ export default function TrackComplaintPage() {
                 to={`/citizen/complaints/${encodeURIComponent(complaint.id)}`}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold self-start sm:self-auto transition"
               >
-                <span>Citizen View</span>
+                <span>{lang === 'hi' ? 'नागरिक दृश्य' : 'Citizen View'}</span>
                 <ExternalLink size={13} />
               </Link>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="text-slate-500 block mb-0.5">Assigned Department</span>
-                <span className="font-bold text-slate-800">{complaint.departmentId || complaint.department}</span>
+                <span className="text-slate-500 block mb-0.5">{t('common.department')}</span>
+                <span className="font-bold text-slate-800">{tDepartment(complaint.departmentId || complaint.department)}</span>
               </div>
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="text-slate-500 block mb-0.5">Jurisdiction</span>
+                <span className="text-slate-500 block mb-0.5">{lang === 'hi' ? 'क्षेत्राधिकार' : 'Jurisdiction'}</span>
                 <span className="font-bold text-slate-800">{complaint.district}, {complaint.state}</span>
               </div>
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="text-slate-500 block mb-0.5">Registration Date</span>
+                <span className="text-slate-500 block mb-0.5">{t('common.filedDate')}</span>
                 <span className="font-bold text-slate-800">
-                  {new Date(complaint.createdAt).toLocaleDateString('en-IN', {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric'
-                  })}
+                  {formatDate(complaint.createdAt)}
                 </span>
               </div>
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="text-slate-500 block mb-0.5">Handoffs / Reassignments</span>
-                <span className="font-bold text-slate-800">{complaint.reassignments || 0} times</span>
+                <span className="text-slate-500 block mb-0.5">{lang === 'hi' ? 'पुनः आवंटन / हस्तांतरण' : 'Handoffs / Reassignments'}</span>
+                <span className="font-bold text-slate-800">
+                  {complaint.reassignments || 0} {lang === 'hi' ? 'बार' : 'times'}
+                </span>
               </div>
             </div>
 
             {/* Privacy Notice */}
             <div className="flex items-center gap-2 text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
               <Lock size={13} className="text-slate-400 shrink-0" />
-              <span>Public Tracking View: Private citizen contact information and internal officer review notes are strictly protected.</span>
+              <span>
+                {lang === 'hi'
+                  ? 'सार्वजनिक ट्रैकिंग दृश्य: निजी नागरिक संपर्क जानकारी और आंतरिक अधिकारी समीक्षा टिप्पणियां पूर्णतः सुरक्षित हैं।'
+                  : 'Public Tracking View: Private citizen contact information and internal officer review notes are strictly protected.'}
+              </span>
             </div>
           </div>
 
-          {/* Phase 12: Citizen-Friendly Vernacular Status Translator Card */}
+          {/* Citizen-Friendly Vernacular Status Translator Card */}
           {statusExplanation && (
             <div className="bg-white p-6 rounded-2xl border border-emerald-200/80 shadow-sm space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
@@ -211,10 +219,10 @@ export default function TrackComplaintPage() {
                   </div>
                   <div>
                     <h3 className="font-bold text-sm text-slate-900">
-                      Plain-Language Vernacular Status Breakdown
+                      {t('trackComplaint.plainLanguageTitle')}
                     </h3>
                     <p className="text-xs text-slate-500">
-                      Explained without administrative jargon or bureaucratic abbreviations
+                      {t('trackComplaint.plainLanguageSubtitle')}
                     </p>
                   </div>
                 </div>
@@ -300,20 +308,22 @@ export default function TrackComplaintPage() {
                   <CheckCircle2 size={20} className="text-emerald-600 shrink-0" />
                   <div>
                     <h3 className="font-bold text-base text-slate-900">
-                      Official Resolution Verification Record
+                      {t('trackComplaint.resolutionDetailsHeading')}
                     </h3>
                     <p className="text-xs text-slate-500">
-                      Procedural quality criteria verified under CivicSarthi Resolution Standards
+                      {lang === 'hi'
+                        ? 'सिविकसारथी निवारण मानकों के तहत सत्यापित प्रक्रियात्मक गुणवत्ता मानदंड'
+                        : 'Procedural quality criteria verified under CivicSarthi Resolution Standards'}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                    Status: {complaint.status}
+                    {t('common.status')}: {tStatus(complaint.status)}
                   </span>
                   {typeof complaint.resolutionDetails.score === 'number' && (
                     <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-300">
-                      {complaint.resolutionDetails.score}% Compliance Score
+                      {complaint.resolutionDetails.score}% {lang === 'hi' ? 'अनुपालन स्कोर' : 'Compliance Score'}
                     </span>
                   )}
                 </div>
@@ -321,31 +331,25 @@ export default function TrackComplaintPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
                 <div className="p-3 bg-white rounded-xl border border-emerald-200/80">
-                  <span className="text-slate-500 block mb-0.5">Remediation Outcome</span>
+                  <span className="text-slate-500 block mb-0.5">{t('trackComplaint.outcomeTypeLabel')}</span>
                   <span className="font-bold text-slate-900">
-                    {formatOutcomeType(complaint.resolutionDetails.outcomeType)}
+                    {formatOutcomeType(complaint.resolutionDetails.outcomeType, lang)}
                   </span>
                 </div>
 
                 <div className="p-3 bg-white rounded-xl border border-emerald-200/80">
-                  <span className="text-slate-500 block mb-0.5">Verification Method</span>
+                  <span className="text-slate-500 block mb-0.5">{t('trackComplaint.verificationMethodLabel')}</span>
                   <span className="font-bold text-slate-900">
-                    {formatVerificationMethod(complaint.resolutionDetails.verificationMethod)}
+                    {formatVerificationMethod(complaint.resolutionDetails.verificationMethod, lang)}
                   </span>
                 </div>
 
                 <div className="p-3 bg-white rounded-xl border border-emerald-200/80">
-                  <span className="text-slate-500 block mb-0.5">Resolution Date</span>
+                  <span className="text-slate-500 block mb-0.5">{lang === 'hi' ? 'समाधान तिथि' : 'Resolution Date'}</span>
                   <span className="font-bold text-slate-900">
                     {complaint.resolutionDetails.resolvedAt
-                      ? new Date(complaint.resolutionDetails.resolvedAt).toLocaleString('en-IN', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })
-                      : 'Recorded'}
+                      ? formatDate(complaint.resolutionDetails.resolvedAt)
+                      : (lang === 'hi' ? 'दर्ज' : 'Recorded')}
                   </span>
                 </div>
               </div>
@@ -353,7 +357,7 @@ export default function TrackComplaintPage() {
               {complaint.resolutionDetails.closureRemarks && (
                 <div className="p-3.5 bg-white rounded-xl border border-emerald-200/80 space-y-1">
                   <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
-                    Official Closure Summary
+                    {t('trackComplaint.closureRemarksLabel')}
                   </span>
                   <p className="text-xs text-slate-800 leading-relaxed font-normal">
                     {complaint.resolutionDetails.closureRemarks}
@@ -365,9 +369,9 @@ export default function TrackComplaintPage() {
                 <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-start gap-2">
                   <ShieldCheck size={16} className="text-amber-700 shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-bold">Supervisory Administrative Exception Applied: </span>
+                    <span className="font-bold">{t('trackComplaint.exceptionReasonLabel')}: </span>
                     <span>
-                      {formatExceptionReason(complaint.resolutionDetails.exceptionReason)}
+                      {formatExceptionReason(complaint.resolutionDetails.exceptionReason, lang)}
                     </span>
                   </div>
                 </div>
@@ -379,15 +383,17 @@ export default function TrackComplaintPage() {
           <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-base text-slate-900">
-                Audit Trail & Status Progression Timeline
+                {t('trackComplaint.statusTimelineTitle')}
               </h3>
               <span className="text-xs text-slate-500 font-medium">
-                {history.length} lifecycle events
+                {history.length} {lang === 'hi' ? 'जीवनचक्र घटनाएं' : 'lifecycle events'}
               </span>
             </div>
 
             {history.length === 0 ? (
-              <p className="text-xs text-slate-500 italic py-4">No status progression recorded yet.</p>
+              <p className="text-xs text-slate-500 italic py-4">
+                {lang === 'hi' ? 'अभी तक कोई स्थिति प्रगति दर्ज नहीं की गई है।' : 'No status progression recorded yet.'}
+              </p>
             ) : (
               <div className="relative pl-6 sm:pl-8 space-y-8 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
                 {history.map((event, idx) => {
@@ -410,17 +416,11 @@ export default function TrackComplaintPage() {
                           <div className="flex items-center gap-2">
                             <StatusBadge status={event.status} />
                             <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-200 text-slate-700">
-                              {event.actorType || 'OFFICER'}
+                              {event.actorType || (lang === 'hi' ? 'अधिकारी' : 'OFFICER')}
                             </span>
                           </div>
                           <span className="text-xs text-slate-500 font-medium">
-                            {new Date(event.timestamp).toLocaleString('en-IN', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
+                            {formatDate(event.timestamp)}
                           </span>
                         </div>
 
@@ -431,7 +431,7 @@ export default function TrackComplaintPage() {
                         )}
 
                         <p className="text-xs text-slate-700 leading-relaxed font-normal pt-0.5">
-                          {event.remarks || 'Status updated in system.'}
+                          {event.remarks || (lang === 'hi' ? 'सिस्टम में स्थिति अद्यतित की गई।' : 'Status updated in system.')}
                         </p>
                       </div>
                     </div>

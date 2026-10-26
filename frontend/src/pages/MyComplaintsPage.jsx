@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchMyComplaints } from '../api/client';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
+import { useLanguage } from '../context/LanguageContext';
 import {
   Search,
   RefreshCw,
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react';
 
 export default function MyComplaintsPage() {
+  const { t, lang, formatDate, tCategory, tStatus } = useLanguage();
   const [complaints, setComplaints] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -79,9 +81,9 @@ export default function MyComplaintsPage() {
       {/* Header */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">My Registered Grievances</h1>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{t('myComplaintsPage.title')}</h1>
           <p className="text-sm text-slate-600 mt-1">
-            Track and monitor civic complaints filed under your verified account.
+            {t('myComplaintsPage.subtitle')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -90,13 +92,13 @@ export default function MyComplaintsPage() {
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition"
           >
             <FilePlus size={15} />
-            <span>Lodge New Grievance</span>
+            <span>{t('myComplaintsPage.lodgeNewBtn')}</span>
           </Link>
           <button
             onClick={() => loadData(currentPage)}
             disabled={loading}
             className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition disabled:opacity-50"
-            title="Refresh"
+            title={t('common.refresh')}
             aria-label="Refresh complaint list"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
@@ -111,7 +113,7 @@ export default function MyComplaintsPage() {
             <Search size={16} className="absolute left-3 top-3 text-slate-400" />
             <input
               type="text"
-              placeholder="Search reference no, title, location..."
+              placeholder={t('myComplaintsPage.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600"
@@ -121,7 +123,7 @@ export default function MyComplaintsPage() {
             type="submit"
             className="px-3 py-2 bg-slate-900 text-white text-xs font-semibold rounded-xl hover:bg-slate-800 transition"
           >
-            Search
+            {t('common.search')}
           </button>
         </form>
 
@@ -131,18 +133,18 @@ export default function MyComplaintsPage() {
             onChange={(e) => setCategoryFilter(e.target.value)}
             className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-slate-700"
           >
-            <option value="ALL">All Categories</option>
-            <option value="roads">Roads & Infrastructure</option>
-            <option value="electricity">Electricity & Power</option>
-            <option value="water">Drinking Water & Drainage</option>
-            <option value="healthcare">Public Health</option>
-            <option value="pension">Social Pensions</option>
-            <option value="scholarship">Scholarships</option>
-            <option value="ration">Ration & PDS</option>
-            <option value="municipal">Municipal Sanitation</option>
-            <option value="revenue">Revenue & Land</option>
-            <option value="police">Police Liaison</option>
-            <option value="flood relief">Flood Relief</option>
+            <option value="ALL">{t('myComplaintsPage.categoryFilterAll')}</option>
+            <option value="roads">{tCategory('roads')}</option>
+            <option value="electricity">{tCategory('electricity')}</option>
+            <option value="water">{tCategory('water')}</option>
+            <option value="healthcare">{tCategory('healthcare')}</option>
+            <option value="pension">{tCategory('pension')}</option>
+            <option value="scholarship">{tCategory('scholarship')}</option>
+            <option value="ration">{tCategory('ration')}</option>
+            <option value="municipal">{tCategory('municipal')}</option>
+            <option value="revenue">{tCategory('revenue')}</option>
+            <option value="police">{tCategory('police')}</option>
+            <option value="flood relief">{tCategory('flood relief')}</option>
           </select>
         </div>
 
@@ -152,14 +154,14 @@ export default function MyComplaintsPage() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-slate-700"
           >
-            <option value="ALL">All Statuses</option>
-            <option value="SUBMITTED">Submitted</option>
-            <option value="UNDER_REVIEW">Under Review</option>
-            <option value="ASSIGNED">Assigned</option>
-            <option value="IN_PROGRESS">In Progress</option>
-            <option value="AWAITING_INFORMATION">Awaiting Info</option>
-            <option value="RESOLVED">Resolved</option>
-            <option value="CLOSED">Closed</option>
+            <option value="ALL">{t('myComplaintsPage.statusFilterAll')}</option>
+            <option value="SUBMITTED">{tStatus('SUBMITTED')}</option>
+            <option value="UNDER_REVIEW">{tStatus('UNDER_REVIEW')}</option>
+            <option value="ASSIGNED">{tStatus('ASSIGNED')}</option>
+            <option value="IN_PROGRESS">{tStatus('IN_PROGRESS')}</option>
+            <option value="AWAITING_INFORMATION">{tStatus('AWAITING_INFORMATION')}</option>
+            <option value="RESOLVED">{tStatus('RESOLVED')}</option>
+            <option value="CLOSED">{tStatus('CLOSED')}</option>
           </select>
         </div>
 
@@ -169,9 +171,9 @@ export default function MyComplaintsPage() {
             onChange={(e) => setSortOrder(e.target.value)}
             className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-slate-700"
           >
-            <option value="createdAt_desc">Newest First</option>
-            <option value="createdAt_asc">Oldest First</option>
-            <option value="priority_desc">Priority (Highest)</option>
+            <option value="createdAt_desc">{t('myComplaintsPage.sortNewest')}</option>
+            <option value="createdAt_asc">{t('myComplaintsPage.sortOldest')}</option>
+            <option value="priority_desc">{t('myComplaintsPage.sortPriority')}</option>
           </select>
         </div>
       </div>
@@ -182,14 +184,14 @@ export default function MyComplaintsPage() {
           <div className="flex items-center gap-3">
             <AlertCircle size={20} className="shrink-0" />
             <div className="text-sm">
-              <span className="font-semibold">Error:</span> {error}
+              <span className="font-semibold">{t('common.error')}:</span> {error}
             </div>
           </div>
           <button
             onClick={() => loadData(currentPage)}
             className="px-3 py-1 bg-rose-600 text-white rounded-lg text-xs font-semibold hover:bg-rose-700 transition"
           >
-            Retry
+            {t('common.retry')}
           </button>
         </div>
       )}
@@ -198,15 +200,19 @@ export default function MyComplaintsPage() {
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
           <span className="font-bold text-sm text-slate-800">
-            Complaints Archive ({pagination ? pagination.total : complaints.length} records)
+            {lang === 'hi'
+              ? `शिकायत संग्रह (${pagination ? pagination.total : complaints.length} रिकॉर्ड)`
+              : `Complaints Archive (${pagination ? pagination.total : complaints.length} records)`}
           </span>
-          <span className="text-xs text-slate-500">Live verified citizen filings</span>
+          <span className="text-xs text-slate-500">
+            {lang === 'hi' ? 'सत्यापित नागरिक फाइलिंग' : 'Live verified citizen filings'}
+          </span>
         </div>
 
         {loading ? (
           <div className="p-12 text-center text-sm text-slate-500 flex flex-col items-center gap-3">
             <RefreshCw size={24} className="animate-spin text-blue-600" />
-            <span>Loading grievances...</span>
+            <span>{t('common.loading')}</span>
           </div>
         ) : complaints.length === 0 ? (
           <div className="p-12 text-center text-sm text-slate-500 space-y-3">
@@ -214,11 +220,13 @@ export default function MyComplaintsPage() {
               <Inbox size={24} />
             </div>
             {isFiltered ? (
-              <p>No complaints match the specified search or filter criteria.</p>
+              <p>{t('myComplaintsPage.noComplaintsDesc')}</p>
             ) : (
               <div className="space-y-1">
-                <p className="font-semibold text-slate-700">You have not submitted any grievances yet.</p>
-                <p className="text-xs text-slate-500">Click below to file your first civic complaint.</p>
+                <p className="font-semibold text-slate-700">{t('myComplaintsPage.noComplaintsFound')}</p>
+                <p className="text-xs text-slate-500">
+                  {lang === 'hi' ? 'अपनी पहली नागरिक शिकायत दर्ज करने के लिए नीचे क्लिक करें।' : 'Click below to file your first civic complaint.'}
+                </p>
               </div>
             )}
             <div className="pt-2">
@@ -227,7 +235,7 @@ export default function MyComplaintsPage() {
                 className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition"
               >
                 <FilePlus size={14} />
-                <span>Submit Grievance</span>
+                <span>{t('submitGrievance')}</span>
               </Link>
             </div>
           </div>
@@ -236,13 +244,13 @@ export default function MyComplaintsPage() {
             <table className="w-full text-left text-xs text-slate-600">
               <thead className="bg-slate-50 text-slate-700 uppercase tracking-wider text-[11px] border-b border-slate-200">
                 <tr>
-                  <th className="px-4 py-3">Reference No</th>
-                  <th className="px-4 py-3">Category</th>
-                  <th className="px-6 py-3">Grievance Subject & Location</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Date Lodged</th>
-                  <th className="px-4 py-3">Last Updated</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+                  <th className="px-4 py-3">{t('common.referenceNo')}</th>
+                  <th className="px-4 py-3">{t('common.category')}</th>
+                  <th className="px-6 py-3">{lang === 'hi' ? 'शिकायत विषय एवं स्थान' : 'Grievance Subject & Location'}</th>
+                  <th className="px-4 py-3">{t('common.status')}</th>
+                  <th className="px-4 py-3">{t('common.filedDate')}</th>
+                  <th className="px-4 py-3">{t('common.lastUpdated')}</th>
+                  <th className="px-4 py-3 text-right">{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -253,7 +261,7 @@ export default function MyComplaintsPage() {
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap">
                       <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 font-medium capitalize">
-                        {item.category}
+                        {tCategory(item.category)}
                       </span>
                     </td>
                     <td className="px-6 py-3.5 max-w-sm">
@@ -275,31 +283,23 @@ export default function MyComplaintsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap text-slate-500">
-                      {new Date(item.createdAt).toLocaleDateString('en-IN', {
-                        day: '2-digit',
-                        month: 'short',
-                        year: 'numeric'
-                      })}
+                      {formatDate(item.createdAt)}
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap text-slate-500">
-                      {new Date(item.updatedAt || item.lastUpdated || item.createdAt).toLocaleDateString('en-IN', {
-                        day: '2-digit',
-                        month: 'short',
-                        year: 'numeric'
-                      })}
+                      {formatDate(item.updatedAt || item.lastUpdated || item.createdAt)}
                     </td>
                     <td className="px-4 py-3.5 text-right whitespace-nowrap space-x-2">
                       <Link
                         to={`/citizen/track/${encodeURIComponent(item.referenceNumber || item.id)}`}
                         className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-900 font-semibold"
                       >
-                        <span>Timeline</span>
+                        <span>{lang === 'hi' ? 'समयरेखा' : 'Timeline'}</span>
                       </Link>
                       <Link
                         to={`/citizen/complaints/${encodeURIComponent(item.id)}`}
                         className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-semibold"
                       >
-                        <span>Details</span>
+                        <span>{t('common.details')}</span>
                         <ExternalLink size={12} />
                       </Link>
                     </td>
@@ -314,8 +314,9 @@ export default function MyComplaintsPage() {
         {pagination && pagination.totalPages > 1 && (
           <div className="px-6 py-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600">
             <div>
-              Page <span className="font-semibold">{pagination.page}</span> of{' '}
-              <span className="font-semibold">{pagination.totalPages}</span> ({pagination.total} total)
+              {lang === 'hi'
+                ? `पृष्ठ ${pagination.page} / ${pagination.totalPages} (कुल ${pagination.total})`
+                : `Page ${pagination.page} of ${pagination.totalPages} (${pagination.total} total)`}
             </div>
             <div className="flex items-center gap-1">
               <button

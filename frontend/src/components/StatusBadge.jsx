@@ -13,6 +13,7 @@ import {
   Shield,
   XCircle
 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export const INCIDENT_STATUS_CONFIGS = {
   ACTIVE: {
@@ -65,6 +66,7 @@ export const SUBTASK_STATUS_CONFIGS = {
 };
 
 export function IncidentStatusBadge({ status, className = '', short = false }) {
+  const { lang, tStatus } = useLanguage();
   const current = INCIDENT_STATUS_CONFIGS[status] || {
     label: status || 'Unknown',
     shortLabel: status || 'Unknown',
@@ -73,20 +75,24 @@ export function IncidentStatusBadge({ status, className = '', short = false }) {
   };
 
   const Icon = current.icon;
+  const translated = tStatus(status);
+  const displayLabel = lang === 'hi' && translated ? translated : (short ? current.shortLabel : current.label);
 
   return (
     <span
       role="status"
-      aria-label={`Incident Status: ${current.label}`}
+      data-status={status}
+      aria-label={`Incident Status: ${displayLabel}`}
       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${current.bg} ${className}`}
     >
       <Icon size={12} className="shrink-0" aria-hidden="true" />
-      <span>{short ? current.shortLabel : current.label}</span>
+      <span>{displayLabel}</span>
     </span>
   );
 }
 
 export function SubtaskStatusBadge({ status, className = '' }) {
+  const { lang, tStatus } = useLanguage();
   const current = SUBTASK_STATUS_CONFIGS[status] || {
     label: status || 'Unknown',
     bg: 'bg-slate-100 border-slate-200 text-slate-700',
@@ -94,20 +100,24 @@ export function SubtaskStatusBadge({ status, className = '' }) {
   };
 
   const Icon = current.icon;
+  const translated = tStatus(status);
+  const displayLabel = lang === 'hi' && translated ? translated : current.label;
 
   return (
     <span
       role="status"
-      aria-label={`Subtask Status: ${current.label}`}
+      data-status={status}
+      aria-label={`Subtask Status: ${displayLabel}`}
       className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${current.bg} ${className}`}
     >
       <Icon size={11} className="shrink-0" aria-hidden="true" />
-      <span>{current.label}</span>
+      <span>{displayLabel}</span>
     </span>
   );
 }
 
 export function StatusBadge({ status, className = '' }) {
+  const { lang, tStatus } = useLanguage();
   const configs = {
     SUBMITTED: {
       label: 'Submitted',
@@ -164,20 +174,24 @@ export function StatusBadge({ status, className = '' }) {
   };
 
   const Icon = current.icon;
+  const translated = tStatus(status);
+  const displayLabel = lang === 'hi' && translated ? translated : current.label;
 
   return (
     <span
       role="status"
-      aria-label={`Complaint Status: ${current.label}`}
+      data-status={status}
+      aria-label={`Complaint Status: ${displayLabel}`}
       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${current.bg} ${className}`}
     >
       <Icon size={12} className="shrink-0" aria-hidden="true" />
-      <span>{current.label}</span>
+      <span>{displayLabel}</span>
     </span>
   );
 }
 
 export function PriorityBadge({ priority, className = '' }) {
+  const { lang, tPriority } = useLanguage();
   const configs = {
     CRITICAL: {
       label: 'Critical',
@@ -208,16 +222,18 @@ export function PriorityBadge({ priority, className = '' }) {
   };
 
   const Icon = current.icon;
+  const translated = tPriority(priority);
+  const displayLabel = lang === 'hi' && translated ? translated : current.label;
 
   return (
     <span
       role="status"
-      aria-label={`Priority Level: ${current.label}`}
+      data-priority={priority}
+      aria-label={`Priority Level: ${displayLabel}`}
       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold border uppercase tracking-wider ${current.bg} ${className}`}
     >
       {Icon && <Icon size={11} className="shrink-0" aria-hidden="true" />}
-      <span>{current.label}</span>
+      <span>{displayLabel}</span>
     </span>
   );
 }
-
