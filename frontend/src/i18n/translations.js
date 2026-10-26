@@ -24,7 +24,7 @@ export const translations = {
     reopeningDesk: 'Reopening Desk',
     departments: 'Departments',
     parentIncident: 'Parent Incident',
-    neglectRadar: 'Neglect Radar',
+    neglectRadarNav: 'Neglect Radar',
     statusTranslator: 'Status Translator',
     overview: 'Overview',
     trackGrievance: 'Track Grievance',
@@ -566,29 +566,6 @@ export const translations = {
       linkComplaintBtn: 'Link Complaint to Incident'
     },
 
-    // Neglect Radar Page
-    neglectRadar: {
-      title: 'Neglect Radar & Accountability Engine',
-      subtitle: 'Early warning detection for departmental ping-pong loops, stale stalled complaints, and SLA breach risks.',
-      refreshBtn: 'Scan Radar Now',
-      criticalNeglect: 'Critical Risk',
-      criticalNeglectSub: 'Score ≥ 70 — Immediate Intervention',
-      highRisk: 'High Risk',
-      highRiskSub: 'Score 50-69 — Supervisory Review',
-      mediumRisk: 'Medium Risk',
-      mediumRiskSub: 'Score 30-49 — On Watchlist',
-      activeSignals: 'Active Signals',
-      activeSignalsSub: 'Detected loop & stall patterns',
-      searchPlaceholder: 'Search reference, department, signals...',
-      filterEntityAll: 'All Entity Types',
-      filterRiskAll: 'All Risk Levels',
-      filterSignalAll: 'All Radar Signals',
-      inspectBtn: 'Inspect Signals',
-      drawerTitle: 'Accountability Diagnostics Drawer',
-      signalsDetectedHeading: 'Detected Neglect Signals',
-      timelineHeading: 'Audit Journey & Reassignment Hops'
-    },
-
     // Appeals Desk
     appeals: {
       title: 'Dispute Appeals Review Desk',
@@ -912,6 +889,7 @@ export const translations = {
 
     // Neglect Radar & Supervisory Monitoring
     neglectRadar: {
+      navLabel: 'Neglect Radar',
       pageTitle: 'Neglect Radar & Supervisory Monitoring',
       earlyWarningBadge: 'Supervisory Early-Warning',
       pageSubtitle: 'Automated supervisory anomaly detection for stalled civic grievances, breached SLA targets, and blocked multi-agency dependencies.',
@@ -1305,7 +1283,7 @@ export const translations = {
     reopeningDesk: 'पुनः खोलने का डेस्क',
     departments: 'विभाग',
     parentIncident: 'मूल घटना',
-    neglectRadar: 'उपेक्षा रडार',
+    neglectRadarNav: 'उपेक्षा रडार',
     statusTranslator: 'स्थिति अनुवादक',
     overview: 'अवलोकन',
     trackGrievance: 'शिकायत ट्रैक करें',
@@ -1847,29 +1825,6 @@ export const translations = {
       linkComplaintBtn: 'घटना से शिकायत संबद्ध करें'
     },
 
-    // Neglect Radar Page
-    neglectRadar: {
-      title: 'उपेक्षा रडार एवं जवाबदेही इंजन',
-      subtitle: 'विभागीय पिंग-पॉन्ग लूप्स, रुकी हुई शिकायतों और समयसीमा उल्लंघन के जोखिमों के लिए प्रारंभिक चेतावनी प्रणाली।',
-      refreshBtn: 'रडार अभी स्कैन करें',
-      criticalNeglect: 'अति-गंभीर जोखिम',
-      criticalNeglectSub: 'स्कोर ≥ 70 — तत्काल हस्तक्षेप आवश्यक',
-      highRisk: 'उच्च जोखिम',
-      highRiskSub: 'स्कोर 50-69 — पर्यवेक्षी समीक्षा',
-      mediumRisk: 'मध्यम जोखिम',
-      mediumRiskSub: 'स्कोर 30-49 — निगरानी सूची में',
-      activeSignals: 'सक्रिय संकेत',
-      activeSignalsSub: 'पहचाने गए लूप एवं ठहराव पैटर्न',
-      searchPlaceholder: 'संदर्भ संख्या, विभाग, संकेत खोजें...',
-      filterEntityAll: 'सभी निकाय प्रकार',
-      filterRiskAll: 'सभी जोखिम स्तर',
-      filterSignalAll: 'सभी रडार संकेत',
-      inspectBtn: 'संकेतों का निरीक्षण करें',
-      drawerTitle: 'जवाबदेही निदान दराज',
-      signalsDetectedHeading: 'पहचाने गए उपेक्षा संकेत',
-      timelineHeading: 'ऑडिट यात्रा एवं पुनरावंटन चरण'
-    },
-
     // Appeals Desk
     appeals: {
       title: 'विवाद अपील समीक्षा डेस्क',
@@ -2193,6 +2148,7 @@ export const translations = {
 
     // Neglect Radar & Supervisory Monitoring
     neglectRadar: {
+      navLabel: 'उपेक्षा रडार',
       pageTitle: 'उपेक्षा रडार एवं पर्यवेक्षी निगरानी',
       earlyWarningBadge: 'पर्यवेक्षी प्रारंभिक चेतावनी',
       pageSubtitle: 'अवरुद्ध नागरिक शिकायतों, टूटी SLA समयसीमा और रुकी बहु-एजेंसी निर्भरताओं के लिए स्वचालित पर्यवेक्षी विसंगति पहचान प्रणाली।',
