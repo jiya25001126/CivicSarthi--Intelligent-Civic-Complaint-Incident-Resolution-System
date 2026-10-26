@@ -13,6 +13,7 @@ import { translations } from '../src/i18n/translations.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import babelParser from '@babel/parser';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,6 +25,48 @@ console.log('====================================================\n');
 let totalKeysChecked = 0;
 let errors = [];
 let warnings = [];
+
+// 0. AST Check for Duplicate Keys in translations.js
+console.log('Checking for duplicate keys in translations.js AST...');
+const translationsFilePath = path.resolve(__dirname, '../src/i18n/translations.js');
+const translationsSrc = fs.readFileSync(translationsFilePath, 'utf8');
+
+try {
+  const ast = babelParser.parse(translationsSrc, { sourceType: 'module' });
+  function checkObject(objNode, scopeName) {
+    const keys = new Map();
+    for (const prop of objNode.properties) {
+      if (prop.type === 'ObjectProperty') {
+        const key = prop.key.name || prop.key.value;
+        const line = prop.loc ? prop.loc.start.line : 0;
+        if (keys.has(key)) {
+          errors.push(`Duplicate key "${key}" detected in ${scopeName} at line ${line} (previously defined at line ${keys.get(key)})`);
+        } else {
+          keys.set(key, line);
+        }
+        if (prop.value.type === 'ObjectExpression') {
+          checkObject(prop.value, `${scopeName}.${key}`);
+        }
+      }
+    }
+  }
+
+  for (const stmt of ast.program.body) {
+    if (stmt.type === 'ExportNamedDeclaration' && stmt.declaration && stmt.declaration.declarations) {
+      for (const decl of stmt.declaration.declarations) {
+        if (decl.id.name === 'translations' && decl.init.type === 'ObjectExpression') {
+          for (const langProp of decl.init.properties) {
+            const lang = langProp.key.name || langProp.key.value;
+            checkObject(langProp.value, lang);
+          }
+        }
+      }
+    }
+  }
+  console.log('✓ No duplicate keys found in translations.js source AST.\n');
+} catch (astErr) {
+  errors.push(`Failed to parse translations.js AST: ${astErr.message}`);
+}
 
 // 1. Recursive Key Parity & Non-Empty Check
 function compareKeys(enObj, hiObj, currentPath = '') {

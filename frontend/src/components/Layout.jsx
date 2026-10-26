@@ -52,7 +52,7 @@ export default function Layout() {
 
   const flagshipNav = [
     { name: t.parentIncident, path: '/incident', icon: ShieldAlert },
-    { name: t.neglectRadar, path: '/neglect-radar', icon: AlertTriangle },
+    { name: t.neglectRadarNav || t.neglectRadar?.navLabel || (lang === 'hi' ? 'उपेक्षा रडार' : 'Neglect Radar'), path: '/neglect-radar', icon: AlertTriangle },
     { name: t.statusTranslator, path: '/status-translator', icon: Languages }
   ];
 
