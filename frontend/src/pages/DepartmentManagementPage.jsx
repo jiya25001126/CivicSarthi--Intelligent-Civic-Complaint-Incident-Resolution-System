@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fetchDepartments, fetchComplaints } from '../api/client';
+import { useLanguage } from '../context/LanguageContext';
 import {
   Building2,
   Mail,
@@ -12,6 +13,7 @@ import {
 } from 'lucide-react';
 
 export default function DepartmentManagementPage() {
+  const { lang, t, tDepartment } = useLanguage();
   const [departments, setDepartments] = useState([]);
   const [complaintCounts, setComplaintCounts] = useState({});
   const [loading, setLoading] = useState(true);
@@ -56,10 +58,10 @@ export default function DepartmentManagementPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
             <Building2 size={24} className="text-blue-600" />
-            Demonstration Department Directory
+            {t('departmentDirectory.title', 'Demonstration Department Directory')}
           </h1>
           <p className="text-sm text-slate-600 mt-1">
-            Configured administrative departments, nodal contact emails, and active caseload allocations.
+            {t('departmentDirectory.subtitle', 'Configured administrative departments, nodal contact emails, and active caseload allocations.')}
           </p>
         </div>
         <button
@@ -68,7 +70,7 @@ export default function DepartmentManagementPage() {
           className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-sm transition disabled:opacity-50 self-start sm:self-auto"
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          <span>Refresh Directory</span>
+          <span>{t('departmentDirectory.refreshBtn', 'Refresh Directory')}</span>
         </button>
       </div>
 
@@ -76,7 +78,8 @@ export default function DepartmentManagementPage() {
       <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 flex items-start gap-2.5">
         <Info size={18} className="shrink-0 text-blue-600 mt-0.5" />
         <div>
-          <span className="font-bold">Demonstration Configuration:</span> These departmental mappings represent synthetic simulation nodes for CivicSarthi's decision-support layer and do not replace authoritative government directories.
+          <span className="font-bold">{t('departmentDirectory.demoNoticeTitle', 'Demonstration Configuration:')}</span>{' '}
+          {t('departmentDirectory.demoNoticeText', "These departmental mappings represent synthetic simulation nodes for CivicSarthi's decision-support layer and do not replace authoritative government directories.")}
         </div>
       </div>
 
@@ -85,7 +88,7 @@ export default function DepartmentManagementPage() {
         <div className="bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-xl flex items-center gap-3">
           <AlertCircle size={20} className="shrink-0" />
           <div className="text-sm">
-            <span className="font-semibold">Error:</span> {error}
+            <span className="font-semibold">{t('common.error', 'Error')}:</span> {error}
           </div>
         </div>
       )}
@@ -94,7 +97,7 @@ export default function DepartmentManagementPage() {
       {loading ? (
         <div className="p-12 text-center text-sm text-slate-500 flex flex-col items-center gap-3 bg-white rounded-2xl border border-slate-200">
           <RefreshCw size={24} className="animate-spin text-blue-600" />
-          <span>Loading department directory...</span>
+          <span>{t('common.loading', 'Loading department directory...')}</span>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -112,12 +115,12 @@ export default function DepartmentManagementPage() {
                     </span>
                     <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                       <CheckCircle2 size={12} />
-                      Active Node
+                      {t('departmentDirectory.activeNode', 'Active Node')}
                     </span>
                   </div>
 
                   <h2 className="font-bold text-sm text-slate-900">
-                    {dept.name}
+                    {tDepartment(dept.id) || dept.name}
                   </h2>
 
                   <p className="text-xs text-slate-500 leading-relaxed">
@@ -129,18 +132,18 @@ export default function DepartmentManagementPage() {
                   <div className="flex items-center justify-between text-slate-600">
                     <span className="flex items-center gap-1.5 text-slate-500">
                       <Clock size={13} />
-                      Target SLA:
+                      {t('departmentDirectory.slaStandard', 'Target SLA:')}
                     </span>
-                    <span className="font-semibold text-slate-800">{dept.slaDays || 30} days</span>
+                    <span className="font-semibold text-slate-800">{dept.slaDays || 30} {t('departmentDirectory.days', 'days')}</span>
                   </div>
 
                   <div className="flex items-center justify-between text-slate-600">
                     <span className="flex items-center gap-1.5 text-slate-500">
                       <FolderOpen size={13} />
-                      Active Caseload:
+                      {t('departmentDirectory.activeCaseload', 'Active Caseload:')}
                     </span>
                     <span className="font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
-                      {count} cases
+                      {count} {t('departmentDirectory.cases', 'cases')}
                     </span>
                   </div>
 

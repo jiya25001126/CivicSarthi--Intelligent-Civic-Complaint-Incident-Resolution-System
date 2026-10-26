@@ -71,6 +71,7 @@ import {
   ExternalLink,
   Image as ImageIcon
 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 import {
   RESOLUTION_OUTCOME_OPTIONS,
   VERIFICATION_METHOD_OPTIONS,
@@ -88,6 +89,7 @@ export default function ComplaintDetailPage() {
   const { id } = useParams();
   const location = useLocation();
   const { user, isOfficer, isAdmin } = useAuth();
+  const { t, lang, formatDate, tStatus, tPriority, tCategory, tDepartment } = useLanguage();
 
   // Check if accessed through officer route and user is authorized
   const isOfficerMode = location.pathname.startsWith('/officer') || isOfficer || isAdmin;
@@ -175,11 +177,18 @@ export default function ComplaintDetailPage() {
   const [reminderMessage, setReminderMessage] = useState(null);
 
   const [statusExplanation, setStatusExplanation] = useState(null);
-  const [translatorLang, setTranslatorLang] = useState('en');
+  const [translatorLang, setTranslatorLang] = useState(lang || 'en');
 
-  const loadExplanation = async (targetId, lang = translatorLang) => {
+  useEffect(() => {
+    setTranslatorLang(lang);
+    if (complaint) {
+      loadExplanation(complaint.id, lang);
+    }
+  }, [lang]);
+
+  const loadExplanation = async (targetId, l = lang) => {
     try {
-      const res = await fetchComplaintStatusExplanation(targetId, { lang });
+      const res = await fetchComplaintStatusExplanation(targetId, { lang: l });
       if (res?.data) {
         setStatusExplanation(res.data);
       }
@@ -303,7 +312,12 @@ export default function ComplaintDetailPage() {
         comments: feedbackComments.trim()
       });
       if (res && res.success && res.data) {
-        setFeedbackMessage({ type: 'success', text: 'Thank you! Your resolution feedback has been recorded.' });
+        setFeedbackMessage({
+          type: 'success',
+          text: lang === 'hi'
+            ? 'धन्यवाद! आपकी निवारण संतुष्टि प्रतिक्रिया दर्ज कर ली गई है।'
+            : 'Thank you! Your resolution feedback has been recorded.'
+        });
         setFeedbackList(prev => [...prev, res.data]);
         setFeedbackComments('');
       } else {
@@ -748,14 +762,14 @@ export default function ComplaintDetailPage() {
           to={isOfficerMode ? '/officer/complaints' : '/citizen/complaints'}
           className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 text-xs font-semibold bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm"
         >
-          <ArrowLeft size={14} /> Back to Grievance List
+          <ArrowLeft size={14} /> {t('complaintDetail.backToComplaints')}
         </Link>
         <div className="flex items-center gap-2">
           <Link
             to={`/citizen/track/${encodeURIComponent(complaint.referenceNumber || complaint.id)}`}
             className="text-xs text-blue-600 hover:text-blue-800 font-semibold"
           >
-            View Status Timeline &rarr;
+            {lang === 'hi' ? 'स्थिति समयरेखा देखें →' : 'View Status Timeline →'}
           </Link>
         </div>
       </div>
@@ -771,18 +785,18 @@ export default function ComplaintDetailPage() {
               <StatusBadge status={complaint.status} />
               <PriorityBadge priority={complaint.priority} />
               <span className="px-2.5 py-0.5 rounded text-xs font-semibold bg-slate-200 text-slate-800 capitalize">
-                {complaint.category}
+                {tCategory(complaint.category)}
               </span>
               {complaint.duplicateOf && (
                 <span className="px-2.5 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
                   <LinkIcon size={12} />
-                  Linked Duplicate of #{complaint.duplicateOf}
+                  {lang === 'hi' ? `लिंक्ड डुप्लिकेट #${complaint.duplicateOf}` : `Linked Duplicate of #${complaint.duplicateOf}`}
                 </span>
               )}
               {complaint.intelligence?.priorityRecommendation?.publicSafetyHazard && (
                 <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300 flex items-center gap-1">
                   <AlertTriangle size={12} />
-                  Hazard Alert
+                  {lang === 'hi' ? 'खतरा चेतावनी' : 'Hazard Alert'}
                 </span>
               )}
             </div>
@@ -790,14 +804,14 @@ export default function ComplaintDetailPage() {
               {complaint.title || complaint.text}
             </h1>
             <p className="text-xs text-slate-500">
-              Department Assigned:{' '}
+              {t('common.department')}:{' '}
               <span className="font-semibold text-slate-800">
-                {complaint.departmentId || complaint.department}
+                {tDepartment(complaint.departmentId || complaint.department)}
               </span>
             </p>
             {complaint.statusDescription && (
               <div className="bg-blue-50/70 border border-blue-200 text-blue-900 text-xs p-2.5 rounded-xl">
-                <span className="font-semibold">Status Meaning: </span>
+                <span className="font-semibold">{lang === 'hi' ? 'स्थिति का अर्थ: ' : 'Status Meaning: '}</span>
                 {complaint.statusDescription}
               </div>
             )}
@@ -805,10 +819,10 @@ export default function ComplaintDetailPage() {
 
           <div className="text-left md:text-right self-start md:self-auto space-y-1">
             <span className="text-[11px] text-slate-500 uppercase tracking-wider block font-semibold">
-              CPGRAMS Status Context
+              {lang === 'hi' ? 'आधिकारिक स्थिति संदर्भ' : 'CPGRAMS Status Context'}
             </span>
             <span className="inline-block px-3 py-1 bg-slate-900 text-white text-xs font-bold rounded-full">
-              {complaint.officialStatus || complaint.status}
+              {tStatus(complaint.officialStatus || complaint.status)}
             </span>
           </div>
         </div>
@@ -817,7 +831,7 @@ export default function ComplaintDetailPage() {
         <div className="p-6 space-y-6">
           <div>
             <h2 className="text-xs uppercase font-bold tracking-wider text-slate-500 mb-2">
-              Citizen Grievance Narrative
+              {t('complaintDetail.subjectHeading')}
             </h2>
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-slate-800 text-sm leading-relaxed">
               {complaint.description || complaint.text}
@@ -829,48 +843,40 @@ export default function ComplaintDetailPage() {
             <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
               <div className="flex items-center gap-1.5 text-slate-500 text-xs mb-1">
                 <Calendar size={13} />
-                <span>Date Lodged</span>
+                <span>{t('common.filedDate')}</span>
               </div>
               <span className="text-xs font-bold text-slate-800">
-                {new Date(complaint.createdAt).toLocaleDateString('en-IN', {
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric'
-                })}
+                {formatDate(complaint.createdAt)}
               </span>
             </div>
 
             <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
               <div className="flex items-center gap-1.5 text-slate-500 text-xs mb-1">
                 <Clock size={13} />
-                <span>Last Updated</span>
+                <span>{t('common.lastUpdated')}</span>
               </div>
               <span className="text-xs font-bold text-slate-800">
-                {new Date(complaint.updatedAt || complaint.lastUpdated).toLocaleDateString('en-IN', {
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric'
-                })}
+                {formatDate(complaint.updatedAt || complaint.lastUpdated)}
               </span>
             </div>
 
             <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
               <div className="flex items-center gap-1.5 text-slate-500 text-xs mb-1">
                 <Shield size={13} />
-                <span>Department Handoffs</span>
+                <span>{t('complaintDetail.reassignmentsHeading')}</span>
               </div>
               <span className="text-xs font-bold text-slate-800">
-                {complaint.reassignments || 0} reassignments
+                {complaint.reassignments || 0} {lang === 'hi' ? 'बार' : 'reassignments'}
               </span>
             </div>
 
             <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
               <div className="flex items-center gap-1.5 text-slate-500 text-xs mb-1">
                 <AlertTriangle size={13} />
-                <span>Citizen Reminders</span>
+                <span>{lang === 'hi' ? 'नागरिक अनुस्मारक' : 'Citizen Reminders'}</span>
               </div>
               <span className="text-xs font-bold text-slate-800">
-                {complaint.citizenReminders || 0} notifications
+                {complaint.citizenReminders || 0} {lang === 'hi' ? 'सूचनाएं' : 'notifications'}
               </span>
             </div>
           </div>
@@ -878,23 +884,23 @@ export default function ComplaintDetailPage() {
           {/* Location & Language */}
           <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
             <div>
-              <span className="text-slate-500 block">State:</span>
-              <span className="font-semibold text-slate-800">{complaint.state || 'Not specified'}</span>
+              <span className="text-slate-500 block">{t('submitComplaint.stateLabel')}:</span>
+              <span className="font-semibold text-slate-800">{complaint.state || (lang === 'hi' ? 'निर्दिष्ट नहीं' : 'Not specified')}</span>
             </div>
             <div>
-              <span className="text-slate-500 block">District:</span>
-              <span className="font-semibold text-slate-800">{complaint.district || 'Not specified'}</span>
+              <span className="text-slate-500 block">{t('submitComplaint.districtLabel')}:</span>
+              <span className="font-semibold text-slate-800">{complaint.district || (lang === 'hi' ? 'निर्दिष्ट नहीं' : 'Not specified')}</span>
             </div>
             <div>
-              <span className="text-slate-500 block">Locality / Landmark:</span>
-              <span className="font-semibold text-slate-800">{complaint.locality || 'General ward area'}</span>
+              <span className="text-slate-500 block">{t('submitComplaint.localityLabel')}:</span>
+              <span className="font-semibold text-slate-800">{complaint.locality || (lang === 'hi' ? 'सामान्य वार्ड क्षेत्र' : 'General ward area')}</span>
             </div>
           </div>
 
           {/* Evidence Attachments */}
           <div>
             <h2 className="text-xs uppercase font-bold tracking-wider text-slate-500 mb-2">
-              Attached Evidence & Citations
+              {t('complaintDetail.evidenceHeading')}
             </h2>
             {complaint.evidence && complaint.evidence.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -962,7 +968,7 @@ export default function ComplaintDetailPage() {
                 })}
               </div>
             ) : (
-              <p className="text-xs text-slate-500 italic">No attachments lodged with this grievance.</p>
+              <p className="text-xs text-slate-500 italic">{lang === 'hi' ? 'इस शिकायत के साथ कोई संलग्नक दर्ज नहीं है।' : 'No attachments lodged with this grievance.'}</p>
             )}
           </div>
 
@@ -971,25 +977,25 @@ export default function ComplaintDetailPage() {
             <div className="p-4 bg-blue-50/60 rounded-xl border border-blue-200 space-y-2">
               <div className="flex items-center gap-2 text-blue-900 text-xs font-bold uppercase tracking-wider">
                 <FileCheck size={15} className="text-blue-700" />
-                <span>Configurable SLA Diagnostic</span>
+                <span>{lang === 'hi' ? 'कॉन्फ़िगरेबल SLA डायग्नोस्टिक' : 'Configurable SLA Diagnostic'}</span>
               </div>
               <div className="text-xs text-slate-700 grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
                 <div>
-                  <span className="text-slate-500">Case Age:</span>{' '}
-                  <span className="font-semibold">{complaint.slaMetrics.ageDays} days</span> (SLA Target: {complaint.slaMetrics.slaDeadlineDays}d)
+                  <span className="text-slate-500">{lang === 'hi' ? 'मामले की आयु:' : 'Case Age:'}</span>{' '}
+                  <span className="font-semibold">{complaint.slaMetrics.ageDays} {lang === 'hi' ? 'दिन' : 'days'}</span> ({lang === 'hi' ? 'SLA लक्ष्य:' : 'SLA Target:'} {complaint.slaMetrics.slaDeadlineDays}d)
                 </div>
                 <div>
-                  <span className="text-slate-500">Days Untouched:</span>{' '}
-                  <span className="font-semibold">{complaint.slaMetrics.daysSinceUpdate} days</span>
+                  <span className="text-slate-500">{lang === 'hi' ? 'अद्यतन रहित दिन:' : 'Days Untouched:'}</span>{' '}
+                  <span className="font-semibold">{complaint.slaMetrics.daysSinceUpdate} {lang === 'hi' ? 'दिन' : 'days'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500">Compliance Health:</span>{' '}
+                  <span className="text-slate-500">{lang === 'hi' ? 'अनुपालन स्थिति:' : 'Compliance Health:'}</span>{' '}
                   {complaint.slaMetrics.isSlaBreached ? (
-                    <span className="text-rose-700 font-bold">SLA Breached</span>
+                    <span className="text-rose-700 font-bold">{lang === 'hi' ? 'SLA का उल्लंघन हुआ' : 'SLA Breached'}</span>
                   ) : complaint.slaMetrics.isStale ? (
-                    <span className="text-amber-700 font-bold">Stalled / Stale</span>
+                    <span className="text-amber-700 font-bold">{lang === 'hi' ? 'ठहरा हुआ / पुराना' : 'Stalled / Stale'}</span>
                   ) : (
-                    <span className="text-emerald-700 font-bold">Within Target SLA</span>
+                    <span className="text-emerald-700 font-bold">{lang === 'hi' ? 'लक्षित SLA के भीतर' : 'Within Target SLA'}</span>
                   )}
                 </div>
               </div>
@@ -1006,20 +1012,20 @@ export default function ComplaintDetailPage() {
               <CheckCircle2 size={22} className="text-emerald-600 shrink-0" />
               <div>
                 <h2 className="font-bold text-base text-slate-900">
-                  Official Resolution & Quality Verification Record
+                  {lang === 'hi' ? 'आधिकारिक निवारण एवं गुणवत्ता सत्यापन रिकॉर्ड' : 'Official Resolution & Quality Verification Record'}
                 </h2>
                 <p className="text-xs text-slate-500">
-                  Validated under CivicSarthi Resolution Quality Standards
+                  {lang === 'hi' ? 'सिविकसारथी निवारण गुणवत्ता मानकों के अंतर्गत सत्यापित' : 'Validated under CivicSarthi Resolution Quality Standards'}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                {complaint.status}
+                {tStatus(complaint.status)}
               </span>
               {typeof complaint.resolutionDetails.score === 'number' && (
                 <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-300">
-                  Score: {complaint.resolutionDetails.score}/100
+                  {lang === 'hi' ? 'स्कोर:' : 'Score:'} {complaint.resolutionDetails.score}/100
                 </span>
               )}
             </div>
@@ -1027,31 +1033,31 @@ export default function ComplaintDetailPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
             <div className="p-3 bg-white rounded-xl border border-slate-200">
-              <span className="text-slate-500 block mb-0.5">Remediation Outcome</span>
+              <span className="text-slate-500 block mb-0.5">{lang === 'hi' ? 'निवारण परिणाम' : 'Remediation Outcome'}</span>
               <span className="font-bold text-slate-900">
-                {formatOutcomeType(complaint.resolutionDetails.outcomeType)}
+                {formatOutcomeType(complaint.resolutionDetails.outcomeType, lang)}
               </span>
             </div>
 
             <div className="p-3 bg-white rounded-xl border border-slate-200">
-              <span className="text-slate-500 block mb-0.5">Verification Method</span>
+              <span className="text-slate-500 block mb-0.5">{lang === 'hi' ? 'सत्यापन पद्धति' : 'Verification Method'}</span>
               <span className="font-bold text-slate-900">
-                {formatVerificationMethod(complaint.resolutionDetails.verificationMethod)}
+                {formatVerificationMethod(complaint.resolutionDetails.verificationMethod, lang)}
               </span>
             </div>
 
             <div className="p-3 bg-white rounded-xl border border-slate-200">
-              <span className="text-slate-500 block mb-0.5">Resolution Timestamp</span>
+              <span className="text-slate-500 block mb-0.5">{lang === 'hi' ? 'निवारण समय-मुद्रा' : 'Resolution Timestamp'}</span>
               <span className="font-bold text-slate-900">
                 {complaint.resolutionDetails.resolvedAt
-                  ? new Date(complaint.resolutionDetails.resolvedAt).toLocaleString('en-IN', {
+                  ? new Date(complaint.resolutionDetails.resolvedAt).toLocaleString(lang === 'hi' ? 'hi-IN' : 'en-IN', {
                       day: '2-digit',
                       month: 'short',
                       year: 'numeric',
                       hour: '2-digit',
                       minute: '2-digit'
                     })
-                  : 'Recorded'}
+                  : (lang === 'hi' ? 'दर्ज किया गया' : 'Recorded')}
               </span>
             </div>
           </div>
@@ -1059,7 +1065,7 @@ export default function ComplaintDetailPage() {
           {complaint.resolutionDetails.closureRemarks && (
             <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-1">
               <span className="text-xs font-bold text-slate-700 uppercase tracking-wide block">
-                Official Closure Remarks
+                {lang === 'hi' ? 'आधिकारिक समापन टिप्पणियाँ' : 'Official Closure Remarks'}
               </span>
               <p className="text-xs text-slate-800 leading-relaxed font-normal">
                 {complaint.resolutionDetails.closureRemarks}
@@ -1072,12 +1078,12 @@ export default function ComplaintDetailPage() {
             <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 space-y-1">
               <div className="flex items-center gap-1.5 font-bold">
                 <Shield size={14} className="text-amber-700 shrink-0" />
-                <span>Supervisory Procedural Exception Granted: {formatExceptionReason(complaint.resolutionDetails.exceptionReason)}</span>
+                <span>{lang === 'hi' ? 'पर्यवेक्षी प्रक्रियात्मक छूट स्वीकृत:' : 'Supervisory Procedural Exception Granted:'} {formatExceptionReason(complaint.resolutionDetails.exceptionReason, lang)}</span>
               </div>
               {/* Only exposed in officer mode; never in citizen mode */}
               {isOfficerMode && complaint.resolutionDetails.exceptionJustification && (
                 <p className="text-[11px] text-amber-800 italic pt-1 border-t border-amber-200">
-                  Justification: {complaint.resolutionDetails.exceptionJustification}
+                  {lang === 'hi' ? 'औचित्य:' : 'Justification:'} {complaint.resolutionDetails.exceptionJustification}
                 </p>
               )}
             </div>
@@ -1087,7 +1093,7 @@ export default function ComplaintDetailPage() {
           {isOfficerMode && Array.isArray(complaint.resolutionDetails.evidence) && complaint.resolutionDetails.evidence.length > 0 && (
             <div className="space-y-1.5">
               <span className="text-xs font-bold text-slate-700 uppercase tracking-wide block">
-                Referenced Supporting Evidence
+                {lang === 'hi' ? 'संदर्भित समर्थक साक्ष्य' : 'Referenced Supporting Evidence'}
               </span>
               <div className="flex flex-wrap gap-2">
                 {complaint.resolutionDetails.evidence.map((ev, idx) => (
@@ -1102,9 +1108,9 @@ export default function ComplaintDetailPage() {
           {/* Resolved by: only in officer mode */}
           {isOfficerMode && complaint.resolutionDetails.resolvedBy && (
             <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-200 flex justify-between">
-              <span>Verified by Officer Role: <strong className="text-slate-700 capitalize">{complaint.resolutionDetails.resolvedBy.role || 'Officer'}</strong></span>
+              <span>{lang === 'hi' ? 'सत्यापित अधिकारी पद:' : 'Verified by Officer Role:'} <strong className="text-slate-700 capitalize">{complaint.resolutionDetails.resolvedBy.role || (lang === 'hi' ? 'अधिकारी' : 'Officer')}</strong></span>
               {complaint.resolutionDetails.resolvedBy.userId && (
-                <span>Officer ID: <strong className="text-slate-700">{complaint.resolutionDetails.resolvedBy.userId}</strong></span>
+                <span>{lang === 'hi' ? 'अधिकारी आईडी:' : 'Officer ID:'} <strong className="text-slate-700">{complaint.resolutionDetails.resolvedBy.userId}</strong></span>
               )}
             </div>
           )}
@@ -1116,17 +1122,18 @@ export default function ComplaintDetailPage() {
         <div className="p-5 bg-amber-50/90 rounded-2xl border-2 border-amber-500 shadow-sm space-y-2">
           <div className="flex items-center gap-2 text-amber-900 font-bold text-sm">
             <RotateCcw size={18} className="text-amber-600 shrink-0" />
-            <span>Grievance Reopened (Investigation Cycle #{complaint.reopenedCount || 1})</span>
+            <span>{lang === 'hi' ? `शिकायत पुनः खोली गई (जाँच चक्र #${complaint.reopenedCount || 1})` : `Grievance Reopened (Investigation Cycle #${complaint.reopenedCount || 1})`}</span>
           </div>
           <p className="text-xs text-amber-800 leading-relaxed">
-            This grievance was reopened following an approved citizen review petition. The assigned department is actively re-investigating the reported civic issue.
-            Under CivicSarthi quality verification standards, subsequent closure will require a complete re-verification pass.
+            {lang === 'hi'
+              ? 'यह शिकायत स्वीकृत नागरिक समीक्षा याचिका के बाद पुनः खोली गई है। संबंधित विभाग द्वारा इस मामले की सक्रिय रूप से पुनः जाँच की जा रही है। सिविकसारथी मानकों के तहत, बाद के समापन हेतु पूर्ण पुनर्सत्यापन अनिवार्य होगा।'
+              : 'This grievance was reopened following an approved citizen review petition. The assigned department is actively re-investigating the reported civic issue. Under CivicSarthi quality verification standards, subsequent closure will require a complete re-verification pass.'}
           </p>
           {complaint.previousResolutionDetails && (
             <div className="pt-2 border-t border-amber-200/80 text-[11px] text-amber-900">
-              <span className="font-semibold">Previous Resolution Outcome (Cycle #{complaint.reopenedCount || 1}): </span>
+              <span className="font-semibold">{lang === 'hi' ? `पिछला निवारण परिणाम (चक्र #${complaint.reopenedCount || 1}): ` : `Previous Resolution Outcome (Cycle #${complaint.reopenedCount || 1}): `}</span>
               <span>
-                {formatOutcomeType(complaint.previousResolutionDetails.outcomeType)} ({formatVerificationMethod(complaint.previousResolutionDetails.verificationMethod)})
+                {formatOutcomeType(complaint.previousResolutionDetails.outcomeType, lang)} ({formatVerificationMethod(complaint.previousResolutionDetails.verificationMethod, lang)})
               </span>
             </div>
           )}
@@ -1232,10 +1239,10 @@ export default function ComplaintDetailPage() {
               </div>
               <div>
                 <h2 className="font-bold text-base text-slate-900">
-                  Citizen Follow-Up Reminder
+                  {lang === 'hi' ? 'नागरिक अनुवर्ती स्मरण पत्र' : 'Citizen Follow-Up Reminder'}
                 </h2>
                 <p className="text-xs text-slate-500">
-                  Request an in-app follow-up for departmental review when progress has stalled
+                  {lang === 'hi' ? 'प्रगति रुकने पर विभागीय समीक्षा हेतु इन-ऐप अनुवर्ती अनुरोध भेजें' : 'Request an in-app follow-up for departmental review when progress has stalled'}
                 </p>
               </div>
             </div>
@@ -1254,17 +1261,17 @@ export default function ComplaintDetailPage() {
               {requestingReminder ? (
                 <>
                   <RefreshCw size={14} className="animate-spin" />
-                  <span>Submitting Reminder...</span>
+                  <span>{lang === 'hi' ? 'स्मरण पत्र भेजा जा रहा है...' : 'Submitting Reminder...'}</span>
                 </>
               ) : reminderEligibility?.throttled ? (
                 <>
                   <Clock size={14} />
-                  <span>Throttled ({reminderEligibility.timeRemainingMinutes || 0}m left)</span>
+                  <span>{lang === 'hi' ? `प्रतीक्षा अवधि (${reminderEligibility.timeRemainingMinutes || 0} मिनट शेष)` : `Throttled (${reminderEligibility.timeRemainingMinutes || 0}m left)`}</span>
                 </>
               ) : (
                 <>
                   <Bell size={14} />
-                  <span>Send Follow-Up Reminder</span>
+                  <span>{lang === 'hi' ? 'अनुवर्ती स्मरण पत्र भेजें' : 'Send Follow-Up Reminder'}</span>
                 </>
               )}
             </button>
@@ -1284,10 +1291,10 @@ export default function ComplaintDetailPage() {
           {/* Transparent delivery disclaimer */}
           <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 flex items-center justify-between flex-wrap gap-2">
             <span>
-              <strong>Delivery Mode:</strong> In-app audit log (reminders are permanently logged for inspecting officers; external SMS/Email is unconfigured).
+              <strong>{lang === 'hi' ? 'वितरण माध्यम:' : 'Delivery Mode:'}</strong> {lang === 'hi' ? 'इन-ऐप ऑडिट लॉग (निरीक्षण अधिकारियों के लिए स्थायी रूप से दर्ज; बाहरी एसएमएस/ईमेल कॉन्फ़िगर नहीं है)।' : 'In-app audit log (reminders are permanently logged for inspecting officers; external SMS/Email is unconfigured).'}
             </span>
             <span className="font-mono text-[11px] text-slate-500">
-              Cooldown window: 24 hours
+              {lang === 'hi' ? 'शीतलन अवधि: 24 घंटे' : 'Cooldown window: 24 hours'}
             </span>
           </div>
 
@@ -1295,7 +1302,7 @@ export default function ComplaintDetailPage() {
           {remindersList.length > 0 && (
             <div className="space-y-2 pt-2 border-t border-slate-100">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">
-                Reminder Audit Trail ({remindersList.length})
+                {lang === 'hi' ? `स्मरण पत्र ऑडिट ट्रेल (${remindersList.length})` : `Reminder Audit Trail (${remindersList.length})`}
               </span>
               <div className="space-y-1.5 max-h-40 overflow-y-auto">
                 {remindersList.map((rem) => (
@@ -1305,7 +1312,7 @@ export default function ComplaintDetailPage() {
                       <span className="text-slate-600 ml-2">{rem.message}</span>
                     </div>
                     <span className="text-[11px] text-slate-400">
-                      {new Date(rem.requestedAt || rem.createdAt).toLocaleString()}
+                      {new Date(rem.requestedAt || rem.createdAt).toLocaleString(lang === 'hi' ? 'hi-IN' : 'en-IN')}
                     </span>
                   </div>
                 ))}
@@ -1324,10 +1331,10 @@ export default function ComplaintDetailPage() {
             </div>
             <div>
               <h2 className="font-bold text-base text-slate-900">
-                Citizen Clarification & Information Threads
+                {lang === 'hi' ? 'नागरिक स्पष्टीकरण एवं सूचना संवाद' : 'Citizen Clarification & Information Threads'}
               </h2>
               <p className="text-xs text-slate-500">
-                Ask clarifying questions or supply additional details without altering official complaint status
+                {lang === 'hi' ? 'आधिकारिक शिकायत स्थिति बदले बिना स्पष्टीकरण प्रश्न पूछें या अतिरिक्त विवरण प्रदान करें' : 'Ask clarifying questions or supply additional details without altering official complaint status'}
               </p>
             </div>
           </div>
@@ -1339,7 +1346,7 @@ export default function ComplaintDetailPage() {
               className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5 self-start sm:self-auto"
             >
               <Plus size={14} />
-              <span>{showClarificationForm ? 'Cancel' : 'New Clarification Query'}</span>
+              <span>{showClarificationForm ? (lang === 'hi' ? 'रद्द करें' : 'Cancel') : (lang === 'hi' ? 'नया स्पष्टीकरण अनुरोध' : 'New Clarification Query')}</span>
             </button>
           )}
         </div>
@@ -1366,7 +1373,7 @@ export default function ComplaintDetailPage() {
                   checked={clarificationType === 'CLARIFICATION'}
                   onChange={() => setClarificationType('CLARIFICATION')}
                 />
-                <span>Clarification Question</span>
+                <span>{lang === 'hi' ? 'स्पष्टीकरण प्रश्न' : 'Clarification Question'}</span>
               </label>
               <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
                 <input
@@ -1376,7 +1383,7 @@ export default function ComplaintDetailPage() {
                   checked={clarificationType === 'ADDITIONAL_INFO'}
                   onChange={() => setClarificationType('ADDITIONAL_INFO')}
                 />
-                <span>Additional Information / Landmark Details</span>
+                <span>{lang === 'hi' ? 'अतिरिक्त सूचना / स्थल विवरण' : 'Additional Information / Landmark Details'}</span>
               </label>
             </div>
 
@@ -1386,11 +1393,11 @@ export default function ComplaintDetailPage() {
                 rows={3}
                 value={clarificationContent}
                 onChange={(e) => setClarificationContent(e.target.value)}
-                placeholder="Type your clarification question or supplementary info (min 5 characters, max 2000)..."
+                placeholder={lang === 'hi' ? 'अपना स्पष्टीकरण प्रश्न या पूरक जानकारी लिखें (न्यूनतम 5 वर्ण, अधिकतम 2000)...' : 'Type your clarification question or supplementary info (min 5 characters, max 2000)...'}
                 className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
               />
               <div className="flex justify-between text-[11px] text-slate-400 mt-1">
-                <span>Min 5 chars</span>
+                <span>{lang === 'hi' ? 'न्यूनतम 5 वर्ण' : 'Min 5 chars'}</span>
                 <span>{clarificationContent.length} / 2000</span>
               </div>
             </div>
@@ -1401,7 +1408,7 @@ export default function ComplaintDetailPage() {
                 onClick={() => setShowClarificationForm(false)}
                 className="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100"
               >
-                Cancel
+                {lang === 'hi' ? 'रद्द करें' : 'Cancel'}
               </button>
               <button
                 type="submit"
@@ -1409,7 +1416,7 @@ export default function ComplaintDetailPage() {
                 className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition disabled:opacity-50 flex items-center gap-1.5"
               >
                 {submittingClarification && <RefreshCw size={12} className="animate-spin" />}
-                <span>Submit to Department</span>
+                <span>{lang === 'hi' ? 'विभाग को सबमिट करें' : 'Submit to Department'}</span>
               </button>
             </div>
           </form>
@@ -1424,7 +1431,7 @@ export default function ComplaintDetailPage() {
                   <div className="flex items-center gap-2">
                     <span className="font-mono font-bold text-indigo-700">#{clr.id}</span>
                     <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 text-[10px] font-bold">
-                      {clr.requestType === 'ADDITIONAL_INFO' ? 'Additional Information' : 'Clarification Request'}
+                      {clr.requestType === 'ADDITIONAL_INFO' ? (lang === 'hi' ? 'अतिरिक्त सूचना' : 'Additional Information') : (lang === 'hi' ? 'स्पष्टीकरण अनुरोध' : 'Clarification Request')}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1435,7 +1442,7 @@ export default function ComplaintDetailPage() {
                         ? 'bg-slate-200 text-slate-700 border-slate-300'
                         : 'bg-amber-100 text-amber-800 border-amber-300'
                     }`}>
-                      {clr.status}
+                      {clr.status === 'RESPONDED' ? (lang === 'hi' ? 'उत्तर दिया गया' : 'RESPONDED') : clr.status === 'CLOSED' ? (lang === 'hi' ? 'बंद' : 'CLOSED') : (lang === 'hi' ? 'प्रतीक्षारत' : 'PENDING')}
                     </span>
                     {clr.status !== 'CLOSED' && (
                       <button
@@ -1443,7 +1450,7 @@ export default function ComplaintDetailPage() {
                         onClick={() => handleClarificationClose(clr.id)}
                         className="px-2 py-0.5 text-[10px] text-slate-600 hover:text-slate-900 border border-slate-300 rounded hover:bg-slate-100 transition"
                       >
-                        Close Thread
+                        {lang === 'hi' ? 'संवाद बंद करें' : 'Close Thread'}
                       </button>
                     )}
                   </div>
@@ -1452,7 +1459,7 @@ export default function ComplaintDetailPage() {
                 {/* Citizen Question / Context */}
                 <div className="p-3 bg-white rounded-lg border border-slate-200 space-y-1">
                   <span className="text-[10px] uppercase font-bold text-slate-400 block">
-                    Citizen Request ({new Date(clr.createdAt).toLocaleString()}):
+                    {lang === 'hi' ? 'नागरिक अनुरोध' : 'Citizen Request'} ({new Date(clr.createdAt).toLocaleString(lang === 'hi' ? 'hi-IN' : 'en-IN')}):
                   </span>
                   <p className="text-slate-800 font-medium leading-relaxed">
                     {clr.content}
@@ -1463,13 +1470,13 @@ export default function ComplaintDetailPage() {
                 {clr.responses && clr.responses.length > 0 && (
                   <div className="space-y-2 pt-2 border-t border-slate-200">
                     <span className="text-[10px] uppercase font-bold text-emerald-700 block">
-                      Official Department Responses ({clr.responses.length}):
+                      {lang === 'hi' ? `आधिकारिक विभागीय उत्तर (${clr.responses.length}):` : `Official Department Responses (${clr.responses.length}):`}
                     </span>
                     {clr.responses.map((resp, rIdx) => (
                       <div key={rIdx} className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-lg text-xs space-y-1">
                         <div className="flex items-center justify-between text-[11px] font-semibold text-emerald-900">
                           <span>{resp.responderName} ({resp.responderRole})</span>
-                          <span>{new Date(resp.respondedAt).toLocaleString()}</span>
+                          <span>{new Date(resp.respondedAt).toLocaleString(lang === 'hi' ? 'hi-IN' : 'en-IN')}</span>
                         </div>
                         <p className="text-slate-800 leading-relaxed font-medium">
                           {resp.response}
@@ -1483,12 +1490,12 @@ export default function ComplaintDetailPage() {
                 {isOfficerMode && clr.status !== 'CLOSED' && (
                   <div className="pt-2 border-t border-slate-200 space-y-2">
                     <span className="text-[11px] font-bold text-slate-700 block">
-                      Post Citizen-Visible Department Response:
+                      {lang === 'hi' ? 'नागरिक-दृश्य विभागीय उत्तर पोस्ट करें:' : 'Post Citizen-Visible Department Response:'}
                     </span>
                     <div className="flex gap-2">
                       <input
                         type="text"
-                        placeholder="Type citizen-visible response (min 5 characters)..."
+                        placeholder={lang === 'hi' ? 'नागरिक-दृश्य उत्तर लिखें (न्यूनतम 5 वर्ण)...' : 'Type citizen-visible response (min 5 characters)...'}
                         value={officerResponses[clr.id] || ''}
                         onChange={(e) => setOfficerResponses({ ...officerResponses, [clr.id]: e.target.value })}
                         className="flex-1 px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
@@ -1499,7 +1506,7 @@ export default function ComplaintDetailPage() {
                         disabled={respondingClarificationId === clr.id || !officerResponses[clr.id] || officerResponses[clr.id].trim().length < 5}
                         className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition disabled:opacity-50"
                       >
-                        {respondingClarificationId === clr.id ? 'Sending...' : 'Send Response'}
+                        {respondingClarificationId === clr.id ? (lang === 'hi' ? 'भेजा जा रहा है...' : 'Sending...') : (lang === 'hi' ? 'उत्तर भेजें' : 'Send Response')}
                       </button>
                     </div>
                   </div>
@@ -1508,7 +1515,7 @@ export default function ComplaintDetailPage() {
             ))}
           </div>
         ) : (
-          <p className="text-xs text-slate-500 italic">No clarification requests initiated for this grievance.</p>
+          <p className="text-xs text-slate-500 italic">{lang === 'hi' ? 'इस शिकायत हेतु कोई स्पष्टीकरण अनुरोध नहीं है।' : 'No clarification requests initiated for this grievance.'}</p>
         )}
       </div>
 
@@ -1519,11 +1526,11 @@ export default function ComplaintDetailPage() {
             <div className="flex items-center gap-2">
               <Star size={20} className="text-amber-500 fill-amber-400" />
               <h2 className="font-bold text-base text-slate-900">
-                Citizen Resolution Satisfaction & Ratings
+                {lang === 'hi' ? 'नागरिक निवारण संतुष्टि एवं रेटिंग' : 'Citizen Resolution Satisfaction & Ratings'}
               </h2>
             </div>
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800">
-              Resolution Feedback
+              {lang === 'hi' ? 'निवारण प्रतिक्रिया' : 'Resolution Feedback'}
             </span>
           </div>
 
@@ -1544,11 +1551,11 @@ export default function ComplaintDetailPage() {
                         ))}
                       </div>
                       <span className="font-bold text-slate-800 ml-1">
-                        {fb.rating} / 5 Stars
+                        {fb.rating} / 5 {lang === 'hi' ? 'सितारे' : 'Stars'}
                       </span>
                     </div>
                     <span className="text-[11px] text-slate-500">
-                      Resolution Cycle #{fb.resolutionMilestone || 1} • {new Date(fb.createdAt).toLocaleDateString('en-IN', {
+                      {lang === 'hi' ? `निवारण चक्र #${fb.resolutionMilestone || 1}` : `Resolution Cycle #${fb.resolutionMilestone || 1}`} • {new Date(fb.createdAt).toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', {
                         day: '2-digit',
                         month: 'short',
                         year: 'numeric'
@@ -1564,7 +1571,7 @@ export default function ComplaintDetailPage() {
               ))}
             </div>
           ) : (
-            <p className="text-xs text-slate-500 italic">No citizen satisfaction ratings recorded yet for this resolution.</p>
+            <p className="text-xs text-slate-500 italic">{lang === 'hi' ? 'इस निवारण के लिए अभी तक कोई नागरिक संतुष्टि रेटिंग दर्ज नहीं की गई है।' : 'No citizen satisfaction ratings recorded yet for this resolution.'}</p>
           )}
 
           {feedbackMessage && (
@@ -1581,11 +1588,11 @@ export default function ComplaintDetailPage() {
             !feedbackList.some(f => String(f.resolutionMilestone || '1') === String(complaint.resolutionMilestone || '1')) && (
               <form onSubmit={handleFeedbackSubmit} className="pt-3 border-t border-slate-200 space-y-3">
                 <span className="text-xs font-bold text-slate-800 block">
-                  Rate Your Resolution Experience
+                  {lang === 'hi' ? 'अपने निवारण अनुभव का मूल्यांकन करें' : 'Rate Your Resolution Experience'}
                 </span>
 
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-slate-500">Rating:</span>
+                  <span className="text-xs text-slate-500">{lang === 'hi' ? 'रेटिंग:' : 'Rating:'}</span>
                   <div className="flex items-center gap-1">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
@@ -1608,14 +1615,14 @@ export default function ComplaintDetailPage() {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Citizen Comments (Optional, max 1000 characters)
+                    {lang === 'hi' ? 'नागरिक टिप्पणियाँ (वैकल्पिक, अधिकतम 1000 वर्ण)' : 'Citizen Comments (Optional, max 1000 characters)'}
                   </label>
                   <textarea
                     rows={2}
                     maxLength={1000}
                     value={feedbackComments}
                     onChange={(e) => setFeedbackComments(e.target.value)}
-                    placeholder="Share whether the work was completed adequately, timeliness, officer conduct..."
+                    placeholder={lang === 'hi' ? 'बताएं कि क्या कार्य संतोषजनक ढंग से पूर्ण हुआ, समयबद्धता, अधिकारी आचरण...' : 'Share whether the work was completed adequately, timeliness, officer conduct...'}
                     className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
@@ -1625,7 +1632,7 @@ export default function ComplaintDetailPage() {
                   disabled={submittingFeedback}
                   className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold shadow-sm transition disabled:opacity-50"
                 >
-                  {submittingFeedback ? 'Recording Rating...' : 'Submit Resolution Rating'}
+                  {submittingFeedback ? (lang === 'hi' ? 'रेटिंग दर्ज की जा रही है...' : 'Recording Rating...') : (lang === 'hi' ? 'निवारण रेटिंग सबमिट करें' : 'Submit Resolution Rating')}
                 </button>
               </form>
             )}
@@ -1638,12 +1645,12 @@ export default function ComplaintDetailPage() {
           <div className="flex items-center gap-2">
             <ShieldAlert size={20} className="text-purple-600" />
             <h2 className="font-bold text-base text-slate-900">
-              Formal Resolution Appeals Desk
+              {lang === 'hi' ? 'औपचारिक निवारण अपील डेस्क' : 'Formal Resolution Appeals Desk'}
             </h2>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800">
-              Dispute Escalation
+              {lang === 'hi' ? 'विवाद निवारण' : 'Dispute Escalation'}
             </span>
             {(!isOfficerMode || (user && user.id === complaint.citizenId)) &&
               (complaint.status === 'RESOLVED' || complaint.status === 'CLOSED') && (
@@ -1652,7 +1659,7 @@ export default function ComplaintDetailPage() {
                   onClick={() => setShowAppealForm(!showAppealForm)}
                   className="text-xs px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition"
                 >
-                  {showAppealForm ? 'Cancel Appeal' : 'File Appeal'}
+                  {showAppealForm ? (lang === 'hi' ? 'अपील रद्द करें' : 'Cancel Appeal') : (lang === 'hi' ? 'अपील दर्ज करें' : 'File Appeal')}
                 </button>
               )}
           </div>
@@ -1662,11 +1669,11 @@ export default function ComplaintDetailPage() {
         {appealsLoading ? (
           <div className="p-4 text-center text-slate-500 text-xs">
             <RefreshCw size={14} className="animate-spin inline mr-1 text-purple-600" />
-            Loading appeals history...
+            {lang === 'hi' ? 'अपील इतिहास लोड हो रहा है...' : 'Loading appeals history...'}
           </div>
         ) : appealLoadError ? (
           <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-            Unable to load appeal history at this time ({appealLoadError}).
+            {lang === 'hi' ? `इस समय अपील इतिहास लोड करने में असमर्थ (${appealLoadError})।` : `Unable to load appeal history at this time (${appealLoadError}).`}
           </div>
         ) : appealsList.length > 0 ? (
           <div className="space-y-3">
@@ -1686,7 +1693,7 @@ export default function ComplaintDetailPage() {
                     appeal.status === 'REJECTED' ? 'bg-rose-100 text-rose-800 border-rose-300' :
                     'bg-amber-100 text-amber-800 border-amber-300'
                   }`}>
-                    {appeal.status}
+                    {appeal.status === 'UPHELD' ? (lang === 'hi' ? 'स्वीकृत' : 'UPHELD') : appeal.status === 'REJECTED' ? (lang === 'hi' ? 'खारिज' : 'REJECTED') : (lang === 'hi' ? 'प्रतीक्षारत' : appeal.status)}
                   </span>
                 </div>
 
@@ -1697,8 +1704,8 @@ export default function ComplaintDetailPage() {
                 {appeal.decision && (
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-[11px] space-y-1">
                     <div className="flex items-center justify-between font-bold text-blue-900">
-                      <span>Adjudication Verdict: {typeof appeal.decision === 'object' ? appeal.decision.outcome : appeal.decision}</span>
-                      <span>Decided: {new Date(appeal.decision?.decidedAt || appeal.decidedAt || appeal.updatedAt).toLocaleDateString('en-IN')}</span>
+                      <span>{lang === 'hi' ? 'निर्णय निष्कर्ष:' : 'Adjudication Verdict:'} {typeof appeal.decision === 'object' ? appeal.decision.outcome : appeal.decision}</span>
+                      <span>{lang === 'hi' ? 'निर्णय तिथि:' : 'Decided:'} {new Date(appeal.decision?.decidedAt || appeal.decidedAt || appeal.updatedAt).toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN')}</span>
                     </div>
                     {(appeal.decision?.reason || appeal.citizenExplanationDecision) && (
                       <p className="text-blue-800">
@@ -1711,61 +1718,63 @@ export default function ComplaintDetailPage() {
             ))}
           </div>
         ) : (
-          <p className="text-xs text-slate-500 italic">No formal appeals lodged against this grievance.</p>
+          <p className="text-xs text-slate-500 italic">{lang === 'hi' ? 'इस शिकायत के विरुद्ध कोई औपचारिक अपील दर्ज नहीं है।' : 'No formal appeals lodged against this grievance.'}</p>
         )}
 
         {/* Appeal Filing Form */}
         {showAppealForm && (
           <form onSubmit={handleAppealSubmit} className="p-4 bg-purple-50/70 border border-purple-200 rounded-xl space-y-3 text-xs">
             <h3 className="font-bold text-purple-900 text-xs">
-              Lodge Formal Resolution Appeal
+              {lang === 'hi' ? 'औपचारिक निवारण अपील दर्ज करें' : 'Lodge Formal Resolution Appeal'}
             </h3>
             <p className="text-[11px] text-purple-800">
-              Submit a formal dispute if the remediation is incomplete, the evidence does not support the claimed outcome, or procedural rules were violated.
+              {lang === 'hi'
+                ? 'यदि निवारण कार्य अधूरा है, साक्ष्य परिणाम का समर्थन नहीं करते, या प्रक्रियात्मक नियमों का उल्लंघन हुआ है, तो औपचारिक अपील प्रस्तुत करें।'
+                : 'Submit a formal dispute if the remediation is incomplete, the evidence does not support the claimed outcome, or procedural rules were violated.'}
             </p>
 
             <div>
               <label className="block font-bold text-slate-700 mb-1">
-                Dispute Reason Category *
+                {lang === 'hi' ? 'विवाद कारण श्रेणी *' : 'Dispute Reason Category *'}
               </label>
               <select
                 value={appealReasonCategory}
                 onChange={(e) => setAppealReasonCategory(e.target.value)}
                 className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
-                <option value="INCOMPLETE_WORK">Incomplete Work</option>
-                <option value="POOR_QUALITY">Poor Remediation Quality</option>
-                <option value="RECURRING_DEFECT">Recurring Defect</option>
-                <option value="EVIDENCE_DISPUTED">Evidence Disputed / Inaccurate</option>
-                <option value="PROCEDURAL_VIOLATION">Procedural Violation</option>
-                <option value="UNSATISFACTORY_EXPLANATION">Unsatisfactory Officer Explanation</option>
-                <option value="OTHER">Other Reason</option>
+                <option value="INCOMPLETE_WORK">{lang === 'hi' ? 'अपूर्ण कार्य' : 'Incomplete Work'}</option>
+                <option value="POOR_QUALITY">{lang === 'hi' ? 'घटिया निवारण गुणवत्ता' : 'Poor Remediation Quality'}</option>
+                <option value="RECURRING_DEFECT">{lang === 'hi' ? 'पुनरावर्ती दोष' : 'Recurring Defect'}</option>
+                <option value="EVIDENCE_DISPUTED">{lang === 'hi' ? 'साक्ष्य विवादित / गलत' : 'Evidence Disputed / Inaccurate'}</option>
+                <option value="PROCEDURAL_VIOLATION">{lang === 'hi' ? 'प्रक्रियात्मक उल्लंघन' : 'Procedural Violation'}</option>
+                <option value="UNSATISFACTORY_EXPLANATION">{lang === 'hi' ? 'असंतोषजनक अधिकारी स्पष्टीकरण' : 'Unsatisfactory Officer Explanation'}</option>
+                <option value="OTHER">{lang === 'hi' ? 'अन्य कारण' : 'Other Reason'}</option>
               </select>
             </div>
 
             <div>
               <label className="block font-bold text-slate-700 mb-1">
-                Detailed Explanation * (Min 10 characters)
+                {lang === 'hi' ? 'विस्तृत विवरण * (न्यूनतम 10 वर्ण)' : 'Detailed Explanation * (Min 10 characters)'}
               </label>
               <textarea
                 required
                 rows={3}
                 value={appealExplanation}
                 onChange={(e) => setAppealExplanation(e.target.value)}
-                placeholder="Explain why the resolution is disputed and what corrective action is expected..."
+                placeholder={lang === 'hi' ? 'बताएं कि समाधान क्यों विवादित है और क्या सुधारात्मक कार्रवाई अपेक्षित है...' : 'Explain why the resolution is disputed and what corrective action is expected...'}
                 className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
 
             <div>
               <label className="block font-bold text-slate-700 mb-1">
-                Supporting Evidence Reference (Optional URL or File ID)
+                {lang === 'hi' ? 'समर्थक साक्ष्य संदर्भ (वैकल्पिक URL या फ़ाइल आईडी)' : 'Supporting Evidence Reference (Optional URL or File ID)'}
               </label>
               <input
                 type="text"
                 value={appealEvidence}
                 onChange={(e) => setAppealEvidence(e.target.value)}
-                placeholder="e.g. https://... or photo verification ID"
+                placeholder={lang === 'hi' ? 'उदा. https://... या फ़ोटो सत्यापन आईडी' : 'e.g. https://... or photo verification ID'}
                 className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
@@ -1784,14 +1793,14 @@ export default function ComplaintDetailPage() {
                 onClick={() => setShowAppealForm(false)}
                 className="px-3 py-1.5 border border-slate-300 rounded-lg text-slate-700 font-semibold"
               >
-                Cancel
+                {lang === 'hi' ? 'रद्द करें' : 'Cancel'}
               </button>
               <button
                 type="submit"
                 disabled={submittingAppeal || appealExplanation.trim().length < 10}
                 className="px-4 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold shadow-sm transition disabled:opacity-50"
               >
-                {submittingAppeal ? 'Submitting Appeal...' : 'Submit Appeal'}
+                {submittingAppeal ? (lang === 'hi' ? 'अपील प्रस्तुत हो रही है...' : 'Submitting Appeal...') : (lang === 'hi' ? 'अपील सबमिट करें' : 'Submit Appeal')}
               </button>
             </div>
           </form>
@@ -1804,12 +1813,12 @@ export default function ComplaintDetailPage() {
           <div className="flex items-center gap-2">
             <RotateCcw size={20} className="text-rose-600" />
             <h2 className="font-bold text-base text-slate-900">
-              Controlled Grievance Reopening Desk
+              {lang === 'hi' ? 'नियंत्रित शिकायत पुनः खोलने का डेस्क' : 'Controlled Grievance Reopening Desk'}
             </h2>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800">
-              Re-Investigation Petitions
+              {lang === 'hi' ? 'पुनः जाँच याचिकाएँ' : 'Re-Investigation Petitions'}
             </span>
             {(!isOfficerMode || (user && user.id === complaint.citizenId)) &&
               (complaint.status === 'RESOLVED' || complaint.status === 'CLOSED') &&
@@ -1819,7 +1828,7 @@ export default function ComplaintDetailPage() {
                   onClick={() => setShowReopeningForm(!showReopeningForm)}
                   className="text-xs px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-semibold transition"
                 >
-                  {showReopeningForm ? 'Cancel Request' : 'Request Reopening'}
+                  {showReopeningForm ? (lang === 'hi' ? 'अनुरोध रद्द करें' : 'Cancel Request') : (lang === 'hi' ? 'पुनः खोलने का अनुरोध करें' : 'Request Reopening')}
                 </button>
               )}
           </div>
@@ -1829,11 +1838,11 @@ export default function ComplaintDetailPage() {
         {reopeningsLoading ? (
           <div className="p-4 text-center text-slate-500 text-xs">
             <RefreshCw size={14} className="animate-spin inline mr-1 text-rose-600" />
-            Loading reopening history...
+            {lang === 'hi' ? 'पुनः खोलने का इतिहास लोड हो रहा है...' : 'Loading reopening history...'}
           </div>
         ) : reopeningLoadError ? (
           <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-            Unable to load reopening history at this time ({reopeningLoadError}).
+            {lang === 'hi' ? `इस समय इतिहास लोड करने में असमर्थ (${reopeningLoadError})।` : `Unable to load reopening history at this time (${reopeningLoadError}).`}
           </div>
         ) : reopeningsList.length > 0 ? (
           <div className="space-y-3">
@@ -1853,7 +1862,7 @@ export default function ComplaintDetailPage() {
                     req.status === 'REJECTED' ? 'bg-slate-200 text-slate-700 border-slate-300' :
                     'bg-amber-100 text-amber-800 border-amber-300'
                   }`}>
-                    {req.status}
+                    {req.status === 'APPROVED' ? (lang === 'hi' ? 'स्वीकृत' : 'APPROVED') : req.status === 'REJECTED' ? (lang === 'hi' ? 'अस्वीकृत' : 'REJECTED') : (lang === 'hi' ? 'प्रतीक्षारत' : req.status)}
                   </span>
                 </div>
 
@@ -1864,12 +1873,12 @@ export default function ComplaintDetailPage() {
                 {req.decision && (
                   <div className="p-3 bg-slate-100 border border-slate-200 rounded-lg text-[11px] space-y-1">
                     <div className="flex items-center justify-between font-bold text-slate-900">
-                      <span>Supervisor Verdict: {typeof req.decision === 'object' ? req.decision.outcome : req.decision}</span>
-                      <span>Decided: {new Date(req.decision?.decidedAt || req.decidedAt || req.updatedAt).toLocaleDateString('en-IN')}</span>
+                      <span>{lang === 'hi' ? 'पर्यवेक्षक निर्णय:' : 'Supervisor Verdict:'} {typeof req.decision === 'object' ? req.decision.outcome : req.decision}</span>
+                      <span>{lang === 'hi' ? 'निर्णय तिथि:' : 'Decided:'} {new Date(req.decision?.decidedAt || req.decidedAt || req.updatedAt).toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN')}</span>
                     </div>
                     {(req.decision?.reason || req.decisionReason) && (
                       <p className="text-slate-700">
-                        Reason: {req.decisionReason || req.decision?.reason}
+                        {lang === 'hi' ? 'कारण:' : 'Reason:'} {req.decisionReason || req.decision?.reason}
                       </p>
                     )}
                   </div>
@@ -1878,48 +1887,49 @@ export default function ComplaintDetailPage() {
             ))}
           </div>
         ) : (
-          <p className="text-xs text-slate-500 italic">No reopening petitions filed for this grievance.</p>
+          <p className="text-xs text-slate-500 italic">{lang === 'hi' ? 'इस शिकायत हेतु कोई पुनः खोलने की याचिका नहीं है।' : 'No reopening petitions filed for this grievance.'}</p>
         )}
 
         {/* Reopening Petition Form */}
         {showReopeningForm && (
           <form onSubmit={handleReopeningSubmit} className="p-4 bg-rose-50/70 border border-rose-200 rounded-xl space-y-3 text-xs">
             <h3 className="font-bold text-rose-900 text-xs">
-              Lodge Grievance Reopening Petition
+              {lang === 'hi' ? 'शिकायत पुनः खोलने की याचिका दर्ज करें' : 'Lodge Grievance Reopening Petition'}
             </h3>
             <p className="text-[11px] text-rose-800">
-              Petition for official case reopening if the issue persists on the ground or physical repair failed.
-              An approved request resets the case status to REOPENED and requires departmental remediation.
+              {lang === 'hi'
+                ? 'यदि समस्या जमीनी स्तर पर अभी भी बनी हुई है या मरम्मत विफल रही है, तो आधिकारिक रूप से पुनः खोलने हेतु याचिका दें। स्वीकृत अनुरोध स्थिति को REOPENED पर रीसेट करता है।'
+                : 'Petition for official case reopening if the issue persists on the ground or physical repair failed. An approved request resets the case status to REOPENED and requires departmental remediation.'}
             </p>
 
             <div>
               <label className="block font-bold text-slate-700 mb-1">
-                Reopening Reason Category *
+                {lang === 'hi' ? 'पुनः खोलने का कारण श्रेणी *' : 'Reopening Reason Category *'}
               </label>
               <select
                 value={reopeningReasonCategory}
                 onChange={(e) => setReopeningReasonCategory(e.target.value)}
                 className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
               >
-                <option value="ISSUE_PERSISTS">Issue Still Persists On Ground</option>
-                <option value="RECURRING_FAILURE">Recurring Defect / Failure</option>
-                <option value="INCOMPLETE_REMEDIATION">Incomplete Remediation</option>
-                <option value="EVIDENCE_UNVERIFIABLE">Evidence Unverifiable / False</option>
-                <option value="SAFETY_HAZARD_REMAINS">Public Safety Hazard Remains</option>
-                <option value="OTHER">Other Reason</option>
+                <option value="ISSUE_PERSISTS">{lang === 'hi' ? 'जमीनी स्तर पर समस्या अभी भी जारी है' : 'Issue Still Persists On Ground'}</option>
+                <option value="RECURRING_FAILURE">{lang === 'hi' ? 'बार-बार होने वाला दोष / विफलता' : 'Recurring Defect / Failure'}</option>
+                <option value="INCOMPLETE_REMEDIATION">{lang === 'hi' ? 'अधूरा निवारण' : 'Incomplete Remediation'}</option>
+                <option value="EVIDENCE_UNVERIFIABLE">{lang === 'hi' ? 'साक्ष्य असत्यापनीय / झूठा' : 'Evidence Unverifiable / False'}</option>
+                <option value="SAFETY_HAZARD_REMAINS">{lang === 'hi' ? 'सार्वजनिक सुरक्षा खतरा बना हुआ है' : 'Public Safety Hazard Remains'}</option>
+                <option value="OTHER">{lang === 'hi' ? 'अन्य कारण' : 'Other Reason'}</option>
               </select>
             </div>
 
             <div>
               <label className="block font-bold text-slate-700 mb-1">
-                Citizen Explanation * (Min 10 characters)
+                {lang === 'hi' ? 'नागरिक विवरण * (न्यूनतम 10 वर्ण)' : 'Citizen Explanation * (Min 10 characters)'}
               </label>
               <textarea
                 required
                 rows={3}
                 value={reopeningExplanation}
                 onChange={(e) => setReopeningExplanation(e.target.value)}
-                placeholder="State clearly why the grievance must be reopened and what remains unresolved..."
+                placeholder={lang === 'hi' ? 'स्पष्ट रूप से बताएं कि शिकायत क्यों पुनः खोली जानी चाहिए और क्या अनसुलझा रह गया है...' : 'State clearly why the grievance must be reopened and what remains unresolved...'}
                 className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
               />
             </div>
@@ -1938,14 +1948,14 @@ export default function ComplaintDetailPage() {
                 onClick={() => setShowReopeningForm(false)}
                 className="px-3 py-1.5 border border-slate-300 rounded-lg text-slate-700 font-semibold"
               >
-                Cancel
+                {lang === 'hi' ? 'रद्द करें' : 'Cancel'}
               </button>
               <button
                 type="submit"
                 disabled={submittingReopening || reopeningExplanation.trim().length < 10}
                 className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold shadow-sm transition disabled:opacity-50"
               >
-                {submittingReopening ? 'Lodging Petition...' : 'Submit Reopening Petition'}
+                {submittingReopening ? (lang === 'hi' ? 'याचिका दर्ज हो रही है...' : 'Lodging Petition...') : (lang === 'hi' ? 'पुनः खोलने की याचिका सबमिट करें' : 'Submit Reopening Petition')}
               </button>
             </div>
           </form>
@@ -1959,21 +1969,21 @@ export default function ComplaintDetailPage() {
             <div className="flex items-center gap-2">
               <ShieldCheck size={20} className="text-blue-700" />
               <h2 className="font-bold text-base text-slate-900">
-                Officer Decision & Redressal Controls
+                {lang === 'hi' ? 'अधिकारी निर्णय एवं निवारण नियंत्रण' : 'Officer Decision & Redressal Controls'}
               </h2>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 font-semibold">
-                Authorized Triage Desk
+                {lang === 'hi' ? 'अधिकृत ट्राइएज डेस्क' : 'Authorized Triage Desk'}
               </span>
               <button
                 type="button"
                 onClick={() => setShowFlagModal(true)}
                 className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-semibold transition shadow-xs"
-                title="Flag complaint for fraud, abuse, or spam review"
+                title={lang === 'hi' ? 'धोखाधड़ी, दुरुपयोग या स्पैम समीक्षा हेतु शिकायत चिह्नित करें' : 'Flag complaint for fraud, abuse, or spam review'}
               >
                 <Flag size={13} className="text-amber-700" />
-                <span>Flag for Review</span>
+                <span>{lang === 'hi' ? 'समीक्षा हेतु चिह्नित करें' : 'Flag for Review'}</span>
               </button>
             </div>
           </div>
@@ -1984,11 +1994,11 @@ export default function ComplaintDetailPage() {
               <div className="flex items-center gap-2">
                 <Sparkles size={18} className="text-blue-600" />
                 <h3 className="text-sm font-bold text-slate-900 tracking-tight">
-                  AI Complaint Intelligence & Decision Support
+                  {lang === 'hi' ? 'एआई शिकायत इंटेलिजेंस एवं निर्णय सहायता' : 'AI Complaint Intelligence & Decision Support'}
                 </h3>
               </div>
               <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 font-semibold self-start sm:self-auto">
-                Assistive Advisory (Deterministic v1)
+                {lang === 'hi' ? 'सहायक परामर्श (निर्धारक v1)' : 'Assistive Advisory (Deterministic v1)'}
               </span>
             </div>
 
@@ -1996,29 +2006,29 @@ export default function ComplaintDetailPage() {
               {/* Card 1: Intelligent Classification */}
               <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-2.5 text-xs">
                 <span className="font-bold text-slate-700 uppercase tracking-wider block text-[11px]">
-                  Classification & Routing
+                  {lang === 'hi' ? 'वर्गीकरण एवं रूटिंग' : 'Classification & Routing'}
                 </span>
                 <div>
-                  <span className="text-slate-500">Recommended Category:</span>
+                  <span className="text-slate-500">{lang === 'hi' ? 'अनुशंसित श्रेणी:' : 'Recommended Category:'}</span>
                   <div className="font-bold text-slate-900 capitalize text-sm">
-                    {complaint.intelligence?.classification?.category || complaint.category}
+                    {tCategory(complaint.intelligence?.classification?.category || complaint.category)}
                   </div>
                 </div>
                 <div>
-                  <span className="text-slate-500">Recommended Department:</span>
+                  <span className="text-slate-500">{lang === 'hi' ? 'अनुशंसित विभाग:' : 'Recommended Department:'}</span>
                   <div className="font-semibold text-slate-800">
-                    {complaint.intelligence?.classification?.departmentName || complaint.departmentId || complaint.department}
+                    {tDepartment(complaint.intelligence?.classification?.departmentName || complaint.departmentId || complaint.department)}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-slate-500">Confidence:</span>
+                  <span className="text-slate-500">{lang === 'hi' ? 'विश्वास स्तर:' : 'Confidence:'}</span>
                   <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-bold">
                     {Math.round((complaint.intelligence?.classification?.confidence || 0.8) * 100)}%
                   </span>
                 </div>
                 {complaint.intelligence?.classification?.explanation && (
                   <p className="text-[11px] text-slate-600 italic pt-1 border-t border-slate-100">
-                    Rationale: {complaint.intelligence.classification.explanation}
+                    {lang === 'hi' ? 'तर्क:' : 'Rationale:'} {complaint.intelligence.classification.explanation}
                   </p>
                 )}
               </div>
@@ -2027,7 +2037,7 @@ export default function ComplaintDetailPage() {
               <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-3 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-slate-700 uppercase tracking-wider block text-[11px]">
-                    Priority Recommendation
+                    {lang === 'hi' ? 'प्राथमिकता अनुशंसा' : 'Priority Recommendation'}
                   </span>
                   <PriorityBadge priority={complaint.intelligence?.priorityRecommendation?.priority || 'MEDIUM'} />
                 </div>
@@ -2035,15 +2045,15 @@ export default function ComplaintDetailPage() {
                 {complaint.intelligence?.priorityRecommendation?.publicSafetyHazard && (
                   <div className="p-2 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-[11px] font-semibold flex items-center gap-1.5">
                     <AlertTriangle size={14} className="shrink-0 text-rose-600" />
-                    <span>Public Safety Hazard Flagged in Complaint Narrative</span>
+                    <span>{lang === 'hi' ? 'शिकायत विवरण में सार्वजनिक सुरक्षा खतरा चिह्नित' : 'Public Safety Hazard Flagged in Complaint Narrative'}</span>
                   </div>
                 )}
 
                 <div>
-                  <span className="text-slate-500 block mb-1">Reasoning Signals:</span>
+                  <span className="text-slate-500 block mb-1">{lang === 'hi' ? 'तर्क संकेत:' : 'Reasoning Signals:'}</span>
                   <ul className="space-y-1 text-[11px] text-slate-700">
                     {(complaint.intelligence?.priorityRecommendation?.reasons || [
-                      'Assigned standard category baseline priority.'
+                      lang === 'hi' ? 'मानक श्रेणी आधार रेखा प्राथमिकता निर्धारित।' : 'Assigned standard category baseline priority.'
                     ]).map((r, idx) => (
                       <li key={idx} className="flex items-start gap-1.5">
                         <span className="text-blue-500 font-bold">•</span>
@@ -2068,22 +2078,22 @@ export default function ComplaintDetailPage() {
                       onChange={(e) => setNewPriority(e.target.value)}
                       className="flex-1 px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
                     >
-                      <option value="CRITICAL">Set CRITICAL</option>
-                      <option value="HIGH">Set HIGH</option>
-                      <option value="MEDIUM">Set MEDIUM</option>
-                      <option value="LOW">Set LOW</option>
+                      <option value="CRITICAL">{lang === 'hi' ? 'गंभीर (CRITICAL)' : 'Set CRITICAL'}</option>
+                      <option value="HIGH">{lang === 'hi' ? 'उच्च (HIGH)' : 'Set HIGH'}</option>
+                      <option value="MEDIUM">{lang === 'hi' ? 'मध्यम (MEDIUM)' : 'Set MEDIUM'}</option>
+                      <option value="LOW">{lang === 'hi' ? 'कम (LOW)' : 'Set LOW'}</option>
                     </select>
                     <button
                       type="submit"
                       disabled={priorityUpdating || newPriority === complaint.priority}
                       className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow transition disabled:opacity-50"
                     >
-                      {priorityUpdating ? 'Saving...' : 'Apply Priority'}
+                      {priorityUpdating ? (lang === 'hi' ? 'सहेजा जा रहा है...' : 'Saving...') : (lang === 'hi' ? 'प्राथमिकता लागू करें' : 'Apply Priority')}
                     </button>
                   </div>
                   <input
                     type="text"
-                    placeholder="Override rationale (e.g. verified on site)..."
+                    placeholder={lang === 'hi' ? 'प्राथमिकता परिवर्तन का तर्क (उदा. स्थल पर सत्यापित)...' : 'Override rationale (e.g. verified on site)...'}
                     value={priorityRemarks}
                     onChange={(e) => setPriorityRemarks(e.target.value)}
                     className="w-full px-2.5 py-1 text-[11px] bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
@@ -2095,11 +2105,11 @@ export default function ComplaintDetailPage() {
               <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-3 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-slate-700 uppercase tracking-wider block text-[11px]">
-                    Duplicate Detection
+                    {lang === 'hi' ? 'समान शिकायत पहचान' : 'Duplicate Detection'}
                   </span>
                   {complaint.duplicateOf && (
                     <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-semibold text-[10px]">
-                      Linked to #{complaint.duplicateOf}
+                      {lang === 'hi' ? `संबंधित #${complaint.duplicateOf}` : `Linked to #${complaint.duplicateOf}`}
                     </span>
                   )}
                 </div>
@@ -2115,7 +2125,7 @@ export default function ComplaintDetailPage() {
                 {duplicates && duplicates.length > 0 ? (
                   <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                     <span className="text-[11px] text-slate-500">
-                      Found {duplicates.length} similar complaints in this jurisdiction:
+                      {lang === 'hi' ? `इस क्षेत्राधिकार में ${duplicates.length} समान शिकायतें मिलीं:` : `Found ${duplicates.length} similar complaints in this jurisdiction:`}
                     </span>
                     {duplicates.map((dup) => (
                       <div
@@ -2127,7 +2137,7 @@ export default function ComplaintDetailPage() {
                             #{dup.referenceNumber || dup.id}
                           </span>
                           <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-800 font-bold text-[10px]">
-                            {Math.round(dup.matchScore * 100)}% Match
+                            {Math.round(dup.matchScore * 100)}% {lang === 'hi' ? 'समानता' : 'Match'}
                           </span>
                         </div>
                         <p className="text-[11px] text-slate-800 line-clamp-1 font-medium">
@@ -2135,7 +2145,7 @@ export default function ComplaintDetailPage() {
                         </p>
                         {dup.signals && (
                           <p className="text-[10px] text-slate-500">
-                            Signals: {dup.signals.join(', ')}
+                            {lang === 'hi' ? 'संकेत:' : 'Signals:'} {dup.signals.join(', ')}
                           </p>
                         )}
                         {complaint.duplicateOf !== dup.id && (
@@ -2146,7 +2156,7 @@ export default function ComplaintDetailPage() {
                               disabled={linkingDuplicate}
                               className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-[11px] font-semibold transition disabled:opacity-50"
                             >
-                              {linkingDuplicate ? 'Linking...' : 'Link as Duplicate'}
+                              {linkingDuplicate ? (lang === 'hi' ? 'लिंक हो रहा है...' : 'Linking...') : (lang === 'hi' ? 'डुप्लिकेट के रूप में लिंक करें' : 'Link as Duplicate')}
                             </button>
                           </div>
                         )}
@@ -2155,7 +2165,7 @@ export default function ComplaintDetailPage() {
                   </div>
                 ) : (
                   <div className="p-3 bg-slate-50 rounded-lg text-slate-500 text-[11px] italic text-center">
-                    No matching duplicate grievances detected in this jurisdiction and time window.
+                    {lang === 'hi' ? 'इस क्षेत्राधिकार और समय सीमा में कोई समान शिकायत नहीं मिली।' : 'No matching duplicate grievances detected in this jurisdiction and time window.'}
                   </div>
                 )}
               </div>
@@ -2166,7 +2176,7 @@ export default function ComplaintDetailPage() {
             {/* Status Transition Control */}
             <form onSubmit={handleStatusUpdate} className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
               <span className="text-xs font-bold text-slate-800 uppercase tracking-wide block">
-                Update Grievance Status
+                {lang === 'hi' ? 'शिकायत स्थिति अद्यतन करें' : 'Update Grievance Status'}
               </span>
               {statusMessage && (
                 <div className={`p-2.5 rounded-lg text-xs ${statusMessage.type === 'success' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
@@ -2174,16 +2184,16 @@ export default function ComplaintDetailPage() {
                 </div>
               )}
               <div>
-                <label className="block text-[11px] font-semibold text-slate-600 mb-1">Target Status *</label>
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">{lang === 'hi' ? 'लक्षित स्थिति *' : 'Target Status *'}</label>
                 <select
                   required
                   value={newStatus}
                   onChange={(e) => setNewStatus(e.target.value)}
                   className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
                 >
-                  <option value="">Select status transition...</option>
+                  <option value="">{lang === 'hi' ? 'स्थिति चयन करें...' : 'Select status transition...'}</option>
                   {STATUS_OPTIONS.map((st) => (
-                    <option key={st} value={st}>{st}</option>
+                    <option key={st} value={st}>{tStatus(st)} ({st})</option>
                   ))}
                 </select>
               </div>
@@ -2192,19 +2202,21 @@ export default function ComplaintDetailPage() {
                 <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-lg text-blue-900 text-xs space-y-1">
                   <div className="flex items-center gap-1.5 font-bold">
                     <ShieldCheck size={14} className="text-blue-700" />
-                    <span>Resolution Quality Verification Required</span>
+                    <span>{lang === 'hi' ? 'निवारण गुणवत्ता सत्यापन आवश्यक' : 'Resolution Quality Verification Required'}</span>
                   </div>
                   <p className="text-[11px] text-blue-800 leading-snug">
-                    Transitioning to <strong>{newStatus}</strong> enforces verifiable checklist criteria: verified outcome type, inspection method, remediation remarks (&ge;25 chars), and supporting evidence or supervisory exception.
+                    {lang === 'hi'
+                      ? `स्थिति को ${tStatus(newStatus)} पर ले जाने के लिए सत्यापन मानदंड लागू होंगे: सत्यापित परिणाम प्रकार, निरीक्षण पद्धति, निवारण टिप्पणियाँ (≥25 वर्ण), और समर्थक साक्ष्य।`
+                      : `Transitioning to ${newStatus} enforces verifiable checklist criteria: verified outcome type, inspection method, remediation remarks (≥25 chars), and supporting evidence or supervisory exception.`}
                   </p>
                 </div>
               )}
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-600 mb-1">Action Remarks</label>
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">{lang === 'hi' ? 'कार्रवाई टिप्पणियाँ' : 'Action Remarks'}</label>
                 <input
                   type="text"
-                  placeholder="e.g. Field inspection completed, contractor engaged..."
+                  placeholder={lang === 'hi' ? 'उदा. स्थल निरीक्षण संपन्न, संवेदक नियुक्त किया गया...' : 'e.g. Field inspection completed, contractor engaged...'}
                   value={statusRemarks}
                   onChange={(e) => setStatusRemarks(e.target.value)}
                   className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
@@ -2221,10 +2233,10 @@ export default function ComplaintDetailPage() {
                 }`}
               >
                 {statusUpdating
-                  ? 'Updating Status...'
+                  ? (lang === 'hi' ? 'स्थिति अद्यतन हो रही है...' : 'Updating Status...')
                   : newStatus === 'RESOLVED' || newStatus === 'CLOSED'
-                  ? `Verify & Resolve Grievance (${newStatus}) →`
-                  : 'Apply Status Transition'}
+                  ? (lang === 'hi' ? `सत्यापित करें एवं शिकायत निवारित करें (${tStatus(newStatus)}) →` : `Verify & Resolve Grievance (${newStatus}) →`)
+                  : (lang === 'hi' ? 'स्थिति परिवर्तन लागू करें' : 'Apply Status Transition')}
               </button>
             </form>
 
@@ -2233,10 +2245,10 @@ export default function ComplaintDetailPage() {
               <form onSubmit={handleDepartmentReassign} className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-800 uppercase tracking-wide block">
-                    Reassign Department
+                    {lang === 'hi' ? 'विभाग पुनः आबंटित करें' : 'Reassign Department'}
                   </span>
                   <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-bold">
-                    Admin Privilege
+                    {lang === 'hi' ? 'व्यवस्थापक विशेषाधिकार' : 'Admin Privilege'}
                   </span>
                 </div>
                 {reassignMessage && (
@@ -2245,7 +2257,7 @@ export default function ComplaintDetailPage() {
                   </div>
                 )}
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">Target Department *</label>
+                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">{lang === 'hi' ? 'लक्षित विभाग *' : 'Target Department *'}</label>
                   <select
                     required
                     value={reassignDeptId}
@@ -2253,16 +2265,16 @@ export default function ComplaintDetailPage() {
                     className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
                   >
                     {departments.map((d) => (
-                      <option key={d.id} value={d.id}>{d.name}</option>
+                      <option key={d.id} value={d.id}>{tDepartment(d.name)}</option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">Reassignment Rationale</label>
+                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">{lang === 'hi' ? 'पुनः आबंटन का कारण' : 'Reassignment Rationale'}</label>
                   <input
                     type="text"
-                    placeholder="e.g. Jurisdiction falls under municipal drainage division..."
+                    placeholder={lang === 'hi' ? 'उदा. क्षेत्राधिकार जल निकासी प्रभाग के अंतर्गत आता है...' : 'e.g. Jurisdiction falls under municipal drainage division...'}
                     value={reassignRemarks}
                     onChange={(e) => setReassignRemarks(e.target.value)}
                     className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
@@ -2274,17 +2286,19 @@ export default function ComplaintDetailPage() {
                   disabled={reassigning || reassignDeptId === complaint.departmentId}
                   className="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow transition disabled:opacity-50"
                 >
-                  {reassigning ? 'Reassigning...' : 'Reassign Grievance'}
+                  {reassigning ? (lang === 'hi' ? 'पुनः आबंटित हो रहा है...' : 'Reassigning...') : (lang === 'hi' ? 'शिकायत पुनः आबंटित करें' : 'Reassign Grievance')}
                 </button>
               </form>
             ) : (
               <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-1">
                 <span className="font-bold text-slate-800 flex items-center gap-1.5 text-[11px]">
                   <Lock size={12} className="text-slate-500" />
-                  Department Reassignment
+                  {lang === 'hi' ? 'विभाग पुनः आबंटन' : 'Department Reassignment'}
                 </span>
                 <p className="text-[11px] text-slate-500">
-                  Cross-department reassignment requires System Administrator privileges to prevent departmental loop bounces.
+                  {lang === 'hi'
+                    ? 'विभागीय पिंग-पॉन्ग बाउंस रोकने के लिए क्रॉस-विभाग पुनः आबंटन हेतु सिस्टम एडमिनिस्ट्रेटर की आवश्यकता होती है।'
+                    : 'Cross-department reassignment requires System Administrator privileges to prevent departmental loop bounces.'}
                 </p>
               </div>
             )}
@@ -2295,9 +2309,9 @@ export default function ComplaintDetailPage() {
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
                 <MessageSquare size={14} className="text-blue-600" />
-                Internal Officer Review Notes ({complaint.officerNotes?.length || 0})
+                {lang === 'hi' ? `आंतरिक अधिकारी समीक्षा टिप्पणियाँ (${complaint.officerNotes?.length || 0})` : `Internal Officer Review Notes (${complaint.officerNotes?.length || 0})`}
               </span>
-              <span className="text-[11px] text-slate-400">Not visible to citizen view</span>
+              <span className="text-[11px] text-slate-400">{lang === 'hi' ? 'नागरिक दृश्य में दृश्यमान नहीं' : 'Not visible to citizen view'}</span>
             </div>
 
             {noteMessage && (
@@ -2310,7 +2324,7 @@ export default function ComplaintDetailPage() {
               <input
                 type="text"
                 required
-                placeholder="Add confidential internal officer note (e.g. tender issued, equipment arriving on Monday)..."
+                placeholder={lang === 'hi' ? 'गोपनीय आंतरिक अधिकारी टिप्पणी जोड़ें (उदा. निविदा जारी, सामग्री सोमवार को पहुंचेगी)...' : 'Add confidential internal officer note (e.g. tender issued, equipment arriving on Monday)...'}
                 value={officerNote}
                 onChange={(e) => setOfficerNote(e.target.value)}
                 className="flex-1 px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
@@ -2320,7 +2334,7 @@ export default function ComplaintDetailPage() {
                 disabled={savingNote || !officerNote.trim()}
                 className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow transition disabled:opacity-50"
               >
-                {savingNote ? 'Adding...' : 'Log Note'}
+                {savingNote ? (lang === 'hi' ? 'जोड़ा जा रहा है...' : 'Adding...') : (lang === 'hi' ? 'नोट दर्ज करें' : 'Log Note')}
               </button>
             </form>
 
@@ -2330,15 +2344,15 @@ export default function ComplaintDetailPage() {
                 {complaint.officerNotes.map((n, idx) => (
                   <div key={idx} className="p-3 bg-white rounded-lg border border-slate-200 text-xs text-slate-700 space-y-1">
                     <div className="flex items-center justify-between text-[11px] text-slate-400">
-                      <span className="font-semibold text-slate-600">{n.officerId || 'OFFICER'}</span>
-                      <span>{new Date(n.timestamp).toLocaleString('en-IN')}</span>
+                      <span className="font-semibold text-slate-600">{n.officerId || (lang === 'hi' ? 'अधिकारी' : 'OFFICER')}</span>
+                      <span>{new Date(n.timestamp).toLocaleString(lang === 'hi' ? 'hi-IN' : 'en-IN')}</span>
                     </div>
                     <p>{n.note}</p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-slate-400 italic">No internal notes added yet.</p>
+              <p className="text-xs text-slate-400 italic">{lang === 'hi' ? 'अभी तक कोई आंतरिक नोट नहीं जोड़ा गया है।' : 'No internal notes added yet.'}</p>
             )}
           </div>
         </div>
@@ -2354,14 +2368,14 @@ export default function ComplaintDetailPage() {
                 <div className="flex items-center gap-2">
                   <ShieldCheck size={20} className="text-blue-600" />
                   <h2 className="font-bold text-base text-slate-900">
-                    Resolution Quality Verification Desk
+                    {lang === 'hi' ? 'निवारण गुणवत्ता सत्यापन डेस्क' : 'Resolution Quality Verification Desk'}
                   </h2>
                   <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-800">
-                    Target: {resolutionTargetStatus}
+                    {lang === 'hi' ? `लक्षित स्थिति: ${tStatus(resolutionTargetStatus)}` : `Target: ${resolutionTargetStatus}`}
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Objective, verifiable resolution standards required before grievance closure
+                  {lang === 'hi' ? 'शिकायत बंद करने से पहले अनिवार्य वस्तुनिष्ठ, सत्यापन योग्य निवारण मानक' : 'Objective, verifiable resolution standards required before grievance closure'}
                 </p>
               </div>
               <button
@@ -2376,20 +2390,20 @@ export default function ComplaintDetailPage() {
             {/* Case Context Strip */}
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
               <div>
-                <span className="text-slate-500 block text-[10px]">Case ID</span>
+                <span className="text-slate-500 block text-[10px]">{lang === 'hi' ? 'मामला आईडी' : 'Case ID'}</span>
                 <span className="font-mono font-bold text-slate-800">#{complaint.referenceNumber || complaint.id}</span>
               </div>
               <div>
-                <span className="text-slate-500 block text-[10px]">Category</span>
-                <span className="font-bold text-slate-800 capitalize">{complaint.category}</span>
+                <span className="text-slate-500 block text-[10px]">{lang === 'hi' ? 'श्रेणी' : 'Category'}</span>
+                <span className="font-bold text-slate-800 capitalize">{tCategory(complaint.category)}</span>
               </div>
               <div>
-                <span className="text-slate-500 block text-[10px]">Department</span>
-                <span className="font-bold text-slate-800">{complaint.departmentId || complaint.department}</span>
+                <span className="text-slate-500 block text-[10px]">{lang === 'hi' ? 'विभाग' : 'Department'}</span>
+                <span className="font-bold text-slate-800">{tDepartment(complaint.departmentId || complaint.department)}</span>
               </div>
               <div>
-                <span className="text-slate-500 block text-[10px]">Role Authorized</span>
-                <span className="font-bold text-slate-800 capitalize">{user?.role || 'Officer'}</span>
+                <span className="text-slate-500 block text-[10px]">{lang === 'hi' ? 'अधिकृत पद' : 'Role Authorized'}</span>
+                <span className="font-bold text-slate-800 capitalize">{user?.role || (lang === 'hi' ? 'अधिकारी' : 'Officer')}</span>
               </div>
             </div>
 
@@ -2402,9 +2416,9 @@ export default function ComplaintDetailPage() {
               return (
                 <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-xl text-xs space-y-1">
                   <div className="flex items-center justify-between text-blue-900 font-bold">
-                    <span>Department Resolution Policy: {complaint.category}</span>
+                    <span>{lang === 'hi' ? `विभागीय निवारण नीति: ${tCategory(complaint.category)}` : `Department Resolution Policy: ${complaint.category}`}</span>
                     <span className={`px-2 py-0.5 rounded text-[10px] ${catPolicy.requiresEvidence ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-slate-200 text-slate-700'}`}>
-                      {catPolicy.requiresEvidence ? 'Evidence Mandatory for Repair' : 'Evidence Optional'}
+                      {catPolicy.requiresEvidence ? (lang === 'hi' ? 'मरम्मत हेतु साक्ष्य अनिवार्य' : 'Evidence Mandatory for Repair') : (lang === 'hi' ? 'साक्ष्य वैकल्पिक' : 'Evidence Optional')}
                     </span>
                   </div>
                   <p className="text-[11px] text-blue-800 leading-relaxed">
@@ -2426,7 +2440,7 @@ export default function ComplaintDetailPage() {
                 }`}
               >
                 <CheckCircle2 size={14} />
-                <span>Standard Verified Resolution</span>
+                <span>{lang === 'hi' ? 'मानक सत्यापित निवारण' : 'Standard Verified Resolution'}</span>
               </button>
               <button
                 type="button"
@@ -2438,7 +2452,7 @@ export default function ComplaintDetailPage() {
                 }`}
               >
                 <Shield size={14} />
-                <span>Supervisory Procedural Exception</span>
+                <span>{lang === 'hi' ? 'पर्यवेक्षी प्रक्रियात्मक छूट' : 'Supervisory Procedural Exception'}</span>
               </button>
             </div>
 
@@ -2448,7 +2462,7 @@ export default function ComplaintDetailPage() {
                   {/* Field 1: Outcome Type */}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Remediation Outcome Type *
+                      {lang === 'hi' ? 'निवारण परिणाम प्रकार *' : 'Remediation Outcome Type *'}
                     </label>
                     <select
                       value={outcomeType}
@@ -2457,7 +2471,7 @@ export default function ComplaintDetailPage() {
                     >
                       {RESOLUTION_OUTCOME_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>
-                          {opt.label}
+                          {formatOutcomeType(opt.value, lang)}
                         </option>
                       ))}
                     </select>
@@ -2466,7 +2480,7 @@ export default function ComplaintDetailPage() {
                     </p>
                     {(outcomeType === 'NO_DEFECT_FOUND' || outcomeType === 'REFERRED_EXTERNAL') && (
                       <p className="text-[11px] text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-200 mt-1.5 font-medium">
-                        ✓ Supporting physical evidence is waived for this non-repair outcome ({outcomeType}).
+                        {lang === 'hi' ? `✓ इस गैर-मरम्मत परिणाम (${outcomeType}) के लिए भौतिक साक्ष्य की आवश्यकता से छूट दी गई है।` : `✓ Supporting physical evidence is waived for this non-repair outcome (${outcomeType}).`}
                       </p>
                     )}
                   </div>
@@ -2474,7 +2488,7 @@ export default function ComplaintDetailPage() {
                   {/* Field 2: Verification Method */}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Outcome Verification Method *
+                      {lang === 'hi' ? 'परिणाम सत्यापन पद्धति *' : 'Outcome Verification Method *'}
                     </label>
                     <select
                       value={verificationMethod}
@@ -2483,7 +2497,7 @@ export default function ComplaintDetailPage() {
                     >
                       {VERIFICATION_METHOD_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>
-                          {opt.label}
+                          {formatVerificationMethod(opt.value, lang)}
                         </option>
                       ))}
                     </select>
@@ -2496,10 +2510,10 @@ export default function ComplaintDetailPage() {
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <label className="block text-xs font-bold text-slate-700">
-                        Meaningful Closure Remarks * (Min 25 chars)
+                        {lang === 'hi' ? 'सार्थक समापन टिप्पणियाँ * (न्यूनतम 25 वर्ण)' : 'Meaningful Closure Remarks * (Min 25 chars)'}
                       </label>
                       <span className={`text-[11px] font-mono font-semibold ${closureRemarks.trim().length >= 25 ? 'text-emerald-600' : 'text-amber-600'}`}>
-                        {closureRemarks.trim().length} / 25 min
+                        {closureRemarks.trim().length} / 25 {lang === 'hi' ? 'न्यूनतम' : 'min'}
                       </span>
                     </div>
                     <textarea
@@ -2507,14 +2521,14 @@ export default function ComplaintDetailPage() {
                       required
                       value={closureRemarks}
                       onChange={(e) => setClosureRemarks(e.target.value)}
-                      placeholder="Explain specific remediation steps executed, repairs completed, or inspection findings (minimum 25 characters)..."
+                      placeholder={lang === 'hi' ? 'निष्पादित किए गए विशिष्ट सुधारात्मक कदमों, पूर्ण की गई मरम्मत या निरीक्षण निष्कर्षों का विवरण दें (कम से कम 25 वर्ण)...' : 'Explain specific remediation steps executed, repairs completed, or inspection findings (minimum 25 characters)...'}
                       className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
                     />
                     <div className="flex items-center justify-between text-[11px] mt-1">
                       <span className={closureRemarks.trim().length >= 25 ? 'text-emerald-700 font-semibold' : 'text-slate-500'}>
                         {closureRemarks.trim().length >= 25
-                          ? '✓ Minimum character requirement met'
-                          : `⚠️ Need at least ${Math.max(0, 25 - closureRemarks.trim().length)} more characters`}
+                          ? (lang === 'hi' ? '✓ न्यूनतम वर्ण आवश्यकता पूर्ण हुई' : '✓ Minimum character requirement met')
+                          : (lang === 'hi' ? `⚠️ कम से कम ${Math.max(0, 25 - closureRemarks.trim().length)} और वर्ण आवश्यक हैं` : `⚠️ Need at least ${Math.max(0, 25 - closureRemarks.trim().length)} more characters`)}
                       </span>
                     </div>
                   </div>
@@ -2523,10 +2537,10 @@ export default function ComplaintDetailPage() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="block text-xs font-bold text-slate-700">
-                        Supporting Evidence References
+                        {lang === 'hi' ? 'समर्थक साक्ष्य संदर्भ' : 'Supporting Evidence References'}
                       </label>
                       <span className="text-[11px] text-slate-500">
-                        {evidenceList.length} attached
+                        {evidenceList.length} {lang === 'hi' ? 'संलग्न' : 'attached'}
                       </span>
                     </div>
 
@@ -2551,7 +2565,7 @@ export default function ComplaintDetailPage() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-[11px] text-slate-400 italic">No evidence references added yet.</p>
+                      <p className="text-[11px] text-slate-400 italic">{lang === 'hi' ? 'अभी तक कोई साक्ष्य संदर्भ नहीं जोड़ा गया है।' : 'No evidence references added yet.'}</p>
                     )}
 
                     {/* Add reference input */}
@@ -2561,7 +2575,7 @@ export default function ComplaintDetailPage() {
                           type="text"
                           value={newEvidenceRef}
                           onChange={(e) => setNewEvidenceRef(e.target.value)}
-                          placeholder="Reference tracking string (e.g. PHOTO-2026-001, WO-98214)..."
+                          placeholder={lang === 'hi' ? 'संदर्भ ट्रैकिंग स्ट्रिंग (उदा. PHOTO-2026-001, WO-98214)...' : 'Reference tracking string (e.g. PHOTO-2026-001, WO-98214)...'}
                           className="flex-1 px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 font-mono"
                         />
                         <button
@@ -2571,33 +2585,33 @@ export default function ComplaintDetailPage() {
                           className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold disabled:opacity-50 flex items-center gap-1"
                         >
                           <Plus size={13} />
-                          <span>Attach</span>
+                          <span>{lang === 'hi' ? 'जोड़ें' : 'Attach'}</span>
                         </button>
                       </div>
 
                       {/* Quick suggestions */}
                       <div className="flex flex-wrap gap-1.5 text-[10px]">
-                        <span className="text-slate-500 self-center">Prefix presets:</span>
+                        <span className="text-slate-500 self-center">{lang === 'hi' ? 'प्रीसेट:' : 'Prefix presets:'}</span>
                         <button
                           type="button"
                           onClick={() => setNewEvidenceRef('PHOTO-SITE-CLEARED-')}
                           className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded border border-slate-200 text-slate-700"
                         >
-                          + Photo Ref
+                          + {lang === 'hi' ? 'फोटो संदर्भ' : 'Photo Ref'}
                         </button>
                         <button
                           type="button"
                           onClick={() => setNewEvidenceRef('WO-REPAIR-')}
                           className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded border border-slate-200 text-slate-700"
                         >
-                          + Work Order
+                          + {lang === 'hi' ? 'कार्य आदेश' : 'Work Order'}
                         </button>
                         <button
                           type="button"
                           onClick={() => setNewEvidenceRef('INSP-REP-')}
                           className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded border border-slate-200 text-slate-700"
                         >
-                          + Inspection Report
+                          + {lang === 'hi' ? 'निरीक्षण रिपोर्ट' : 'Inspection Report'}
                         </button>
                       </div>
 
@@ -2605,7 +2619,7 @@ export default function ComplaintDetailPage() {
                       {newEvidenceRef.trim().length > 0 && !isSafeEvidenceReference(newEvidenceRef.trim()) && (
                         <p className="text-[11px] text-rose-600 font-semibold flex items-center gap-1">
                           <AlertCircle size={12} />
-                          <span>Unsafe reference syntax detected! Local filesystem paths and traversals are strictly prohibited.</span>
+                          <span>{lang === 'hi' ? 'असुरक्षित संदर्भ सिंटैक्स पहचाना गया! स्थानीय फाइल सिस्टम पाथ सख्त वर्जित हैं।' : 'Unsafe reference syntax detected! Local filesystem paths and traversals are strictly prohibited.'}</span>
                         </p>
                       )}
                     </div>
@@ -2619,18 +2633,19 @@ export default function ComplaintDetailPage() {
                     <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl text-emerald-900 text-xs flex items-start gap-2">
                       <ShieldCheck size={16} className="text-emerald-600 shrink-0 mt-0.5" />
                       <div>
-                        <span className="font-bold">Supervisory Administrator Privilege Active: </span>
-                        <span>You have administrative credentials to evaluate and approve supervisory procedural exceptions.</span>
+                        <span className="font-bold">{lang === 'hi' ? 'पर्यवेक्षी व्यवस्थापक विशेषाधिकार सक्रिय: ' : 'Supervisory Administrator Privilege Active: '}</span>
+                        <span>{lang === 'hi' ? 'आपके पास पर्यवेक्षी प्रक्रियात्मक छूट का मूल्यांकन और अनुमोदन करने के व्यवस्थापकीय क्रेडेंशियल हैं।' : 'You have administrative credentials to evaluate and approve supervisory procedural exceptions.'}</span>
                       </div>
                     </div>
                   ) : (
                     <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-amber-900 text-xs flex items-start gap-2">
                       <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
                       <div>
-                        <span className="font-bold">Role-Based Authorization Notice: </span>
+                        <span className="font-bold">{lang === 'hi' ? 'भूमिका-आधारित प्राधिकरण सूचना: ' : 'Role-Based Authorization Notice: '}</span>
                         <span>
-                          You are logged in as Officer (non-admin). General procedural exceptions require Administrator authorization.
-                          The backend will reject unauthorized exceptions with <strong>403 Forbidden</strong> unless this complaint is an incident duplicate cascade.
+                          {lang === 'hi'
+                            ? 'आप अधिकारी (गैर-व्यवस्थापक) के रूप में लॉग इन हैं। सामान्य प्रक्रियात्मक छूट के लिए व्यवस्थापक प्राधिकरण की आवश्यकता होती है।'
+                            : 'You are logged in as Officer (non-admin). General procedural exceptions require Administrator authorization. The backend will reject unauthorized exceptions with 403 Forbidden unless this complaint is an incident duplicate cascade.'}
                         </span>
                       </div>
                     </div>
@@ -2639,7 +2654,7 @@ export default function ComplaintDetailPage() {
                   {/* Exception Reason */}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Exception Reason Code *
+                      {lang === 'hi' ? 'छूट कारण कोड *' : 'Exception Reason Code *'}
                     </label>
                     <select
                       value={exceptionReason}
@@ -2648,7 +2663,7 @@ export default function ComplaintDetailPage() {
                     >
                       {Object.values(RESOLUTION_EXCEPTION_REASONS).map((r) => (
                         <option key={r.code} value={r.code}>
-                          {r.label} ({r.code})
+                          {formatExceptionReason(r.code, lang)} ({r.code})
                         </option>
                       ))}
                     </select>
@@ -2661,10 +2676,10 @@ export default function ComplaintDetailPage() {
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <label className="block text-xs font-bold text-slate-700">
-                        Exception Justification * (Min 25 chars)
+                        {lang === 'hi' ? 'छूट का औचित्य * (न्यूनतम 25 वर्ण)' : 'Exception Justification * (Min 25 chars)'}
                       </label>
                       <span className={`text-[11px] font-mono font-semibold ${exceptionJustification.trim().length >= 25 ? 'text-emerald-600' : 'text-amber-600'}`}>
-                        {exceptionJustification.trim().length} / 25 min
+                        {exceptionJustification.trim().length} / 25 {lang === 'hi' ? 'न्यूनतम' : 'min'}
                       </span>
                     </div>
                     <textarea
@@ -2672,14 +2687,14 @@ export default function ComplaintDetailPage() {
                       required
                       value={exceptionJustification}
                       onChange={(e) => setExceptionJustification(e.target.value)}
-                      placeholder="Explain why standard remediation could not be completed and why an administrative exception is legally or operationally justified..."
+                      placeholder={lang === 'hi' ? 'बताएं कि मानक निवारण क्यों पूर्ण नहीं हो सका और प्रशासनिक छूट कानूनी या परिचालन रूप से क्यों उचित है...' : 'Explain why standard remediation could not be completed and why an administrative exception is legally or operationally justified...'}
                       className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-600"
                     />
                     <div className="flex items-center justify-between text-[11px] mt-1">
                       <span className={exceptionJustification.trim().length >= 25 ? 'text-emerald-700 font-semibold' : 'text-slate-500'}>
                         {exceptionJustification.trim().length >= 25
-                          ? '✓ Minimum character requirement met'
-                          : `⚠️ Need at least ${Math.max(0, 25 - exceptionJustification.trim().length)} more characters`}
+                          ? (lang === 'hi' ? '✓ न्यूनतम वर्ण आवश्यकता पूर्ण हुई' : '✓ Minimum character requirement met')
+                          : (lang === 'hi' ? `⚠️ कम से कम ${Math.max(0, 25 - exceptionJustification.trim().length)} और वर्ण आवश्यक हैं` : `⚠️ Need at least ${Math.max(0, 25 - exceptionJustification.trim().length)} more characters`)}
                       </span>
                     </div>
                   </div>
@@ -2696,7 +2711,7 @@ export default function ComplaintDetailPage() {
                     </div>
                     {typeof resolutionScore === 'number' && (
                       <span className="px-2 py-0.5 rounded bg-rose-200 text-rose-900 font-mono text-[11px]">
-                        Score: {resolutionScore}/100
+                        {lang === 'hi' ? 'स्कोर:' : 'Score:'} {resolutionScore}/100
                       </span>
                     )}
                   </div>
@@ -2710,7 +2725,7 @@ export default function ComplaintDetailPage() {
                   {resolutionMissingRequirements && resolutionMissingRequirements.length > 0 && (
                     <div className="space-y-1 pt-1 border-t border-rose-200">
                       <span className="font-bold text-rose-900 uppercase text-[10px] tracking-wider block">
-                        Missing Requirements Identified:
+                        {lang === 'hi' ? 'पहचानी गई अनुपलब्ध आवश्यकताएँ:' : 'Missing Requirements Identified:'}
                       </span>
                       <ul className="list-disc pl-4 space-y-1 text-rose-800">
                         {resolutionMissingRequirements.map((req, idx) => (
@@ -2723,7 +2738,7 @@ export default function ComplaintDetailPage() {
                   {resolutionChecklist && resolutionChecklist.length > 0 && (
                     <div className="space-y-1.5 pt-2 border-t border-rose-200">
                       <span className="font-bold text-slate-800 uppercase text-[10px] tracking-wider block">
-                        Procedural Checklist Breakdown:
+                        {lang === 'hi' ? 'प्रक्रियात्मक चेकलिस्ट विवरण:' : 'Procedural Checklist Breakdown:'}
                       </span>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {resolutionChecklist.map((item, idx) => (
@@ -2768,7 +2783,7 @@ export default function ComplaintDetailPage() {
                   disabled={resolutionSubmitting}
                   className="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition disabled:opacity-50"
                 >
-                  Cancel
+                  {lang === 'hi' ? 'रद्द करें' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
@@ -2776,7 +2791,7 @@ export default function ComplaintDetailPage() {
                   className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow transition disabled:opacity-50 flex items-center gap-2"
                 >
                   {resolutionSubmitting && <RefreshCw size={13} className="animate-spin" />}
-                  <span>{resolutionSubmitting ? 'Validating Resolution...' : `Validate & Confirm ${resolutionTargetStatus}`}</span>
+                  <span>{resolutionSubmitting ? (lang === 'hi' ? 'सत्यापन हो रहा है...' : 'Validating Resolution...') : (lang === 'hi' ? `सत्यापित करें एवं पुष्टि करें (${tStatus(resolutionTargetStatus)})` : `Validate & Confirm ${resolutionTargetStatus}`)}</span>
                 </button>
               </div>
             </form>
@@ -2795,10 +2810,10 @@ export default function ComplaintDetailPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 text-sm">
-                    Flag Grievance for Spam / Fraud Review
+                    {lang === 'hi' ? 'स्पैम / धोखाधड़ी समीक्षा हेतु चिह्नित करें' : 'Flag Grievance for Spam / Fraud Review'}
                   </h3>
                   <p className="text-[11px] text-slate-600">
-                    Target Reference: <span className="font-mono font-bold text-amber-900">#{complaint.referenceNumber || complaint.id}</span>
+                    {lang === 'hi' ? 'लक्षित संदर्भ:' : 'Target Reference:'} <span className="font-mono font-bold text-amber-900">#{complaint.referenceNumber || complaint.id}</span>
                   </p>
                 </div>
               </div>
@@ -2819,10 +2834,12 @@ export default function ComplaintDetailPage() {
               <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-amber-900 space-y-1">
                 <span className="font-bold block flex items-center gap-1.5 text-[11px]">
                   <ShieldAlert size={14} className="text-amber-700" />
-                  Responsible Human-in-the-Loop Review
+                  {lang === 'hi' ? 'उत्तरदायी मानवीय समीक्षा' : 'Responsible Human-in-the-Loop Review'}
                 </span>
                 <p className="text-[11px] text-amber-800 leading-relaxed">
-                  Flagging this grievance adds it to the Spam Review Desk queue with full telemetry for supervisory evaluation. The complaint is not rejected or deleted; citizen rights and audit trails are strictly preserved.
+                  {lang === 'hi'
+                    ? 'इस शिकायत को चिह्नित करने से यह पूर्ण टेलीमेट्री के साथ स्पैम समीक्षा डेस्क पर जोड़ दी जाती है। शिकायत हटाई या खारिज नहीं की जाती; नागरिक अधिकार और ऑडिट ट्रेल सुरक्षित रहते हैं।'
+                    : 'Flagging this grievance adds it to the Spam Review Desk queue with full telemetry for supervisory evaluation. The complaint is not rejected or deleted; citizen rights and audit trails are strictly preserved.'}
                 </p>
               </div>
 
@@ -2838,7 +2855,7 @@ export default function ComplaintDetailPage() {
 
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
-                  Reason for Flagging *
+                  {lang === 'hi' ? 'चिह्नित करने का कारण *' : 'Reason for Flagging *'}
                 </label>
                 <select
                   value={flagReasonCode}
@@ -2846,17 +2863,17 @@ export default function ComplaintDetailPage() {
                   disabled={flagging}
                   className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium"
                 >
-                  <option value="SUSPICIOUS_CONTENT">Suspicious or Contradictory Grievance Details</option>
-                  <option value="DUPLICATE_TEXT_EXACT">Identical Repeated Narrative Pattern</option>
-                  <option value="GIBBERISH_NONSENSE_DETECTED">Nonsensical or Incomprehensible Content</option>
-                  <option value="BURST_FREQUENCY">Abnormal Submission Frequency / Automation</option>
-                  <option value="OTHER">Other Administrative Screening Required</option>
+                  <option value="SUSPICIOUS_CONTENT">{lang === 'hi' ? 'संदेहास्पद या विरोधाभासी शिकायत विवरण' : 'Suspicious or Contradictory Grievance Details'}</option>
+                  <option value="DUPLICATE_TEXT_EXACT">{lang === 'hi' ? 'समान दोहराया गया विवरण पैटर्न' : 'Identical Repeated Narrative Pattern'}</option>
+                  <option value="GIBBERISH_NONSENSE_DETECTED">{lang === 'hi' ? 'निरर्थक या अबोधगम्य सामग्री' : 'Nonsensical or Incomprehensible Content'}</option>
+                  <option value="BURST_FREQUENCY">{lang === 'hi' ? 'असामान्य प्रविष्टि आवृत्ति / स्वचालन' : 'Abnormal Submission Frequency / Automation'}</option>
+                  <option value="OTHER">{lang === 'hi' ? 'अन्य प्रशासनिक जांच आवश्यक' : 'Other Administrative Screening Required'}</option>
                 </select>
               </div>
 
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
-                  Officer Explanation & Evidence Notes * (Min 10 characters)
+                  {lang === 'hi' ? 'अधिकारी स्पष्टीकरण एवं साक्ष्य टिप्पणियाँ * (न्यूनतम 10 वर्ण)' : 'Officer Explanation & Evidence Notes * (Min 10 characters)'}
                 </label>
                 <textarea
                   required
@@ -2864,12 +2881,12 @@ export default function ComplaintDetailPage() {
                   value={flagNotes}
                   onChange={(e) => setFlagNotes(e.target.value)}
                   disabled={flagging}
-                  placeholder="State the factual basis for flagging this complaint for review (e.g. repeated identical wording observed across multiple ward filings)..."
+                  placeholder={lang === 'hi' ? 'समीक्षा हेतु चिह्नित करने का तथ्यात्मक आधार बताएं (उदा. कई वार्ड फाइलों में समान शब्दावली देखी गई)...' : 'State the factual basis for flagging this complaint for review (e.g. repeated identical wording observed across multiple ward filings)...'}
                   className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 leading-relaxed"
                 />
                 <div className="flex justify-between text-[11px] text-slate-400 mt-1">
-                  <span>Minimum 10 characters required</span>
-                  <span>{flagNotes.length} chars</span>
+                  <span>{lang === 'hi' ? 'न्यूनतम 10 वर्ण आवश्यक' : 'Minimum 10 characters required'}</span>
+                  <span>{flagNotes.length} {lang === 'hi' ? 'वर्ण' : 'chars'}</span>
                 </div>
               </div>
 
@@ -2883,7 +2900,7 @@ export default function ComplaintDetailPage() {
                   disabled={flagging}
                   className="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition disabled:opacity-50"
                 >
-                  Cancel
+                  {lang === 'hi' ? 'रद्द करें' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
@@ -2891,7 +2908,7 @@ export default function ComplaintDetailPage() {
                   className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow transition disabled:opacity-50 flex items-center gap-2"
                 >
                   {flagging && <RefreshCw size={13} className="animate-spin" />}
-                  <span>{flagging ? 'Submitting Flag...' : 'Confirm & Flag for Review'}</span>
+                  <span>{flagging ? (lang === 'hi' ? 'चिह्नित किया जा रहा है...' : 'Submitting Flag...') : (lang === 'hi' ? 'पुष्टि करें एवं समीक्षा हेतु चिह्नित करें' : 'Confirm & Flag for Review')}</span>
                 </button>
               </div>
             </form>

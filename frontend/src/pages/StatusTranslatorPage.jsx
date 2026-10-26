@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Languages,
   HelpCircle,
@@ -16,10 +16,11 @@ import {
 } from 'lucide-react';
 import { fetchComplaintStatusExplanation, fetchComplaintTracking } from '../api/client';
 import { StatusBadge } from '../components/StatusBadge';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function StatusTranslatorPage() {
+  const { lang, setLanguage: setGlobalLanguage, t, tDepartment, formatDate } = useLanguage();
   const [referenceInput, setReferenceInput] = useState('');
-  const [language, setLanguage] = useState('en');
   const [explanation, setExplanation] = useState(null);
   const [tracking, setTracking] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -27,7 +28,7 @@ export default function StatusTranslatorPage() {
 
   const sampleReferences = ['CS-2026-0001', 'CS-2026-0002', 'CS-2026-0003'];
 
-  const handleTranslate = async (refToUse = referenceInput, langToUse = language) => {
+  const handleTranslate = async (refToUse = referenceInput, langToUse = lang) => {
     const targetRef = (refToUse || '').trim();
     if (!targetRef) return;
 
@@ -63,7 +64,7 @@ export default function StatusTranslatorPage() {
   };
 
   const handleLanguageToggle = (newLang) => {
-    setLanguage(newLang);
+    setGlobalLanguage(newLang);
     if (explanation || referenceInput.trim()) {
       handleTranslate(referenceInput, newLang);
     }
@@ -71,7 +72,7 @@ export default function StatusTranslatorPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    handleTranslate(referenceInput, language);
+    handleTranslate(referenceInput, lang);
   };
 
   return (
@@ -84,9 +85,11 @@ export default function StatusTranslatorPage() {
               <Languages size={24} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Citizen Status Translator</h1>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+                {t('statusTranslatorPage.title', 'Citizen Status Translator')}
+              </h1>
               <p className="text-sm text-slate-600">
-                Translating bureaucratic administrative jargon into reassuring, plain-language vernacular explanations.
+                {t('statusTranslatorPage.subtitle', 'Translating bureaucratic administrative jargon into reassuring, plain-language vernacular explanations.')}
               </p>
             </div>
           </div>
@@ -97,7 +100,7 @@ export default function StatusTranslatorPage() {
               type="button"
               onClick={() => handleLanguageToggle('en')}
               className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
-                language === 'en'
+                lang === 'en'
                   ? 'bg-emerald-600 text-white shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
@@ -108,7 +111,7 @@ export default function StatusTranslatorPage() {
               type="button"
               onClick={() => handleLanguageToggle('hi')}
               className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
-                language === 'hi'
+                lang === 'hi'
                   ? 'bg-emerald-600 text-white shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
@@ -127,7 +130,7 @@ export default function StatusTranslatorPage() {
             <input
               type="text"
               required
-              placeholder="Enter grievance reference (e.g. CS-2026-0001)..."
+              placeholder={t('statusTranslatorPage.searchPlaceholderInput', 'Enter grievance reference (e.g. CS-2026-0001)...')}
               value={referenceInput}
               onChange={(e) => setReferenceInput(e.target.value)}
               className="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 font-mono font-semibold"
@@ -138,20 +141,20 @@ export default function StatusTranslatorPage() {
             disabled={loading}
             className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl shadow-sm transition disabled:opacity-50"
           >
-            {loading ? 'Translating...' : 'Translate Status'}
+            {loading ? t('statusTranslatorPage.translatingBtn', 'Translating...') : t('statusTranslatorPage.translateBtn', 'Translate Status')}
           </button>
         </form>
 
         {/* Quick Demo Reference Chips */}
         <div className="flex items-center gap-2 text-xs text-slate-500 flex-wrap">
-          <span>Try quick sample:</span>
+          <span>{t('statusTranslatorPage.trySample', 'Try quick sample:')}</span>
           {sampleReferences.map((ref) => (
             <button
               key={ref}
               type="button"
               onClick={() => {
                 setReferenceInput(ref);
-                handleTranslate(ref, language);
+                handleTranslate(ref, lang);
               }}
               className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-mono text-xs font-semibold transition"
             >
@@ -182,7 +185,7 @@ export default function StatusTranslatorPage() {
                   </span>
                   <StatusBadge status={explanation.officialStatus} />
                   <span className="text-xs px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-semibold">
-                    {explanation.language === 'hi' ? 'हिंदी में अनुवादित' : 'Plain English'}
+                    {explanation.language === 'hi' ? t('statusTranslatorPage.translatedBadgeHi', 'हिंदी में अनुवादित') : t('statusTranslatorPage.translatedBadgeEn', 'Plain English')}
                   </span>
                 </div>
                 <h2 className="text-xl font-bold text-slate-900 mt-2">
@@ -192,7 +195,7 @@ export default function StatusTranslatorPage() {
 
               <div className="flex items-center gap-1.5 text-xs text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 self-start sm:self-auto font-medium">
                 <ShieldCheck size={16} />
-                <span>Zero Private Notes Leaked</span>
+                <span>{t('statusTranslatorPage.zeroLeaked', 'Zero Private Notes Leaked')}</span>
               </div>
             </div>
 
@@ -202,7 +205,7 @@ export default function StatusTranslatorPage() {
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2">
                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600">
                   <Info size={16} className="text-blue-600" />
-                  <span>{language === 'hi' ? 'इस स्थिति का क्या अर्थ है?' : 'What this status means'}</span>
+                  <span>{t('statusTranslatorPage.whatMeans', 'What this status means')}</span>
                 </div>
                 <p className="text-sm text-slate-800 leading-relaxed font-medium">
                   {explanation.meaning}
@@ -213,7 +216,7 @@ export default function StatusTranslatorPage() {
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2">
                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600">
                   <CheckCircle2 size={16} className="text-emerald-600" />
-                  <span>{language === 'hi' ? 'अब तक क्या हुआ है?' : 'What has actually happened'}</span>
+                  <span>{t('statusTranslatorPage.whatHappened', 'What has actually happened')}</span>
                 </div>
                 <p className="text-sm text-slate-800 leading-relaxed font-medium">
                   {explanation.whatHappened}
@@ -224,7 +227,7 @@ export default function StatusTranslatorPage() {
               <div className="p-4 bg-amber-50/60 rounded-xl border border-amber-200/70 space-y-2">
                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-800">
                   <ArrowRight size={16} className="text-amber-600" />
-                  <span>{language === 'hi' ? 'आप आगे क्या कर सकते हैं?' : 'What you can do next'}</span>
+                  <span>{t('statusTranslatorPage.whatCanDo', 'What you can do next')}</span>
                 </div>
                 <p className="text-sm text-amber-950 leading-relaxed font-medium">
                   {explanation.nextSteps}
@@ -235,7 +238,7 @@ export default function StatusTranslatorPage() {
               <div className="p-4 bg-blue-50/60 rounded-xl border border-blue-200/70 space-y-2">
                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-800">
                   <Clock size={16} className="text-blue-600" />
-                  <span>{language === 'hi' ? 'समय-सीमा व प्रगति' : 'SLA & Expected Timelines'}</span>
+                  <span>{t('statusTranslatorPage.slaGuidance', 'SLA & Expected Timelines')}</span>
                 </div>
                 <p className="text-sm text-blue-950 leading-relaxed font-medium">
                   {explanation.slaGuidance}
@@ -248,16 +251,16 @@ export default function StatusTranslatorPage() {
               <div className="flex items-center gap-4 flex-wrap">
                 <span className="flex items-center gap-1">
                   <Building2 size={13} />
-                  <span>Department: <strong>{explanation.verifiedContext?.departmentId}</strong></span>
+                  <span>{t('common.department', 'Department')}: <strong>{tDepartment(explanation.verifiedContext?.departmentId)}</strong></span>
                 </span>
                 <span className="flex items-center gap-1">
                   <Calendar size={13} />
-                  <span>Last Updated: <strong>{new Date(explanation.verifiedContext?.lastUpdated).toLocaleString()}</strong></span>
+                  <span>{t('complaintDetail.lastUpdated', 'Last Updated')}: <strong>{formatDate(explanation.verifiedContext?.lastUpdated)}</strong></span>
                 </span>
               </div>
               <div className="flex items-center gap-1 text-slate-400">
                 <Lock size={12} />
-                <span>Deterministic vernacular engine</span>
+                <span>{t('statusTranslatorPage.deterministicEngine', 'Deterministic vernacular engine')}</span>
               </div>
             </div>
           </div>
@@ -271,10 +274,10 @@ export default function StatusTranslatorPage() {
             <HelpCircle size={24} />
           </div>
           <h2 className="text-base font-semibold text-slate-800">
-            Understand Grievance Progress Without Cryptic Department Acronyms
+            {t('statusTranslatorPage.emptyTitle', 'Understand Grievance Progress Without Cryptic Department Acronyms')}
           </h2>
           <p className="text-xs text-slate-500 max-w-md mx-auto">
-            Enter your tracking reference above to receive instant, transparent clarity on what stage your case has reached, what the department is doing, and what steps you can take next.
+            {t('statusTranslatorPage.emptyDesc', 'Enter your tracking reference above to receive instant, transparent clarity on what stage your case has reached, what the department is doing, and what steps you can take next.')}
           </p>
         </div>
       )}

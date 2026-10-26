@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import {
   fetchNeglectRadar,
   fetchNeglectRadarItem,
@@ -42,6 +43,7 @@ import {
 
 export default function NeglectRadarPage() {
   const { user, isAuthenticated, isOfficer, isAdmin, isCitizen, loading: authLoading } = useAuth();
+  const { t, lang, tDepartment, tStatus, tPriority, formatDate } = useLanguage();
 
   // Data State
   const [items, setItems] = useState([]);
@@ -220,15 +222,7 @@ export default function NeglectRadarPage() {
   // Format Helper for Dates
   const formatTimestamp = (ts) => {
     if (!ts) return '—';
-    try {
-      const d = new Date(ts);
-      return d.toLocaleString('en-IN', {
-        dateStyle: 'medium',
-        timeStyle: 'short'
-      });
-    } catch {
-      return ts;
-    }
+    return formatDate(ts);
   };
 
   // Risk Level UI Helper
@@ -238,26 +232,26 @@ export default function NeglectRadarPage() {
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 border border-rose-200 text-rose-700">
             <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse"></span>
-            Critical Risk ({typeof score === 'number' ? score : '—'})
+            {lang === 'hi' ? 'अति-गंभीर जोखिम' : 'Critical Risk'} ({typeof score === 'number' ? score : '—'})
           </span>
         );
       case 'HIGH':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 border border-amber-200 text-amber-700">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-            High Risk ({typeof score === 'number' ? score : '—'})
+            {lang === 'hi' ? 'उच्च जोखिम' : 'High Risk'} ({typeof score === 'number' ? score : '—'})
           </span>
         );
       case 'MEDIUM':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 border border-blue-200 text-blue-700">
-            Medium Risk ({typeof score === 'number' ? score : '—'})
+            {lang === 'hi' ? 'मध्यम जोखिम' : 'Medium Risk'} ({typeof score === 'number' ? score : '—'})
           </span>
         );
       case 'LOW':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 border border-emerald-200 text-emerald-700">
-            Low Risk ({typeof score === 'number' ? score : '—'})
+            {lang === 'hi' ? 'कम जोखिम' : 'Low Risk'} ({typeof score === 'number' ? score : '—'})
           </span>
         );
       case 'INSUFFICIENT_DATA':
@@ -265,7 +259,7 @@ export default function NeglectRadarPage() {
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 border border-slate-300 text-slate-700" title="Available records do not support a reliable risk score">
             <Info size={11} className="text-slate-500" />
-            Insufficient Data
+            {t.neglectRadar.insufficientData}
           </span>
         );
     }
@@ -278,21 +272,21 @@ export default function NeglectRadarPage() {
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200 uppercase tracking-wide">
             <FileText size={11} />
-            Grievance
+            {lang === 'hi' ? 'नागरिक शिकायत' : 'Grievance'}
           </span>
         );
       case 'INCIDENT':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 uppercase tracking-wide">
             <ShieldAlert size={11} />
-            Incident
+            {lang === 'hi' ? 'घटना' : 'Incident'}
           </span>
         );
       case 'SUBTASK':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-violet-50 text-violet-700 border border-violet-200 uppercase tracking-wide">
             <Layers size={11} />
-            Subtask
+            {lang === 'hi' ? 'उप-कार्य' : 'Subtask'}
           </span>
         );
       default:
@@ -334,7 +328,7 @@ export default function NeglectRadarPage() {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="flex flex-col items-center gap-3">
           <RefreshCw className="w-8 h-8 text-blue-600 animate-spin" />
-          <p className="text-sm font-medium text-slate-600">Verifying supervisory credentials...</p>
+          <p className="text-sm font-medium text-slate-600">{t.neglectRadar.verifyingCreds}</p>
         </div>
       </div>
     );
@@ -347,16 +341,16 @@ export default function NeglectRadarPage() {
         <div className="w-14 h-14 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mx-auto">
           <Lock size={28} />
         </div>
-        <h2 className="text-xl font-bold text-slate-900">Authentication Required</h2>
+        <h2 className="text-xl font-bold text-slate-900">{t.neglectRadar.authRequiredTitle}</h2>
         <p className="text-sm text-slate-600 max-w-md mx-auto">
-          Neglect Radar is an internal GovTech operational triage system restricted to authorized Department Officers and Platform Administrators. Please sign in with official credentials.
+          {t.neglectRadar.authRequiredDesc}
         </p>
         <div className="pt-2">
           <Link
             to="/login"
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition"
           >
-            <span>Sign In with Officer Credentials</span>
+            <span>{t.neglectRadar.signInBtn}</span>
             <ArrowRight size={16} />
           </Link>
         </div>
@@ -371,16 +365,16 @@ export default function NeglectRadarPage() {
         <div className="w-14 h-14 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center mx-auto">
           <ShieldAlert size={28} />
         </div>
-        <h2 className="text-xl font-bold text-slate-900">Supervisory Access Restricted</h2>
+        <h2 className="text-xl font-bold text-slate-900">{t.neglectRadar.accessRestrictedTitle}</h2>
         <p className="text-sm text-slate-600 max-w-md mx-auto">
-          Neglect Radar is an internal decision support and supervisory triage tool restricted to Department Officers and System Administrators. Public tracking and citizen accounts do not have access to internal operational scoring.
+          {t.neglectRadar.accessRestrictedDesc}
         </p>
         <div className="pt-2">
           <Link
             to="/citizen"
             className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold rounded-lg shadow-sm transition"
           >
-            <span>Return to Citizen Dashboard</span>
+            <span>{t.neglectRadar.returnCitizenBtn}</span>
             <ArrowRight size={16} />
           </Link>
         </div>
@@ -406,22 +400,22 @@ export default function NeglectRadarPage() {
           </div>
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Neglect Radar & Supervisory Monitoring</h1>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{t.neglectRadar.pageTitle}</h1>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                Supervisory Early-Warning
+                {t.neglectRadar.earlyWarningBadge}
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
-              Automated supervisory anomaly detection for stalled civic grievances, breached SLA targets, and blocked multi-agency dependencies.
+              {t.neglectRadar.pageSubtitle}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2.5 self-start md:self-auto shrink-0">
           <div className="text-right hidden sm:block">
-            <span className="text-[11px] text-slate-400 block">Department Authorization</span>
+            <span className="text-[11px] text-slate-400 block">{t.neglectRadar.deptAuth}</span>
             <span className="text-xs font-semibold text-slate-700">
-              {isAdmin ? 'Platform Wide (Administrator)' : `Department: ${user?.departmentId || 'Assigned Scope'}`}
+              {isAdmin ? t.neglectRadar.platformWideAdmin : t.neglectRadar.deptScope.replace('{dept}', user?.departmentId || 'Assigned Scope')}
             </span>
           </div>
 
@@ -429,11 +423,11 @@ export default function NeglectRadarPage() {
             type="button"
             onClick={loadNeglectRadar}
             disabled={loading}
-            title="Refresh Neglect Radar evaluation"
+            title={t.neglectRadar.refreshBtn}
             className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-medium shadow-xs transition disabled:opacity-50"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin text-blue-600' : ''} />
-            <span>Refresh</span>
+            <span>{t.neglectRadar.refreshBtn}</span>
           </button>
         </div>
       </div>
@@ -443,11 +437,11 @@ export default function NeglectRadarPage() {
         <div className="bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-xl flex items-start gap-3 shadow-xs">
           <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
           <div className="text-xs">
-            <span className="font-bold">Partial Source Data Warning:</span> One or more underlying repositories were unavailable during this evaluation cycle.
+            <span className="font-bold">{lang === 'hi' ? 'आंशिक स्रोत डेटा चेतावनी:' : 'Partial Source Data Warning:'}</span> {t.neglectRadar.partialWarning}
             <div className="mt-1 text-[11px] text-amber-800 flex gap-4">
-              <span>Complaints: {sources.complaints?.ok ? 'OK' : 'Unavailable'}</span>
-              <span>Incidents: {sources.incidents?.ok ? 'OK' : 'Unavailable'}</span>
-              <span>Subtasks: {sources.subtasks?.ok ? 'OK' : 'Unavailable'}</span>
+              <span>{lang === 'hi' ? 'शिकायतें:' : 'Complaints:'} {sources.complaints?.ok ? 'OK' : (lang === 'hi' ? 'अनुपलब्ध' : 'Unavailable')}</span>
+              <span>{lang === 'hi' ? 'घटनाएं:' : 'Incidents:'} {sources.incidents?.ok ? 'OK' : (lang === 'hi' ? 'अनुपलब्ध' : 'Unavailable')}</span>
+              <span>{lang === 'hi' ? 'उप-कार्य:' : 'Subtasks:'} {sources.subtasks?.ok ? 'OK' : (lang === 'hi' ? 'अनुपलब्ध' : 'Unavailable')}</span>
             </div>
           </div>
         </div>
@@ -459,10 +453,10 @@ export default function NeglectRadarPage() {
           <div className="flex items-start gap-3">
             <AlertCircle size={18} className="text-rose-600 shrink-0 mt-0.5" />
             <div className="text-xs">
-              <span className="font-bold">Evaluation Request Failed:</span> {error.message}
+              <span className="font-bold">{t.neglectRadar.evalFailed}</span> {error.message}
               {error.status === 403 && (
                 <div className="mt-1 text-[11px] text-rose-700">
-                  Access denied by server authorization guard. Ensure you are signed in as an officer or administrator with appropriate department credentials.
+                  {t.neglectRadar.accessDenied}
                 </div>
               )}
             </div>
@@ -472,7 +466,7 @@ export default function NeglectRadarPage() {
             onClick={loadNeglectRadar}
             className="px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded text-xs font-semibold shrink-0 transition"
           >
-            Retry
+            {t.common.retry}
           </button>
         </div>
       )}
@@ -484,94 +478,94 @@ export default function NeglectRadarPage() {
             {/* Total Flagged */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
               <div className="flex items-center justify-between text-slate-500 mb-1">
-                <span className="text-[11px] font-semibold uppercase tracking-wider">Total Flagged</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wider">{lang === 'hi' ? 'कुल चिन्हित' : 'Total Flagged'}</span>
                 <Activity size={15} className="text-blue-600" />
               </div>
               <div className="text-2xl font-black text-slate-900 tracking-tight">
                 {summary.totalFlagged}
               </div>
-              <span className="text-[11px] text-slate-500">Active anomalies</span>
+              <span className="text-[11px] text-slate-500">{lang === 'hi' ? 'सक्रिय विसंगतियां' : 'Active anomalies'}</span>
             </div>
 
             {/* Critical Risk */}
             <div className="bg-white p-4 rounded-xl border border-rose-200 bg-rose-50/20 shadow-xs">
               <div className="flex items-center justify-between text-rose-700 mb-1">
-                <span className="text-[11px] font-semibold uppercase tracking-wider">Critical Risk</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wider">{t.neglectRadar.criticalRisk}</span>
                 <ShieldAlert size={15} className="text-rose-600" />
               </div>
               <div className="text-2xl font-black text-rose-700 tracking-tight">
                 {summary.criticalCount}
               </div>
-              <span className="text-[11px] text-rose-600 font-medium">Score ≥ 70</span>
+              <span className="text-[11px] text-rose-600 font-medium">{lang === 'hi' ? 'स्कोर ≥ 70' : 'Score ≥ 70'}</span>
             </div>
 
             {/* High Risk */}
             <div className="bg-white p-4 rounded-xl border border-amber-200 bg-amber-50/20 shadow-xs">
               <div className="flex items-center justify-between text-amber-700 mb-1">
-                <span className="text-[11px] font-semibold uppercase tracking-wider">High Risk</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wider">{t.neglectRadar.highRisk}</span>
                 <AlertTriangle size={15} className="text-amber-600" />
               </div>
               <div className="text-2xl font-black text-amber-700 tracking-tight">
                 {summary.highCount}
               </div>
-              <span className="text-[11px] text-amber-600 font-medium">Score 50–69</span>
+              <span className="text-[11px] text-amber-600 font-medium">{lang === 'hi' ? 'स्कोर 50–69' : 'Score 50–69'}</span>
             </div>
 
             {/* Overdue SLA */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
               <div className="flex items-center justify-between text-slate-500 mb-1">
-                <span className="text-[11px] font-semibold uppercase tracking-wider">Overdue SLA</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wider">{lang === 'hi' ? 'समयसीमा पार SLA' : 'Overdue SLA'}</span>
                 <Clock size={15} className="text-rose-600" />
               </div>
               <div className="text-2xl font-black text-slate-900 tracking-tight">
                 {summary.overdueSlaCount}
               </div>
-              <span className="text-[11px] text-slate-500">Target breached</span>
+              <span className="text-[11px] text-slate-500">{lang === 'hi' ? 'लक्ष्य पार' : 'Target breached'}</span>
             </div>
 
             {/* Stalled Progress */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
               <div className="flex items-center justify-between text-slate-500 mb-1">
-                <span className="text-[11px] font-semibold uppercase tracking-wider">Stalled Cases</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wider">{lang === 'hi' ? 'अवरुद्ध मामले' : 'Stalled Cases'}</span>
                 <RotateCcw size={15} className="text-amber-600" />
               </div>
               <div className="text-2xl font-black text-slate-900 tracking-tight">
                 {summary.staleProgressCount}
               </div>
-              <span className="text-[11px] text-slate-500">&gt; 7 days stagnant</span>
+              <span className="text-[11px] text-slate-500">{lang === 'hi' ? '> 7 दिन से शिथिल' : '> 7 days stagnant'}</span>
             </div>
 
             {/* Blocked Dependencies */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
               <div className="flex items-center justify-between text-slate-500 mb-1">
-                <span className="text-[11px] font-semibold uppercase tracking-wider">Blocked Work</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wider">{lang === 'hi' ? 'रुका हुआ कार्य' : 'Blocked Work'}</span>
                 <Lock size={15} className="text-violet-600" />
               </div>
               <div className="text-2xl font-black text-slate-900 tracking-tight">
                 {summary.blockedDependencyCount}
               </div>
-              <span className="text-[11px] text-slate-500">Unresolved blocks</span>
+              <span className="text-[11px] text-slate-500">{lang === 'hi' ? 'अनिस्तारित अवरोध' : 'Unresolved blocks'}</span>
             </div>
           </div>
 
           {/* Secondary Operational Metrics Bar */}
           <div className="bg-slate-50 px-4 py-2.5 rounded-lg border border-slate-200 text-xs text-slate-600 flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-4 flex-wrap">
-              <span>Medium Risk: <strong className="text-slate-800">{summary.mediumCount}</strong></span>
+              <span>{lang === 'hi' ? 'मध्यम जोखिम:' : 'Medium Risk:'} <strong className="text-slate-800">{summary.mediumCount}</strong></span>
               <span className="text-slate-300">•</span>
-              <span>Low Risk: <strong className="text-slate-800">{summary.lowCount}</strong></span>
+              <span>{lang === 'hi' ? 'कम जोखिम:' : 'Low Risk:'} <strong className="text-slate-800">{summary.lowCount}</strong></span>
               <span className="text-slate-300">•</span>
-              <span>Insufficient Data: <strong className="text-slate-800">{summary.insufficientDataCount}</strong></span>
+              <span>{lang === 'hi' ? 'अपर्याप्त डेटा:' : 'Insufficient Data:'} <strong className="text-slate-800">{summary.insufficientDataCount}</strong></span>
               <span className="text-slate-300">•</span>
-              <span>Ping-Pong Loops: <strong className="text-slate-800">{summary.reassignmentLoopCount}</strong></span>
+              <span>{lang === 'hi' ? 'पुनर्आवंटन लूप:' : 'Ping-Pong Loops:'} <strong className="text-slate-800">{summary.reassignmentLoopCount}</strong></span>
               <span className="text-slate-300">•</span>
-              <span>Reopened: <strong className="text-slate-800">{summary.reopenedCount}</strong></span>
+              <span>{lang === 'hi' ? 'पुनः खोला गया:' : 'Reopened:'} <strong className="text-slate-800">{summary.reopenedCount}</strong></span>
               <span className="text-slate-300">•</span>
-              <span>Unassigned: <strong className="text-slate-800">{summary.unassignedOwnershipCount}</strong></span>
+              <span>{lang === 'hi' ? 'अनावंटित:' : 'Unassigned:'} <strong className="text-slate-800">{summary.unassignedOwnershipCount}</strong></span>
             </div>
             {evaluatedAt && (
               <span className="text-[11px] text-slate-400">
-                Evaluation Reference: {formatTimestamp(evaluatedAt)}
+                {lang === 'hi' ? 'मूल्यांकन संदर्भ:' : 'Evaluation Reference:'} {formatTimestamp(evaluatedAt)}
               </span>
             )}
           </div>
@@ -583,7 +577,7 @@ export default function NeglectRadarPage() {
         <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2 text-xs font-bold text-slate-900 uppercase tracking-wider">
             <SlidersHorizontal size={14} className="text-blue-600" />
-            <span>Supervisory Filters &amp; Triage Parameters</span>
+            <span>{lang === 'hi' ? 'पर्यवेक्षी फिल्टर एवं छंटनी पैरामीटर' : 'Supervisory Filters & Triage Parameters'}</span>
           </div>
 
           {hasActiveFilters && (
@@ -593,7 +587,7 @@ export default function NeglectRadarPage() {
               className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 transition"
             >
               <RotateCcw size={12} />
-              <span>Reset all filters</span>
+              <span>{lang === 'hi' ? 'सभी फिल्टर रीसेट करें' : 'Reset all filters'}</span>
             </button>
           )}
         </div>
@@ -601,7 +595,7 @@ export default function NeglectRadarPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {/* Entity Type Filter */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Entity Scope</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">{t.neglectRadar.entityType}</label>
             <select
               value={entityTypeFilter}
               onChange={(e) => {
@@ -610,16 +604,16 @@ export default function NeglectRadarPage() {
               }}
               className="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="ALL">All Entities (Complaints, Incidents, Subtasks)</option>
-              <option value="COMPLAINT">Citizen Grievances only</option>
-              <option value="INCIDENT">Parent Incidents only</option>
-              <option value="SUBTASK">Subtasks only</option>
+              <option value="ALL">{lang === 'hi' ? 'सभी इकाइयां (शिकायतें, घटनाएं, उप-कार्य)' : 'All Entities (Complaints, Incidents, Subtasks)'}</option>
+              <option value="COMPLAINT">{t.neglectRadar.complaintsOnly}</option>
+              <option value="INCIDENT">{t.neglectRadar.incidentsOnly}</option>
+              <option value="SUBTASK">{t.neglectRadar.subtasksOnly}</option>
             </select>
           </div>
 
           {/* Risk Level Filter */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Risk Severity</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">{t.neglectRadar.riskFilter}</label>
             <select
               value={riskLevelFilter}
               onChange={(e) => {
@@ -628,18 +622,18 @@ export default function NeglectRadarPage() {
               }}
               className="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="ALL">All Risk Levels</option>
-              <option value="CRITICAL">Critical Risk (Score ≥ 70)</option>
-              <option value="HIGH">High Risk (Score 50–69)</option>
-              <option value="MEDIUM">Medium Risk (Score 25–49)</option>
-              <option value="LOW">Low Risk (Score 0–24)</option>
-              <option value="INSUFFICIENT_DATA">Insufficient Data (&lt; 30% complete)</option>
+              <option value="ALL">{t.neglectRadar.allRisks}</option>
+              <option value="CRITICAL">{lang === 'hi' ? 'अति-गंभीर जोखिम (स्कोर ≥ 70)' : 'Critical Risk (Score ≥ 70)'}</option>
+              <option value="HIGH">{lang === 'hi' ? 'उच्च जोखिम (स्कोर 50–69)' : 'High Risk (Score 50–69)'}</option>
+              <option value="MEDIUM">{lang === 'hi' ? 'मध्यम जोखिम (स्कोर 25–49)' : 'Medium Risk (Score 25–49)'}</option>
+              <option value="LOW">{lang === 'hi' ? 'कम जोखिम (स्कोर 0–24)' : 'Low Risk (Score 0–24)'}</option>
+              <option value="INSUFFICIENT_DATA">{lang === 'hi' ? 'अपर्याप्त डेटा (< 30% पूर्ण)' : 'Insufficient Data (< 30% complete)'}</option>
             </select>
           </div>
 
           {/* Specific Signal Filter */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Triggered Signal</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">{t.neglectRadar.signalFilter}</label>
             <select
               value={signalCodeFilter}
               onChange={(e) => {
@@ -648,13 +642,13 @@ export default function NeglectRadarPage() {
               }}
               className="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">All Signals</option>
-              <option value="OVERDUE_SLA">Overdue SLA Target</option>
-              <option value="STALE_PROGRESS">Stalled Operational Progress</option>
-              <option value="BLOCKED_DEPENDENCY">Blocked Dependency</option>
-              <option value="REASSIGNMENT_LOOP">Reassignment Ping-Pong</option>
-              <option value="REOPENED_CASE">Reopened Grievance</option>
-              <option value="UNASSIGNED_OWNERSHIP">Missing / Unassigned Owner</option>
+              <option value="">{t.neglectRadar.allSignals}</option>
+              <option value="OVERDUE_SLA">{lang === 'hi' ? 'समयसीमा पार SLA लक्ष्य' : 'Overdue SLA Target'}</option>
+              <option value="STALE_PROGRESS">{lang === 'hi' ? 'शिथिल परिचालन प्रगति' : 'Stalled Operational Progress'}</option>
+              <option value="BLOCKED_DEPENDENCY">{lang === 'hi' ? 'अवरुद्ध निर्भरता' : 'Blocked Dependency'}</option>
+              <option value="REASSIGNMENT_LOOP">{lang === 'hi' ? 'पुनर्आवंटन पिंग-पॉन्ग' : 'Reassignment Ping-Pong'}</option>
+              <option value="REOPENED_CASE">{lang === 'hi' ? 'पुनः खोली गई शिकायत' : 'Reopened Grievance'}</option>
+              <option value="UNASSIGNED_OWNERSHIP">{lang === 'hi' ? 'लापता / अनावंटित उत्तरदायित्व' : 'Missing / Unassigned Owner'}</option>
             </select>
           </div>
 
@@ -662,7 +656,7 @@ export default function NeglectRadarPage() {
           <div>
             {isAdmin ? (
               <>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Department Scope</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">{t.common.department}</label>
                 <select
                   value={departmentFilter}
                   onChange={(e) => {
@@ -671,23 +665,23 @@ export default function NeglectRadarPage() {
                   }}
                   className="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">All Departments (Unrestricted)</option>
+                  <option value="">{lang === 'hi' ? 'सभी विभाग (अप्रतिबंधित)' : 'All Departments (Unrestricted)'}</option>
                   {departments.map((dept) => (
                     <option key={dept.id || dept.code} value={dept.id || dept.code}>
-                      {dept.name || dept.id || dept.code}
+                      {tDepartment(dept.name || dept.id || dept.code)}
                     </option>
                   ))}
                 </select>
               </>
             ) : (
               <>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Department Scope</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">{t.common.department}</label>
                 <div
                   className="w-full text-xs rounded-lg border border-slate-200 px-3 py-2 bg-slate-50 text-slate-700 flex items-center gap-1.5 font-medium cursor-not-allowed"
                   title="Officers are restricted to their authorized department by server policy"
                 >
                   <Building2 size={13} className="text-slate-500 shrink-0" />
-                  <span className="truncate">{user?.departmentId || 'Officer Scope (Authoritative)'}</span>
+                  <span className="truncate">{user?.departmentId ? tDepartment(user.departmentId) : (lang === 'hi' ? 'अधिकारी कार्यक्षेत्र' : 'Officer Scope (Authoritative)')}</span>
                 </div>
               </>
             )}
@@ -702,7 +696,7 @@ export default function NeglectRadarPage() {
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search by ID (e.g. CS-2026-0001) or title..."
+                placeholder={t.neglectRadar.searchPlaceholder}
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 className="w-full pl-9 pr-8 py-2 text-xs rounded-lg border border-slate-300 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -712,7 +706,7 @@ export default function NeglectRadarPage() {
                   type="button"
                   onClick={handleClearSearch}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  title="Clear search input"
+                  title={t.common.clear}
                 >
                   <X size={13} />
                 </button>
@@ -722,14 +716,14 @@ export default function NeglectRadarPage() {
               type="submit"
               className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs transition shrink-0"
             >
-              Search
+              {t.common.search}
             </button>
           </form>
 
           {/* Sort Order & Terminal Records Toggle */}
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-slate-600 shrink-0">Sort:</span>
+              <span className="text-xs font-medium text-slate-600 shrink-0">{t.neglectRadar.sortBy}</span>
               <select
                 value={sortOrder}
                 onChange={(e) => {
@@ -738,11 +732,11 @@ export default function NeglectRadarPage() {
                 }}
                 className="text-xs rounded-lg border border-slate-300 px-2.5 py-2 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="riskScore_desc">Highest Risk Score</option>
-                <option value="riskScore_asc">Lowest Risk Score</option>
-                <option value="createdAt_desc">Oldest Registered</option>
-                <option value="createdAt_asc">Newest Registered</option>
-                <option value="updatedAt_desc">Longest Stalled</option>
+                <option value="riskScore_desc">{t.neglectRadar.riskDesc}</option>
+                <option value="riskScore_asc">{t.neglectRadar.riskAsc}</option>
+                <option value="createdAt_desc">{lang === 'hi' ? 'सबसे पुरानी पंजीकृत' : 'Oldest Registered'}</option>
+                <option value="createdAt_asc">{lang === 'hi' ? 'नवीनतम पंजीकृत' : 'Newest Registered'}</option>
+                <option value="updatedAt_desc">{t.neglectRadar.stalledDesc}</option>
               </select>
             </div>
 
@@ -756,7 +750,7 @@ export default function NeglectRadarPage() {
                 }}
                 className="w-3.5 h-3.5 rounded text-blue-600 border-slate-300 focus:ring-blue-500"
               />
-              <span>Include resolved / closed</span>
+              <span>{t.neglectRadar.terminalPill}</span>
             </label>
           </div>
         </div>
@@ -767,8 +761,8 @@ export default function NeglectRadarPage() {
         {loading ? (
           <div className="p-12 text-center space-y-3">
             <RefreshCw className="w-7 h-7 text-blue-600 animate-spin mx-auto" />
-            <p className="text-sm font-semibold text-slate-700">Evaluating Neglect Radar signals across repositories...</p>
-            <p className="text-xs text-slate-500">Checking SLA adherence, progress velocities, and multi-agency dependencies.</p>
+            <p className="text-sm font-semibold text-slate-700">{t.neglectRadar.evaluatingSignals}</p>
+            <p className="text-xs text-slate-500">{t.neglectRadar.evaluatingSubtitle}</p>
           </div>
         ) : items.length === 0 ? (
           <div className="p-12 text-center space-y-4">
@@ -776,11 +770,11 @@ export default function NeglectRadarPage() {
               <CheckCircle2 size={24} />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">No Neglect Anomalies Detected</h3>
+              <h3 className="text-base font-bold text-slate-900">{t.neglectRadar.noAnomaliesTitle}</h3>
               <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
                 {hasActiveFilters
-                  ? 'No records match the current filter criteria. Try broadening your entity scope or resetting your filters.'
-                  : 'All evaluated civic grievances and incidents are progressing within designated service targets and activity thresholds.'}
+                  ? t.neglectRadar.noFilterMatchDesc
+                  : t.neglectRadar.allHealthyDesc}
               </p>
             </div>
             {hasActiveFilters && (
@@ -790,7 +784,7 @@ export default function NeglectRadarPage() {
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition"
               >
                 <RotateCcw size={13} />
-                <span>Reset Filters</span>
+                <span>{t.neglectRadar.resetFilters}</span>
               </button>
             )}
           </div>
@@ -799,13 +793,13 @@ export default function NeglectRadarPage() {
             <table className="w-full text-left text-xs text-slate-700">
               <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
                 <tr>
-                  <th scope="col" className="px-4 py-3">Entity &amp; Title</th>
-                  <th scope="col" className="px-4 py-3">Status / Priority</th>
-                  <th scope="col" className="px-4 py-3">Department</th>
-                  <th scope="col" className="px-4 py-3">Risk Assessment</th>
-                  <th scope="col" className="px-4 py-3">Velocity &amp; Duration</th>
-                  <th scope="col" className="px-4 py-3">Triggered Signals</th>
-                  <th scope="col" className="px-4 py-3 text-right">Actions</th>
+                  <th scope="col" className="px-4 py-3">{t.neglectRadar.thEntity}</th>
+                  <th scope="col" className="px-4 py-3">{t.neglectRadar.thStatus}</th>
+                  <th scope="col" className="px-4 py-3">{t.neglectRadar.thDepartment}</th>
+                  <th scope="col" className="px-4 py-3">{t.neglectRadar.thRiskScore}</th>
+                  <th scope="col" className="px-4 py-3">{t.neglectRadar.thAge}</th>
+                  <th scope="col" className="px-4 py-3">{t.neglectRadar.thSignals}</th>
+                  <th scope="col" className="px-4 py-3 text-right">{t.neglectRadar.thAction}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -823,11 +817,11 @@ export default function NeglectRadarPage() {
                           <span className="font-mono text-xs font-bold text-slate-900">{item.entityId}</span>
                         </div>
                         <p className="text-xs font-medium text-slate-800 line-clamp-1" title={item.title}>
-                          {item.title || '(Untitled record)'}
+                          {item.title || `(${lang === 'hi' ? 'अनाम रिकॉर्ड' : 'Untitled record'})`}
                         </p>
                         {item.suggestedAction && (
                           <div className="mt-1 text-[11px] text-slate-500 line-clamp-1 italic">
-                            Action: {item.suggestedAction}
+                            {lang === 'hi' ? 'कार्रवाई:' : 'Action:'} {item.suggestedAction}
                           </div>
                         )}
                       </td>
@@ -844,7 +838,7 @@ export default function NeglectRadarPage() {
                       <td className="px-4 py-3.5 whitespace-nowrap">
                         <span className="inline-flex items-center gap-1 text-slate-700 font-medium">
                           <Building2 size={12} className="text-slate-400" />
-                          <span>{item.departmentId || 'Unassigned'}</span>
+                          <span>{tDepartment(item.departmentId) || item.departmentId || (lang === 'hi' ? 'अनअसाइंड' : 'Unassigned')}</span>
                         </span>
                       </td>
 
@@ -853,7 +847,7 @@ export default function NeglectRadarPage() {
                         <div className="space-y-1">
                           <div>{getRiskLevelBadge(item.riskLevel, item.riskScore)}</div>
                           <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                            <span>Data completeness:</span>
+                            <span>{t.neglectRadar.dataCompleteness}</span>
                             <span className="font-semibold text-slate-700">{item.dataCompleteness}%</span>
                           </div>
                         </div>
@@ -863,15 +857,15 @@ export default function NeglectRadarPage() {
                       <td className="px-4 py-3.5 whitespace-nowrap text-[11px]">
                         <div className="space-y-0.5">
                           <div className="text-slate-700">
-                            Registered: <strong className="text-slate-900">{item.evidenceSummary?.elapsedDays ?? '—'}d</strong> ago
+                            {t.neglectRadar.registeredAgo.replace('{days}', item.evidenceSummary?.elapsedDays ?? '—')}
                           </div>
                           <div className={isStalled ? 'text-amber-700 font-semibold' : 'text-slate-500'}>
-                            No progress: <strong>{item.evidenceSummary?.daysSinceProgress ?? '—'}d</strong>
+                            {t.neglectRadar.noProgressDays.replace('{days}', item.evidenceSummary?.daysSinceProgress ?? '—')}
                           </div>
                           {isOverdue && (
                             <div className="text-rose-700 font-bold flex items-center gap-1">
                               <Clock size={11} />
-                              <span>+{item.evidenceSummary.slaOverdueDays}d past target</span>
+                              <span>{t.neglectRadar.pastTargetDays.replace('{days}', item.evidenceSummary.slaOverdueDays)}</span>
                             </div>
                           )}
                         </div>
@@ -892,7 +886,7 @@ export default function NeglectRadarPage() {
                               </span>
                             ))
                           ) : (
-                            <span className="text-[11px] text-slate-400 italic">No signals triggered</span>
+                            <span className="text-[11px] text-slate-400 italic">{t.neglectRadar.noSignalsTriggered}</span>
                           )}
                         </div>
                       </td>
@@ -905,7 +899,7 @@ export default function NeglectRadarPage() {
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-semibold transition"
                         >
                           <Eye size={13} />
-                          <span>Inspect Evidence</span>
+                          <span>{t.neglectRadar.inspectEvidence}</span>
                         </button>
                       </td>
                     </tr>
@@ -920,14 +914,15 @@ export default function NeglectRadarPage() {
         {pagination && pagination.total > 0 && (
           <div className="bg-slate-50 px-4 py-3 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
             <div>
-              Showing <strong className="text-slate-900">{Math.min((pagination.page - 1) * pagination.limit + 1, pagination.total)}</strong> to{' '}
-              <strong className="text-slate-900">{Math.min(pagination.page * pagination.limit, pagination.total)}</strong> of{' '}
-              <strong className="text-slate-900">{pagination.total}</strong> results
+              {t.neglectRadar.showingResults
+                .replace('{from}', Math.min((pagination.page - 1) * pagination.limit + 1, pagination.total))
+                .replace('{to}', Math.min(pagination.page * pagination.limit, pagination.total))
+                .replace('{total}', pagination.total)}
             </div>
 
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1.5">
-                <span className="text-slate-500">Page size:</span>
+                <span className="text-slate-500">{t.neglectRadar.pageSize}</span>
                 <select
                   value={pageSize}
                   onChange={(e) => {
@@ -948,7 +943,7 @@ export default function NeglectRadarPage() {
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={pagination.page <= 1}
                   className="p-1.5 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
-                  title="Previous page"
+                  title={t.neglectRadar.prevPage}
                 >
                   <ChevronLeft size={14} />
                 </button>
@@ -960,7 +955,7 @@ export default function NeglectRadarPage() {
                   onClick={() => setCurrentPage((p) => Math.min(pagination.totalPages || 1, p + 1))}
                   disabled={pagination.page >= (pagination.totalPages || 1)}
                   className="p-1.5 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
-                  title="Next page"
+                  title={t.neglectRadar.nextPage}
                 >
                   <ChevronRight size={14} />
                 </button>
@@ -1010,14 +1005,14 @@ export default function NeglectRadarPage() {
               {detailLoading ? (
                 <div className="py-20 text-center space-y-3">
                   <RefreshCw className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
-                  <p className="text-sm font-semibold text-slate-700">Retrieving safe supervisory evidence...</p>
-                  <p className="text-xs text-slate-500">Checking signal evaluations and data completeness.</p>
+                  <p className="text-sm font-semibold text-slate-700">{t.neglectRadar.retrievingEvidence}</p>
+                  <p className="text-xs text-slate-500">{t.neglectRadar.retrievingSubtitle}</p>
                 </div>
               ) : detailError ? (
                 <div className="bg-rose-50 border border-rose-200 text-rose-900 p-4 rounded-xl space-y-2">
                   <div className="flex items-center gap-2 font-bold text-xs">
                     <AlertCircle size={16} className="text-rose-600" />
-                    <span>Failed to load item evidence</span>
+                    <span>{t.neglectRadar.failedToLoadEvidence}</span>
                   </div>
                   <p className="text-xs text-rose-700">{detailError}</p>
                 </div>
@@ -1028,7 +1023,7 @@ export default function NeglectRadarPage() {
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                       <div>
                         <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-                          Supervisory Risk Assessment
+                          {t.neglectRadar.supervisoryRiskAssessment}
                         </span>
                         <div className="flex items-baseline gap-2 mt-0.5">
                           {itemDetail.riskScore !== null ? (
@@ -1037,7 +1032,7 @@ export default function NeglectRadarPage() {
                               <span className="text-sm text-slate-400">/ 100</span>
                             </>
                           ) : (
-                            <span className="text-lg font-bold text-slate-300">Insufficient Data</span>
+                            <span className="text-lg font-bold text-slate-300">{t.neglectRadar.insufficientData}</span>
                           )}
                         </div>
                       </div>
@@ -1047,7 +1042,7 @@ export default function NeglectRadarPage() {
 
                     <div className="space-y-1.5 border-t border-slate-800 pt-3">
                       <div className="flex justify-between text-xs text-slate-300">
-                        <span>Data Completeness:</span>
+                        <span>{t.neglectRadar.dataCompleteness}</span>
                         <span className="font-semibold text-white">{itemDetail.dataCompleteness}%</span>
                       </div>
                       <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
@@ -1058,13 +1053,13 @@ export default function NeglectRadarPage() {
                       </div>
                       {itemDetail.dataCompleteness < 100 && (
                         <p className="text-[11px] text-slate-400">
-                          Some signals could not be verified due to incomplete historical records.
+                          {t.neglectRadar.someSignalsUnverified}
                         </p>
                       )}
                     </div>
 
                     <div className="text-[11px] text-slate-400 border-t border-slate-800 pt-2 leading-relaxed">
-                      CivicSarthi supervisory scores are algorithmic operational indicators measuring SLA velocity and activity. They do not constitute allegations of officer negligence or misconduct.
+                      {t.neglectRadar.neutralDisclaimer}
                     </div>
                   </div>
 
@@ -1073,7 +1068,7 @@ export default function NeglectRadarPage() {
                     <div className="bg-blue-50 border border-blue-200 text-blue-900 p-4 rounded-xl space-y-1.5 shadow-xs">
                       <div className="flex items-center gap-1.5 text-xs font-bold text-blue-800">
                         <ArrowRight size={14} className="text-blue-600" />
-                        <span>Recommended Operational Action</span>
+                        <span>{t.neglectRadar.recommendedOperationalAction}</span>
                       </div>
                       <p className="text-xs text-blue-950 font-medium leading-relaxed">
                         {itemDetail.suggestedAction}
@@ -1085,45 +1080,47 @@ export default function NeglectRadarPage() {
                   <div className="space-y-2.5">
                     <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
                       <Clock size={13} className="text-blue-600" />
-                      <span>Operational Timeline &amp; Context</span>
+                      <span>{t.neglectRadar.operationalTimelineContext}</span>
                     </h3>
 
                     <div className="grid grid-cols-2 gap-3 text-xs">
                       <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                        <span className="text-[11px] text-slate-500 block">Total Registered Elapsed</span>
+                        <span className="text-[11px] text-slate-500 block">{t.neglectRadar.totalRegisteredElapsed}</span>
                         <strong className="text-slate-900 text-sm">
-                          {itemDetail.evidenceSummary?.elapsedDays ?? '—'} days
+                          {itemDetail.evidenceSummary?.elapsedDays != null ? `${itemDetail.evidenceSummary.elapsedDays} ${lang === 'hi' ? 'दिन' : 'days'}` : '—'}
                         </strong>
                       </div>
 
                       <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                        <span className="text-[11px] text-slate-500 block">Days Since Meaningful Progress</span>
+                        <span className="text-[11px] text-slate-500 block">{t.neglectRadar.daysSinceProgress}</span>
                         <strong className="text-slate-900 text-sm">
-                          {itemDetail.evidenceSummary?.daysSinceProgress ?? '—'} days
+                          {itemDetail.evidenceSummary?.daysSinceProgress != null ? `${itemDetail.evidenceSummary.daysSinceProgress} ${lang === 'hi' ? 'दिन' : 'days'}` : '—'}
                         </strong>
                       </div>
 
                       <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                        <span className="text-[11px] text-slate-500 block">Authoritative SLA Target</span>
+                        <span className="text-[11px] text-slate-500 block">{t.neglectRadar.authoritativeSlaTarget}</span>
                         <strong className="text-slate-900 text-sm">
                           {itemDetail.evidenceSummary?.slaTargetDays
-                            ? `${itemDetail.evidenceSummary.slaTargetDays} days`
-                            : 'No authoritative SLA'}
+                            ? `${itemDetail.evidenceSummary.slaTargetDays} ${lang === 'hi' ? 'दिन' : 'days'}`
+                            : t.neglectRadar.noAuthoritativeSla}
                         </strong>
                         {(itemDetail.evidenceSummary?.slaOverdueDays || 0) > 0 && (
                           <span className="text-[11px] text-rose-600 font-bold block mt-0.5">
-                            +{itemDetail.evidenceSummary.slaOverdueDays} days overdue
+                            {t.neglectRadar.daysOverdue.replace('{days}', itemDetail.evidenceSummary.slaOverdueDays)}
                           </span>
                         )}
                       </div>
 
                       <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                        <span className="text-[11px] text-slate-500 block">Department / Assigned Officer</span>
+                        <span className="text-[11px] text-slate-500 block">{t.neglectRadar.deptAssignedOfficer}</span>
                         <strong className="text-slate-900 text-sm block truncate">
-                          {itemDetail.departmentId || 'Unassigned'}
+                          {tDepartment(itemDetail.departmentId) || itemDetail.departmentId || (lang === 'hi' ? 'अनअसाइंड' : 'Unassigned')}
                         </strong>
                         <span className="text-[11px] text-slate-500 block truncate">
-                          Officer: {itemDetail.evidenceSummary?.assignedOfficerId || 'None assigned'}
+                          {itemDetail.evidenceSummary?.assignedOfficerId
+                            ? `${lang === 'hi' ? 'अधिकारी:' : 'Officer:'} ${itemDetail.evidenceSummary.assignedOfficerId}`
+                            : t.neglectRadar.officerNoneAssigned}
                         </span>
                       </div>
                     </div>
@@ -1131,21 +1128,20 @@ export default function NeglectRadarPage() {
                     {/* Additional entity-specific metrics */}
                     {itemDetail.evidenceSummary?.reassignmentCount > 0 && (
                       <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 text-xs text-amber-900">
-                        <strong>Reassignment Count:</strong> Case has been transferred{' '}
-                        {itemDetail.evidenceSummary.reassignmentCount} times across departments.
+                        {t.neglectRadar.reassignmentNote.replace('{count}', itemDetail.evidenceSummary.reassignmentCount)}
                       </div>
                     )}
 
                     {itemDetail.evidenceSummary?.isBlocked && (
                       <div className="p-3 bg-rose-50 rounded-lg border border-rose-200 text-xs text-rose-900">
-                        <strong>Dependency Block:</strong> {itemDetail.evidenceSummary.blockReason || 'Marked as blocked.'}
+                        {t.neglectRadar.dependencyBlock.replace('{reason}', itemDetail.evidenceSummary.blockReason || (lang === 'hi' ? 'अवरुद्ध चिह्नित।' : 'Marked as blocked.'))}
                       </div>
                     )}
 
                     {itemDetail.entityType === 'INCIDENT' && (
                       <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-700 flex justify-between">
-                        <span>Unresolved Subtasks: <strong>{itemDetail.evidenceSummary?.unresolvedSubtaskCount ?? 0}</strong></span>
-                        <span>Blocked Subtasks: <strong>{itemDetail.evidenceSummary?.blockedSubtaskCount ?? 0}</strong></span>
+                        <span>{t.neglectRadar.unresolvedSubtasks.replace('{count}', itemDetail.evidenceSummary?.unresolvedSubtaskCount ?? 0)}</span>
+                        <span>{t.neglectRadar.blockedSubtasks.replace('{count}', itemDetail.evidenceSummary?.blockedSubtaskCount ?? 0)}</span>
                       </div>
                     )}
                   </div>
@@ -1154,7 +1150,7 @@ export default function NeglectRadarPage() {
                   <div className="space-y-3">
                     <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
                       <SlidersHorizontal size={13} className="text-blue-600" />
-                      <span>Evaluated Risk Signals Breakdown</span>
+                      <span>{t.neglectRadar.evaluatedSignalsBreakdown}</span>
                     </h3>
 
                     <div className="space-y-2.5">
@@ -1175,11 +1171,11 @@ export default function NeglectRadarPage() {
                                   <span className="font-bold text-slate-900">{signal.name}</span>
                                   {isTriggered ? (
                                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-200">
-                                      Triggered (+{signal.points} pts)
+                                      {t.neglectRadar.signalTriggeredPoints.replace('{points}', signal.points)}
                                     </span>
                                   ) : (
                                     <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600">
-                                      Not triggered (0 / {signal.maxPoints} pts)
+                                      {t.neglectRadar.signalNotTriggered.replace('{maxPoints}', signal.maxPoints)}
                                     </span>
                                   )}
                                 </div>
@@ -1198,7 +1194,7 @@ export default function NeglectRadarPage() {
                               {signal.evidence && typeof signal.evidence === 'object' ? (
                                 <div className="pt-1 border-t border-slate-100/80">
                                   <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-                                    Telemetry Evidence Parameters:
+                                    {t.neglectRadar.telemetryParams}
                                   </span>
                                   <div className="flex flex-wrap gap-1.5">
                                     {Object.entries(signal.evidence).map(([k, v]) => (
@@ -1214,7 +1210,7 @@ export default function NeglectRadarPage() {
                                 </div>
                               ) : signal.evidence ? (
                                 <p className="text-slate-700">
-                                  <strong>Evidence:</strong> {String(signal.evidence)}
+                                  <strong>{lang === 'hi' ? 'साक्ष्य:' : 'Evidence:'}</strong> {String(signal.evidence)}
                                 </p>
                               ) : null}
                             </div>
@@ -1229,13 +1225,13 @@ export default function NeglectRadarPage() {
                     <div className="space-y-2">
                       <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                         <Info size={13} className="text-slate-500" />
-                        <span>Unobserved / Non-Applicable Signals</span>
+                        <span>{t.neglectRadar.unobservedSignals}</span>
                       </h3>
                       <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-600 space-y-1">
                         {itemDetail.missingSignals.map((ms, idx) => {
                           const code = typeof ms === 'object' ? (ms.code || idx) : ms;
                           const name = typeof ms === 'object' ? (ms.name || ms.code) : ms;
-                          const reason = typeof ms === 'object' ? (ms.missingReason || ms.reason || 'Not applicable for this entity type') : 'Not applicable for this entity type';
+                          const reason = typeof ms === 'object' ? (ms.missingReason || ms.reason || (lang === 'hi' ? 'इस इकाई प्रकार के लिए लागू नहीं' : 'Not applicable for this entity type')) : (lang === 'hi' ? 'इस इकाई प्रकार के लिए लागू नहीं' : 'Not applicable for this entity type');
                           return (
                             <div key={code} className="text-[11px]">
                               • <strong className="text-slate-700">{name}:</strong> {reason}
@@ -1255,23 +1251,23 @@ export default function NeglectRadarPage() {
                       >
                         <span>
                           {itemDetail.entityType === 'COMPLAINT'
-                            ? 'Open Grievance Management Workspace'
-                            : 'Open Parent Incident Cockpit'}
+                            ? t.neglectRadar.openGrievanceWorkspace
+                            : t.neglectRadar.openParentIncidentCockpit}
                         </span>
                         <ExternalLink size={14} />
                       </Link>
                     ) : (
                       <div className="bg-slate-50 border border-slate-200 p-3 rounded-lg text-center text-xs text-slate-600">
-                        <span className="font-semibold block text-slate-800">Subtask Operational Record</span>
+                        <span className="font-semibold block text-slate-800">{t.neglectRadar.subtaskRecordTitle}</span>
                         <span>
-                          Subtask details are fully verified above. Subtasks are coordinated within their parent incident workspace.
+                          {t.neglectRadar.subtaskRecordDesc}
                         </span>
                         <div className="mt-2">
                           <Link
                             to="/incident"
                             className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 font-semibold"
                           >
-                            <span>Open Incident Cockpit</span>
+                            <span>{t.neglectRadar.openIncidentCockpit}</span>
                             <ArrowRight size={13} />
                           </Link>
                         </div>
@@ -1289,7 +1285,7 @@ export default function NeglectRadarPage() {
                 onClick={handleCloseDrawer}
                 className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold shadow-xs transition"
               >
-                Close Evidence Panel
+                {t.neglectRadar.closeEvidencePanel}
               </button>
             </div>
           </div>

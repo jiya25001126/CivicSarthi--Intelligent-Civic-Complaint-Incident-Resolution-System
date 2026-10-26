@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchComplaints, fetchComplaintStats } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
 import {
   ShieldCheck,
@@ -39,6 +40,7 @@ const DEPARTMENT_LABELS = {
 
 export default function OfficerDashboard() {
   const { user } = useAuth();
+  const { lang, t, tStatus, tPriority, tDepartment } = useLanguage();
   const [complaints, setComplaints] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -68,7 +70,7 @@ export default function OfficerDashboard() {
     loadData();
   }, []);
 
-  const departmentName = (user?.departmentId && DEPARTMENT_LABELS[user.departmentId]) || user?.departmentId || 'Department Caseload';
+  const departmentName = (user?.departmentId && tDepartment(user.departmentId)) || user?.departmentId || t('officerDashboard.title', 'Department Caseload');
   const hasSynthetic = complaints.some((c) => c.synthetic === true);
 
   // Compute caseload metrics dynamically from loaded list
@@ -130,10 +132,10 @@ export default function OfficerDashboard() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-              Officer Triage & Decision Cockpit
+              {t('officerDashboard.cockpitTitle', 'Officer Triage & Decision Cockpit')}
             </h1>
             <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-xs font-semibold">
-              Officer Mode
+              {t('officerDashboard.officerMode', 'Officer Mode')}
             </span>
             {user?.departmentId && (
               <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200">
@@ -145,7 +147,7 @@ export default function OfficerDashboard() {
             <Building2 size={15} className="text-slate-400" />
             <span className="font-medium text-slate-800">{departmentName}</span>
             <span className="text-slate-400">&bull;</span>
-            <span>Departmental caseload overview, bottleneck diagnostics, and urgent case triage.</span>
+            <span>{t('officerDashboard.cockpitSubtitle', 'Departmental caseload overview, bottleneck diagnostics, and urgent case triage.')}</span>
           </p>
         </div>
         <div className="flex items-center gap-2.5">
@@ -154,21 +156,21 @@ export default function OfficerDashboard() {
             className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold shadow-sm transition border border-slate-700"
           >
             <BarChart3 size={14} className="text-blue-400" />
-            <span>Analytics & Reports</span>
+            <span>{t('officerDashboard.analyticsAndReports', 'Analytics & Reports')}</span>
           </Link>
           <Link
             to="/officer/complaints"
             className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition"
           >
-            <span>Manage All ({complaints.length})</span>
+            <span>{t('officerDashboard.manageAll', 'Manage All ({count})', { count: complaints.length })}</span>
             <ArrowRight size={14} />
           </Link>
           <button
             onClick={loadData}
             disabled={loading}
             className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition disabled:opacity-50"
-            title="Refresh"
-            aria-label="Refresh dashboard data"
+            title={t('common.refresh', 'Refresh')}
+            aria-label={t('officerDashboard.refreshAria', 'Refresh dashboard data')}
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </button>
@@ -184,16 +186,16 @@ export default function OfficerDashboard() {
             </div>
             <div>
               <span className="font-bold text-slate-900 block text-xs">
-                Synthetic Caseload Evaluation Environment Active
+                {t('officerDashboard.syntheticBannerTitle', 'Synthetic Caseload Evaluation Environment Active')}
               </span>
               <span className="text-slate-600 text-[11px]">
-                Showing realistic demonstration grievances spanning SLA breaches, multi-hop department handoffs, pending triage, and citizen clarifications.
+                {t('officerDashboard.syntheticBannerDesc', 'Showing realistic demonstration grievances spanning SLA breaches, multi-hop department handoffs, pending triage, and citizen clarifications.')}
               </span>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <span className="px-2.5 py-1 rounded-lg bg-white/80 border border-blue-200 text-blue-800 font-semibold text-[11px]">
-              {complaints.length} Department Cases Active
+              {t('officerDashboard.deptCasesActive', '{count} Department Cases Active', { count: complaints.length })}
             </span>
           </div>
         </div>
@@ -211,13 +213,13 @@ export default function OfficerDashboard() {
           }`}
         >
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase">Total Active Queue</span>
+            <span className="text-xs font-semibold uppercase">{t('officerDashboard.totalActiveQueue', 'Total Active Queue')}</span>
             <ShieldCheck size={18} className="text-blue-600" />
           </div>
           <div className="text-2xl font-black text-slate-900">
             {stats ? stats.total : complaints.length}
           </div>
-          <p className="text-[11px] text-slate-500 mt-1">All registered cases in scope</p>
+          <p className="text-[11px] text-slate-500 mt-1">{t('officerDashboard.allRegisteredScope', 'All registered cases in scope')}</p>
         </button>
 
         <button
@@ -230,13 +232,13 @@ export default function OfficerDashboard() {
           }`}
         >
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase">Critical & High</span>
+            <span className="text-xs font-semibold uppercase">{t('officerDashboard.criticalHigh', 'Critical & High')}</span>
             <Flame size={18} className="text-rose-600" />
           </div>
           <div className="text-2xl font-black text-rose-600">
             {criticalCount}
           </div>
-          <p className="text-[11px] text-slate-500 mt-1">Urgent intervention required</p>
+          <p className="text-[11px] text-slate-500 mt-1">{t('officerDashboard.urgentIntervention', 'Urgent intervention required')}</p>
         </button>
 
         <button
@@ -249,13 +251,13 @@ export default function OfficerDashboard() {
           }`}
         >
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase">Reassignment Loops</span>
+            <span className="text-xs font-semibold uppercase">{t('officerDashboard.reassignmentLoops', 'Reassignment Loops')}</span>
             <Repeat size={18} className="text-amber-600" />
           </div>
           <div className="text-2xl font-black text-amber-600">
             {loopCount}
           </div>
-          <p className="text-[11px] text-slate-500 mt-1">&ge; 2 department handoffs</p>
+          <p className="text-[11px] text-slate-500 mt-1">{t('officerDashboard.handoffsCount', '≥ 2 department handoffs')}</p>
         </button>
 
         <button
@@ -268,13 +270,13 @@ export default function OfficerDashboard() {
           }`}
         >
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase">Stale Cases</span>
+            <span className="text-xs font-semibold uppercase">{t('officerDashboard.staleCases', 'Stale Cases')}</span>
             <Clock size={18} className="text-indigo-600" />
           </div>
           <div className="text-2xl font-black text-indigo-600">
             {staleCount}
           </div>
-          <p className="text-[11px] text-slate-500 mt-1">&gt; 7 days without update</p>
+          <p className="text-[11px] text-slate-500 mt-1">{t('officerDashboard.withoutUpdate', '> 7 days without update')}</p>
         </button>
       </div>
 
@@ -284,20 +286,20 @@ export default function OfficerDashboard() {
           <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
             <span className="flex items-center gap-1.5">
               <Layers size={14} className="text-slate-400" />
-              Department SLA Caseload Health
+              {t('officerDashboard.slaHealthBar', 'Department SLA Caseload Health')}
             </span>
             <div className="flex items-center gap-4 text-[11px]">
               <span className="flex items-center gap-1.5 text-emerald-700">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                On Track: {onTrackCount}
+                {t('officerDashboard.onTrackLabel', 'On Track: {count}', { count: onTrackCount })}
               </span>
               <span className="flex items-center gap-1.5 text-amber-700">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                Stale / Attention: {staleCount}
+                {t('officerDashboard.staleAttentionLabel', 'Stale / Attention: {count}', { count: staleCount })}
               </span>
               <span className="flex items-center gap-1.5 text-rose-700">
                 <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-                SLA Breached: {breachedCount}
+                {t('officerDashboard.slaBreachedLabel', 'SLA Breached: {count}', { count: breachedCount })}
               </span>
             </div>
           </div>
@@ -336,7 +338,7 @@ export default function OfficerDashboard() {
                   : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
               }`}
             >
-              Urgent & High ({criticalCount})
+              {t('officerDashboard.tabUrgent', 'Urgent & High ({count})', { count: criticalCount })}
             </button>
             <button
               type="button"
@@ -347,7 +349,7 @@ export default function OfficerDashboard() {
                   : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
               }`}
             >
-              SLA Breached ({breachedCount})
+              {t('officerDashboard.tabBreached', 'SLA Breached ({count})', { count: breachedCount })}
             </button>
             <button
               type="button"
@@ -358,7 +360,7 @@ export default function OfficerDashboard() {
                   : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
               }`}
             >
-              Stale Cases ({staleCount})
+              {t('officerDashboard.tabStale', 'Stale Cases ({count})', { count: staleCount })}
             </button>
             <button
               type="button"
@@ -369,7 +371,7 @@ export default function OfficerDashboard() {
                   : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
               }`}
             >
-              Loops ({loopCount})
+              {t('officerDashboard.tabLoops', 'Loops ({count})', { count: loopCount })}
             </button>
             <button
               type="button"
@@ -380,7 +382,7 @@ export default function OfficerDashboard() {
                   : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
               }`}
             >
-              Resolved ({resolvedCount})
+              {t('officerDashboard.tabResolved', 'Resolved ({count})', { count: resolvedCount })}
             </button>
             <button
               type="button"
@@ -391,7 +393,7 @@ export default function OfficerDashboard() {
                   : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
               }`}
             >
-              All ({complaints.length})
+              {t('officerDashboard.tabAll', 'All ({count})', { count: complaints.length })}
             </button>
           </div>
 
@@ -402,7 +404,7 @@ export default function OfficerDashboard() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search reference, ward, issue..."
+              placeholder={t('officerDashboard.searchPlaceholder', 'Search reference, ward, issue...')}
               className="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 placeholder:text-slate-400"
             />
             {searchQuery && (
@@ -410,7 +412,7 @@ export default function OfficerDashboard() {
                 type="button"
                 onClick={() => setSearchQuery('')}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                title="Clear search"
+                title={t('common.clear', 'Clear search')}
               >
                 <X size={13} />
               </button>
@@ -421,14 +423,14 @@ export default function OfficerDashboard() {
         {loading ? (
           <div className="p-12 text-center text-sm text-slate-500 flex flex-col items-center gap-3">
             <RefreshCw size={24} className="animate-spin text-blue-600" />
-            <span>Loading cases...</span>
+            <span>{t('common.loading', 'Loading cases...')}</span>
           </div>
         ) : filteredComplaints.length === 0 ? (
           <div className="p-10 text-center flex flex-col items-center justify-center space-y-2">
             <Filter size={24} className="text-slate-400" />
-            <h4 className="text-sm font-bold text-slate-700">No Cases In Selected View</h4>
+            <h4 className="text-sm font-bold text-slate-700">{t('officerDashboard.noCasesInView', 'No Cases In Selected View')}</h4>
             <p className="text-xs text-slate-500 max-w-sm">
-              No complaint matched current filter criteria. Select another caseload view or reset your search query.
+              {t('officerDashboard.noCasesDesc', 'No complaint matched current filter criteria. Select another caseload view or reset your search query.')}
             </p>
             <button
               type="button"
@@ -438,7 +440,7 @@ export default function OfficerDashboard() {
               }}
               className="mt-2 px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition"
             >
-              Show All Cases
+              {t('officerDashboard.showAllCases', 'Show All Cases')}
             </button>
           </div>
         ) : (
@@ -446,13 +448,13 @@ export default function OfficerDashboard() {
             <table className="w-full text-left text-xs text-slate-600">
               <thead className="bg-slate-50 text-slate-700 uppercase tracking-wider text-[11px] border-b border-slate-200">
                 <tr>
-                  <th className="px-4 py-3">Reference No</th>
-                  <th className="px-4 py-3">Department & Ward</th>
-                  <th className="px-6 py-3">Grievance Issue</th>
-                  <th className="px-3 py-3">Status</th>
-                  <th className="px-3 py-3">Priority</th>
-                  <th className="px-4 py-3">SLA Alert</th>
-                  <th className="px-4 py-3 text-right">Triage Action</th>
+                  <th className="px-4 py-3">{t('officerDashboard.thReference', 'Reference No')}</th>
+                  <th className="px-4 py-3">{t('officerDashboard.thDeptWard', 'Department & Ward')}</th>
+                  <th className="px-6 py-3">{t('officerDashboard.thIssue', 'Grievance Issue')}</th>
+                  <th className="px-3 py-3">{t('officerDashboard.thStatus', 'Status')}</th>
+                  <th className="px-3 py-3">{t('officerDashboard.thPriority', 'Priority')}</th>
+                  <th className="px-4 py-3">{t('officerDashboard.thSlaAlert', 'SLA Alert')}</th>
+                  <th className="px-4 py-3 text-right">{t('officerDashboard.thAction', 'Triage Action')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -463,14 +465,14 @@ export default function OfficerDashboard() {
                         <span>{item.referenceNumber || item.id}</span>
                         {item.synthetic && (
                           <span className="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                            Demo
+                            {t('officerDashboard.demoBadge', 'Demo')}
                           </span>
                         )}
                       </div>
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap">
                       <div className="font-medium text-slate-700">
-                        {item.departmentId || item.department}
+                        {tDepartment(item.departmentId || item.department)}
                       </div>
                       {(item.location?.ward || item.location?.landmark || item.locality) && (
                         <div className="flex items-center gap-0.5 text-[10px] text-slate-500 mt-0.5">
@@ -489,7 +491,7 @@ export default function OfficerDashboard() {
                       {(item.reassignments || 0) >= 2 && (
                         <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
                           <Repeat size={10} />
-                          {item.reassignments}x Handoff Loops
+                          {t('officerDashboard.handoffLoops', '{count}x Handoff Loops', { count: item.reassignments })}
                         </span>
                       )}
                     </td>
@@ -503,16 +505,16 @@ export default function OfficerDashboard() {
                       {item.slaMetrics?.isSlaBreached ? (
                         <span className="inline-flex items-center gap-1 text-rose-600 font-bold">
                           <AlertTriangle size={13} />
-                          Breached ({item.slaMetrics.ageDays}d)
+                          {t('officerDashboard.breachedDays', 'Breached ({days}d)', { days: item.slaMetrics.ageDays })}
                         </span>
                       ) : item.slaMetrics?.isStale ? (
                         <span className="inline-flex items-center gap-1 text-amber-600 font-semibold">
                           <Clock size={13} />
-                          Stale ({item.slaMetrics.daysSinceUpdate}d)
+                          {t('officerDashboard.staleDays', 'Stale ({days}d)', { days: item.slaMetrics.daysSinceUpdate })}
                         </span>
                       ) : (
                         <span className="text-emerald-700 font-medium">
-                          Active ({item.slaMetrics?.ageDays || 0}d)
+                          {t('officerDashboard.activeDays', 'Active ({days}d)', { days: item.slaMetrics?.ageDays || 0 })}
                         </span>
                       )}
                     </td>
@@ -521,7 +523,7 @@ export default function OfficerDashboard() {
                         to={`/officer/complaints/${encodeURIComponent(item.id)}`}
                         className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg font-bold text-xs transition"
                       >
-                        <span>Review</span>
+                        <span>{t('officerDashboard.reviewBtn', 'Review')}</span>
                         <ExternalLink size={12} />
                       </Link>
                     </td>

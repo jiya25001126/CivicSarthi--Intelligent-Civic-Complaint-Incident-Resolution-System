@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { LanguageProvider } from './context/LanguageContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import LandingPage from './pages/LandingPage';
@@ -25,8 +26,9 @@ import AnalyticsDashboardPage from './pages/AnalyticsDashboardPage';
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <Routes>
+      <LanguageProvider>
+        <AuthProvider>
+          <Routes>
           <Route path="/" element={<Layout />}>
             {/* Public Landing & Authentication Views */}
             <Route index element={<LandingPage />} />
@@ -165,6 +167,7 @@ export default function App() {
           </Route>
         </Routes>
       </AuthProvider>
-    </BrowserRouter>
-  );
+    </LanguageProvider>
+  </BrowserRouter>
+);
 }

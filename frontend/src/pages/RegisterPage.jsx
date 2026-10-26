@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { Shield, User, Mail, Lock, AlertCircle, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { register } = useAuth();
+  const { t, lang } = useLanguage();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -19,22 +21,38 @@ export default function RegisterPage() {
     setErrorMessage('');
 
     if (!name.trim() || !email.trim() || !password) {
-      setErrorMessage('Please fill in all required registration fields.');
+      setErrorMessage(
+        lang === 'hi'
+          ? 'कृपया पंजीकरण के सभी आवश्यक फ़ील्ड भरें।'
+          : 'Please fill in all required registration fields.'
+      );
       return;
     }
 
     if (password.length < 8) {
-      setErrorMessage('Password must be at least 8 characters in length.');
+      setErrorMessage(
+        lang === 'hi'
+          ? 'पासवर्ड कम से कम 8 अक्षरों का होना चाहिए।'
+          : 'Password must be at least 8 characters in length.'
+      );
       return;
     }
 
     if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
-      setErrorMessage('Password must contain at least one letter and one number.');
+      setErrorMessage(
+        lang === 'hi'
+          ? 'पासवर्ड में कम से कम एक अक्षर और एक अंक होना अनिवार्य है।'
+          : 'Password must contain at least one letter and one number.'
+      );
       return;
     }
 
     if (password !== confirmPassword) {
-      setErrorMessage('Passwords do not match. Please re-enter your password.');
+      setErrorMessage(
+        lang === 'hi'
+          ? 'पासवर्ड मेल नहीं खाते। कृपया अपना पासवर्ड पुनः दर्ज करें।'
+          : 'Passwords do not match. Please re-enter your password.'
+      );
       return;
     }
 
@@ -43,7 +61,18 @@ export default function RegisterPage() {
       await register({ name, email, password });
       navigate('/citizen', { replace: true });
     } catch (err) {
-      setErrorMessage(err.message || 'Registration failed. Please check your information and try again.');
+      const rawMsg = err.message || '';
+      let localized = rawMsg;
+      if (lang === 'hi') {
+        if (/already exists|duplicate/i.test(rawMsg)) {
+          localized = 'यह ईमेल पता पहले से पंजीकृत है। कृपया लॉगिन करें।';
+        } else if (/weak|invalid password/i.test(rawMsg)) {
+          localized = 'अमान्य पासवर्ड। कृपया नियमों का पालन करें।';
+        } else {
+          localized = `पंजीकरण विफल: ${rawMsg}`;
+        }
+      }
+      setErrorMessage(localized || (lang === 'hi' ? 'पंजीकरण विफल। कृपया अपनी जानकारी की जांच करें।' : 'Registration failed. Please check your information and try again.'));
     } finally {
       setSubmitting(false);
     }
@@ -57,9 +86,9 @@ export default function RegisterPage() {
           <div className="w-12 h-12 rounded-lg bg-blue-700 flex items-center justify-center font-bold text-white text-2xl mx-auto mb-3 shadow">
             CS
           </div>
-          <h1 className="text-xl font-bold tracking-tight">Citizen Registration</h1>
+          <h1 className="text-xl font-bold tracking-tight">{t('auth.registerTitle')}</h1>
           <p className="text-xs text-blue-200 mt-1">
-            Create an authenticated citizen profile to submit and monitor civic grievances
+            {t('auth.registerSubtitle')}
           </p>
         </div>
 
@@ -73,7 +102,7 @@ export default function RegisterPage() {
             >
               <AlertCircle size={16} className="text-rose-600 shrink-0 mt-0.5" aria-hidden="true" />
               <div>
-                <p className="font-semibold">Registration Issue</p>
+                <p className="font-semibold">{lang === 'hi' ? 'पंजीकरण त्रुटि' : 'Registration Issue'}</p>
                 <p className="mt-0.5">{errorMessage}</p>
               </div>
             </div>
@@ -82,7 +111,7 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="reg-name" className="block text-xs font-semibold text-slate-700 mb-1">
-                Full Name <span className="text-rose-500" aria-hidden="true">*</span>
+                {t('auth.fullNameLabel')} <span className="text-rose-500" aria-hidden="true">*</span>
               </label>
               <div className="relative">
                 <User size={16} className="absolute left-3 top-2.5 text-slate-400" aria-hidden="true" />
@@ -94,7 +123,7 @@ export default function RegisterPage() {
                   aria-invalid={Boolean(errorMessage)}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Ramesh Kumar"
+                  placeholder={t('auth.fullNamePlaceholder')}
                   className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                   autoComplete="name"
                 />
@@ -103,7 +132,7 @@ export default function RegisterPage() {
 
             <div>
               <label htmlFor="reg-email" className="block text-xs font-semibold text-slate-700 mb-1">
-                Email Address <span className="text-rose-500" aria-hidden="true">*</span>
+                {t('auth.emailLabel')} <span className="text-rose-500" aria-hidden="true">*</span>
               </label>
               <div className="relative">
                 <Mail size={16} className="absolute left-3 top-2.5 text-slate-400" aria-hidden="true" />
@@ -124,7 +153,7 @@ export default function RegisterPage() {
 
             <div>
               <label htmlFor="reg-password" className="block text-xs font-semibold text-slate-700 mb-1">
-                Password <span className="text-rose-500" aria-hidden="true">*</span>
+                {t('auth.passwordLabel')} <span className="text-rose-500" aria-hidden="true">*</span>
               </label>
               <div className="relative">
                 <Lock size={16} className="absolute left-3 top-2.5 text-slate-400" aria-hidden="true" />
@@ -136,19 +165,19 @@ export default function RegisterPage() {
                   aria-invalid={Boolean(errorMessage)}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Minimum 8 characters with letter & number"
+                  placeholder={lang === 'hi' ? 'कम से कम 8 अक्षर, जिसमें अक्षर और अंक हों' : 'Minimum 8 characters with letter & number'}
                   className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                   autoComplete="new-password"
                 />
               </div>
               <p className="text-[11px] text-slate-500 mt-1">
-                At least 8 characters, containing both letters and digits.
+                {t('auth.passwordRuleText')}
               </p>
             </div>
 
             <div>
               <label htmlFor="reg-confirm-password" className="block text-xs font-semibold text-slate-700 mb-1">
-                Confirm Password <span className="text-rose-500" aria-hidden="true">*</span>
+                {t('auth.confirmPasswordLabel')} <span className="text-rose-500" aria-hidden="true">*</span>
               </label>
               <div className="relative">
                 <Lock size={16} className="absolute left-3 top-2.5 text-slate-400" aria-hidden="true" />
@@ -160,7 +189,7 @@ export default function RegisterPage() {
                   aria-invalid={Boolean(errorMessage)}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Re-enter your password"
+                  placeholder={t('auth.confirmPasswordPlaceholder')}
                   className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                   autoComplete="new-password"
                 />
@@ -178,10 +207,10 @@ export default function RegisterPage() {
               }`}
             >
               {submitting ? (
-                <>Creating Account...</>
+                <>{t('auth.creatingAccount')}</>
               ) : (
                 <>
-                  Register as Citizen <ArrowRight size={14} />
+                  {t('auth.registerButton')} <ArrowRight size={14} />
                 </>
               )}
             </button>
@@ -190,9 +219,9 @@ export default function RegisterPage() {
           {/* Login Link */}
           <div className="mt-6 pt-5 border-t border-slate-100 text-center">
             <p className="text-xs text-slate-600">
-              Already have an account?{' '}
+              {t('auth.alreadyHaveAccount')}{' '}
               <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-800 underline">
-                Sign in here
+                {t('auth.signInHere')}
               </Link>
             </p>
           </div>
@@ -201,10 +230,10 @@ export default function RegisterPage() {
           <div className="mt-5 p-3 rounded bg-amber-50 border border-amber-200 text-[11px] text-amber-800 space-y-1">
             <p className="font-semibold flex items-center gap-1.5 text-amber-900">
               <Shield size={12} className="text-amber-700" />
-              Public Registration Policy
+              {t('auth.publicRegistrationPolicy')}
             </p>
             <p>
-              Self-registration is strictly restricted to citizen accounts. Nodal officer and administrator accounts cannot be created here.
+              {t('auth.registrationPolicyText')}
             </p>
           </div>
         </div>
