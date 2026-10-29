@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { createComplaint, fetchDepartments, analyzeGrievancePreview } from '../api/client';
+import VoiceInput, { mergeTranscript } from '../components/VoiceInput';
 import {
   FilePlus,
   Send,
@@ -127,6 +128,11 @@ export default function SubmitComplaintPage() {
       setDepartmentId(recDeptId);
     }
     setAiApplied(true);
+  };
+
+  const handleVoiceTranscript = (transcriptText, mode = 'append') => {
+    if (!transcriptText || !transcriptText.trim()) return;
+    setDescription((prev) => mergeTranscript(prev, transcriptText, mode));
   };
 
   const handleSubmit = async (e) => {
@@ -441,10 +447,19 @@ export default function SubmitComplaintPage() {
         </div>
 
         {/* Description */}
-        <div className="space-y-1.5">
-          <label htmlFor="complaint-description" className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
-            Detailed Grievance Narrative <span className="text-rose-600">*</span>
-          </label>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label htmlFor="complaint-description" className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
+              Detailed Grievance Narrative <span className="text-rose-600">*</span>
+            </label>
+            <span className="text-[11px] text-slate-400 font-medium">Speak or Type</span>
+          </div>
+
+          {/* Multilingual Voice Input Assistant */}
+          <VoiceInput
+            onTranscript={handleVoiceTranscript}
+            disabled={submitting}
+          />
           <textarea
             id="complaint-description"
             required
