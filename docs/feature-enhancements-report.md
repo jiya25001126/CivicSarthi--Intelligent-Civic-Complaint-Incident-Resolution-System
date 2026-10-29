@@ -117,3 +117,4 @@ To enable live SMS and WhatsApp delivery on Render:
    TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
    ```
 3. Trigger deployment. The backend will automatically initialize the Twilio adapter while preserving existing grievance workflows.
+
