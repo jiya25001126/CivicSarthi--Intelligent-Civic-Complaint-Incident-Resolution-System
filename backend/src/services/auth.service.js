@@ -6,6 +6,7 @@ import config from '../config/app.config.js';
 import { userRepository } from '../repositories/user.repository.js';
 import { departmentRepository } from '../repositories/department.repository.js';
 import { auditLogRepository } from '../repositories/auditLog.repository.js';
+import { seedDemoUsers, DEFAULT_DEMO_USERS, DEMO_PASSWORD_DEFAULT } from './demoSeed.service.js';
 
 export const registerSchema = z.object({
   email: z.string().trim().email('Valid email address is required').toLowerCase(),
@@ -207,6 +208,13 @@ export class AuthService {
     return crypto.randomBytes(24).toString('hex');
   }
 
+  /**
+   * Seed development demo accounts idempotently.
+   */
+  async seedDemoUsers(options = {}) {
+    return seedDemoUsers({ userRepository, ...options });
+  }
+
   sanitizeUser(user) {
     if (!user) return null;
     return {
@@ -223,4 +231,5 @@ export class AuthService {
 }
 
 export const authService = new AuthService();
+export { seedDemoUsers, DEFAULT_DEMO_USERS, DEMO_PASSWORD_DEFAULT };
 export default authService;

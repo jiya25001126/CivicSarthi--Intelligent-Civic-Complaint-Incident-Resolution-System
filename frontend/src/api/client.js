@@ -1,6 +1,15 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+export function resolveApiBaseUrl(configuredUrl, isProd = false) {
+  if (configuredUrl && typeof configuredUrl === 'string' && configuredUrl.trim() !== '') {
+    return configuredUrl.trim().replace(/\/+$/, '');
+  }
+  return isProd ? '' : 'http://localhost:5000';
+}
+
+const envUrl = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_API_URL : undefined;
+const isProduction = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.PROD : false;
+const API_BASE_URL = resolveApiBaseUrl(envUrl, isProduction);
 
 function getCookie(name) {
   if (typeof document === 'undefined') return null;
@@ -157,6 +166,24 @@ export async function addOfficerNote(id, { note }) {
   const res = await api.post(`/complaints/${encodeURIComponent(id)}/notes`, {
     note
   });
+  return res.data;
+}
+
+export async function uploadAttachment(payload) {
+  let csrf = getCookie('civicsarthi_csrf');
+  if (!csrf && typeof window !== 'undefined') {
+    try {
+      csrf = localStorage.getItem('civicsarthi_csrf');
+    } catch {}
+  }
+  if (!csrf) {
+    csrf = await fetchCsrfToken();
+  }
+  const headers = {};
+  if (csrf) {
+    headers['x-csrf-token'] = csrf;
+  }
+  const res = await api.post('/complaints/upload', payload, { headers });
   return res.data;
 }
 

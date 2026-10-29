@@ -885,7 +885,7 @@ export default function NeglectRadarPage() {
                               <span
                                 key={signal.code}
                                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-800 border border-slate-200"
-                                title={signal.evidence}
+                                title={signal.message || (typeof signal.evidence === 'object' ? JSON.stringify(signal.evidence) : String(signal.evidence || ''))}
                               >
                                 <span>{signal.name}</span>
                                 <span className="font-bold text-slate-500">+{signal.points}</span>
@@ -1187,9 +1187,35 @@ export default function NeglectRadarPage() {
                             </span>
                           </div>
 
-                          <p className="text-slate-600 text-[11px] mt-1.5 leading-relaxed bg-white/60 p-2 rounded border border-slate-100">
-                            <strong>Evidence:</strong> {signal.evidence}
-                          </p>
+                          <div className="text-slate-600 text-[11px] mt-1.5 leading-relaxed bg-white/60 p-2.5 rounded-lg border border-slate-100 space-y-1.5">
+                            {signal.message && (
+                              <p className="text-slate-800 font-medium leading-snug">
+                                {signal.message}
+                              </p>
+                            )}
+                            {signal.evidence && typeof signal.evidence === 'object' ? (
+                              <div className="pt-1 border-t border-slate-100/80">
+                                <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                                  Telemetry Evidence Parameters
+                                </span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {Object.entries(signal.evidence).map(([k, v]) => (
+                                    <span
+                                      key={k}
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-mono border border-slate-200"
+                                    >
+                                      <span className="text-slate-500 font-semibold">{k}:</span>
+                                      <span className="font-bold">{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : signal.evidence ? (
+                              <p className="text-slate-700">
+                                <strong>Evidence:</strong> {String(signal.evidence)}
+                              </p>
+                            ) : null}
+                          </div>
                         </div>
                       ))}
                     </div>

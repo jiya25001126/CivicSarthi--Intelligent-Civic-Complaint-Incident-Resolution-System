@@ -3,28 +3,27 @@ import authService from '../services/auth.service.js';
 
 const isProduction = config.env === 'production';
 
-const cookieOptions = {
-  httpOnly: true,
+export const getCookieOptions = (isSessionCookie = true) => ({
+  httpOnly: Boolean(isSessionCookie),
   secure: isProduction,
   sameSite: 'lax',
   path: '/',
   maxAge: 24 * 60 * 60 * 1000 // 24 hours
-};
+});
 
-const csrfCookieOptions = {
-  httpOnly: false, // Must be readable by client script to send in x-csrf-token header
+export const getClearCookieOptions = (isSessionCookie = true) => ({
+  httpOnly: Boolean(isSessionCookie),
   secure: isProduction,
   sameSite: 'lax',
-  path: '/',
-  maxAge: 24 * 60 * 60 * 1000
-};
+  path: '/'
+});
 
 export const register = async (req, res, next) => {
   try {
     const { user, token, csrfToken } = await authService.register(req.body);
 
-    res.cookie(config.auth.cookieName, token, cookieOptions);
-    res.cookie(config.auth.csrfCookieName, csrfToken, csrfCookieOptions);
+    res.cookie(config.auth.cookieName, token, getCookieOptions(true));
+    res.cookie(config.auth.csrfCookieName, csrfToken, getCookieOptions(false));
 
     res.status(201).json({
       success: true,
@@ -44,8 +43,8 @@ export const login = async (req, res, next) => {
   try {
     const { user, token, csrfToken } = await authService.login(req.body);
 
-    res.cookie(config.auth.cookieName, token, cookieOptions);
-    res.cookie(config.auth.csrfCookieName, csrfToken, csrfCookieOptions);
+    res.cookie(config.auth.cookieName, token, getCookieOptions(true));
+    res.cookie(config.auth.csrfCookieName, csrfToken, getCookieOptions(false));
 
     res.json({
       success: true,
@@ -62,19 +61,8 @@ export const login = async (req, res, next) => {
 };
 
 export const logout = (req, res) => {
-  res.clearCookie(config.auth.cookieName, {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: 'lax',
-    path: '/'
-  });
-
-  res.clearCookie(config.auth.csrfCookieName, {
-    httpOnly: false,
-    secure: isProduction,
-    sameSite: 'lax',
-    path: '/'
-  });
+  res.clearCookie(config.auth.cookieName, getClearCookieOptions(true));
+  res.clearCookie(config.auth.csrfCookieName, getClearCookieOptions(false));
 
   res.json({
     success: true,
@@ -84,7 +72,7 @@ export const logout = (req, res) => {
 
 export const getCurrentUser = (req, res) => {
   const csrfToken = req.cookies?.[config.auth.csrfCookieName] || authService.generateCsrfToken();
-  res.cookie(config.auth.csrfCookieName, csrfToken, csrfCookieOptions);
+  res.cookie(config.auth.csrfCookieName, csrfToken, getCookieOptions(false));
 
   res.json({
     success: true,
@@ -97,5 +85,7 @@ export default {
   register,
   login,
   logout,
-  getCurrentUser
+  getCurrentUser,
+  getCookieOptions,
+  getClearCookieOptions
 };

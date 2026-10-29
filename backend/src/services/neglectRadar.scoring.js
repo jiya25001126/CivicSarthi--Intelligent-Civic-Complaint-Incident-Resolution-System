@@ -562,6 +562,7 @@ export function evaluateEntityRisk(entity, entityType, options = {}) {
     signals: evaluatedSignals,
     triggeredSignals,
     missingSignals: evaluatedSignals.filter(s => !s.isAvailable).map(s => s.code),
+    evidence: entity.evidence || [],
     evidenceSummary: {
       elapsedDays,
       daysSinceProgress,

@@ -211,9 +211,9 @@ export class IncidentService {
    * Sanitize an incident object for safe citizen/public view.
    * Conceals internal administrative details while preserving tracking visibility.
    */
-  sanitizeForCitizen(incident) {
+  sanitizeForCitizen(incident, { isDetail = false } = {}) {
     if (!incident) return null;
-    return {
+    const sanitized = {
       id: incident.id,
       title: incident.title,
       description: incident.description,
@@ -230,6 +230,13 @@ export class IncidentService {
       closedAt: incident.closedAt || null,
       resolutionSummary: incident.resolutionSummary || null
     };
+
+    if (isDetail) {
+      sanitized.linkedComplaints = Array.isArray(incident.linkedComplaints) ? incident.linkedComplaints : [];
+      sanitized.linkedComplaintsDetails = Array.isArray(incident.linkedComplaintsDetails) ? incident.linkedComplaintsDetails : [];
+    }
+
+    return sanitized;
   }
 
   // =========================================================================
@@ -387,7 +394,7 @@ export class IncidentService {
     };
 
     let linkedComplaintsDetails = [];
-    if (isOfficer && Array.isArray(incident.linkedComplaints) && incident.linkedComplaints.length > 0 && this.complaintRepo) {
+    if (Array.isArray(incident.linkedComplaints) && incident.linkedComplaints.length > 0 && this.complaintRepo) {
       for (const cid of incident.linkedComplaints) {
         try {
           const cmp = await this.complaintRepo.findById(cid);
@@ -428,10 +435,10 @@ export class IncidentService {
       ...incident,
       subtasksSummary,
       ...(includeSubtasks ? { subtasks } : {}),
-      ...(isOfficer ? { linkedComplaintsDetails } : {})
+      linkedComplaintsDetails
     };
 
-    return isOfficer ? enriched : this.sanitizeForCitizen(enriched);
+    return isOfficer ? enriched : this.sanitizeForCitizen(enriched, { isDetail: true });
   }
 
   /**

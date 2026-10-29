@@ -17,6 +17,33 @@ const slaConfig = JSON.parse(fs.readFileSync(slaConfigPath, 'utf-8'));
 const env = process.env.NODE_ENV || 'development';
 const jwtSecret = process.env.JWT_SECRET || (env === 'production' ? null : 'civicsarthi_dev_insecure_jwt_secret_change_in_production');
 
+export function validateProductionConfig(targetEnv = process.env.NODE_ENV || 'development', envVars = process.env) {
+  if (targetEnv !== 'production') {
+    return { valid: true, errors: [] };
+  }
+
+  const errors = [];
+  const secret = envVars.JWT_SECRET;
+  if (!secret || secret.length < 16) {
+    errors.push('JWT_SECRET must be set and contain at least 16 characters in production.');
+  }
+
+  const persistence = (envVars.PERSISTENCE_MODE || '').toLowerCase();
+  if (persistence !== 'mongodb') {
+    errors.push('PERSISTENCE_MODE must be set to mongodb in production.');
+  }
+
+  const mongoUri = envVars.MONGODB_URI;
+  if (!mongoUri || mongoUri.trim() === '') {
+    errors.push('MONGODB_URI must be set in production.');
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+}
+
 // Fail safely in production if JWT_SECRET is not configured
 if (env === 'production' && (!jwtSecret || jwtSecret.length < 16)) {
   console.error('[CivicSarthi Security Fatal] In production, JWT_SECRET must be set and contain at least 16 characters.');

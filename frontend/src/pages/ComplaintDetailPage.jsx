@@ -27,11 +27,15 @@ import {
   requestComplaintReminder,
   fetchComplaintReminderStatus,
   fetchComplaintReminders,
-  fetchComplaintStatusExplanation
+  fetchComplaintStatusExplanation,
+  API_BASE_URL
 } from '../api/client';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
 import {
   ArrowLeft,
+  ArrowRight,
+  ExternalLink,
+  Image as ImageIcon,
   Calendar,
   Clock,
   Shield,
@@ -174,13 +178,18 @@ export default function ComplaintDetailPage() {
     try {
       setLoading(true);
       setError(null);
-      const [compRes, deptsRes] = await Promise.all([
+      const [compSettled, deptsSettled] = await Promise.allSettled([
         fetchComplaintById(id),
         fetchDepartments()
       ]);
-      const comp = compRes.data;
+      if (compSettled.status === 'rejected') {
+        throw compSettled.reason;
+      }
+      const comp = compSettled.value.data;
       setComplaint(comp);
-      setDepartments(deptsRes.data || []);
+      if (deptsSettled.status === 'fulfilled') {
+        setDepartments(deptsSettled.value.data || []);
+      }
       if (comp) {
         setReassignDeptId(comp.departmentId || comp.department || '');
         setNewPriority(comp.priority || 'MEDIUM');
@@ -805,16 +814,69 @@ export default function ComplaintDetailPage() {
               Attached Evidence & Citations
             </h2>
             {complaint.evidence && complaint.evidence.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {complaint.evidence.map((item, idx) => (
-                  <span
-                    key={idx}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-900 border border-blue-200 text-xs font-medium"
-                  >
-                    <Paperclip size={13} className="text-blue-600" />
-                    {item}
-                  </span>
-                ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {complaint.evidence.map((item, idx) => {
+                  const isImage = typeof item === 'string' && (
+                    item.startsWith('ATTACH-') ||
+                    /\.(jpe?g|png|webp)$/i.test(item)
+                  );
+                  const attachmentUrl = isImage ? `${API_BASE_URL}/api/v1/complaints/attachments/${encodeURIComponent(item)}` : null;
+
+                  if (isImage) {
+                    return (
+                      <div
+                        key={idx}
+                        className="group bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs hover:shadow-md transition flex flex-col"
+                      >
+                        <div className="relative h-32 bg-slate-100 overflow-hidden flex items-center justify-center">
+                          <img
+                            src={attachmentUrl}
+                            alt={`Evidence ${item}`}
+                            className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.style.display = 'none';
+                              if (e.target.nextSibling) {
+                                e.target.nextSibling.style.display = 'flex';
+                              }
+                            }}
+                          />
+                          <div style={{ display: 'none' }} className="p-3 text-center text-slate-400 flex flex-col items-center justify-center">
+                            <ImageIcon size={24} className="text-slate-300 mb-1" />
+                            <span className="text-[10px]">Photo Attachment</span>
+                          </div>
+                        </div>
+                        <div className="p-2.5 flex items-center justify-between gap-2 bg-white">
+                          <div className="min-w-0 flex-1">
+                            <span className="text-[11px] font-semibold text-slate-800 block truncate" title={item}>
+                              {item}
+                            </span>
+                            <span className="text-[10px] text-slate-400">Attached Photo</span>
+                          </div>
+                          <a
+                            href={attachmentUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition"
+                            title="View full size in new tab"
+                          >
+                            <ExternalLink size={14} />
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={idx}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-50 text-blue-900 border border-blue-200 text-xs font-medium"
+                    >
+                      <Paperclip size={14} className="text-blue-600 shrink-0" />
+                      <span className="truncate" title={String(item)}>{String(item)}</span>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <p className="text-xs text-slate-500 italic">No attachments lodged with this grievance.</p>

@@ -15,7 +15,9 @@ import {
   getComplaintIntelligence,
   getComplaintDuplicates,
   updateComplaintPriority,
-  linkDuplicateComplaint
+  linkDuplicateComplaint,
+  uploadComplaintAttachment,
+  getComplaintAttachment
 } from '../controllers/complaint.controller.js';
 import { validate } from '../middleware/validate.middleware.js';
 import {
@@ -81,6 +83,17 @@ const createComplaintSchema = {
     citizenEmail: z.string().email().optional(),
     citizenPhone: z.string().max(20).optional(),
     idempotencyKey: z.string().max(100).optional()
+  })
+};
+
+const uploadAttachmentSchema = {
+  body: z.object({
+    filename: z.string().min(1).max(255),
+    mimeType: z.string().min(1).max(100),
+    base64Data: z.string().min(1, 'Image data is required').optional(),
+    data: z.string().min(1, 'Image data is required').optional()
+  }).refine((d) => d.base64Data || d.data, {
+    message: 'Image data payload is required'
   })
 };
 
@@ -223,9 +236,11 @@ router.post('/analyze', submissionRateLimiter, validate(analyzeSchema), analyzeG
 
 // ==========================================
 // Protected Endpoints (Authentication strictly required)
-// NOTE: Static routes (/my) must precede dynamic param routes (/:id)
+// NOTE: Static routes (/my, /upload, /attachments) must precede dynamic param routes (/:id)
 // ==========================================
 router.get('/my', authenticate, validate(listComplaintsSchema), listMyComplaints);
+router.post('/upload', authenticate, submissionRateLimiter, validate(uploadAttachmentSchema), uploadComplaintAttachment);
+router.get('/attachments/:filename', authenticate, getComplaintAttachment);
 router.get('/', authenticate, validate(listComplaintsSchema), listComplaints);
 router.get('/:id', authenticate, validate(getComplaintSchema), getComplaint);
 router.get('/:id/intelligence', authenticate, validate(getComplaintSchema), getComplaintIntelligence);
