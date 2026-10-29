@@ -15,6 +15,10 @@ export class FeedbackRepository {
     }
   }
 
+  get filePath() {
+    return (this._customJsonRepo || jsonFeedbackRepository).filePath;
+  }
+
   resetFilePath() {
     if (this._customJsonRepo) {
       this._customJsonRepo.resetFilePath();

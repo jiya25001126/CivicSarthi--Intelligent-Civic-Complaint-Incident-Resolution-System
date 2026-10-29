@@ -30,9 +30,24 @@ import { incidentService } from '../src/services/incident.service.js';
 import { evaluateEntityRisk } from '../src/services/neglectRadar.scoring.js';
 import { runMigration } from '../src/scripts/migrate.js';
 import config from '../src/config/app.config.js';
+import { incidentRepository } from '../src/repositories/incident.repository.js';
+import { subtaskRepository } from '../src/repositories/subtask.repository.js';
+import complaintRepository from '../src/repositories/complaint.repository.js';
+import spamReviewRepository from '../src/repositories/spamReview.repository.js';
+import appealRepository from '../src/repositories/appeal.repository.js';
+import reopeningRequestRepository from '../src/repositories/reopeningRequest.repository.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const SANDBOX_DIR = path.resolve(__dirname, 'sandbox-production-bugfix');
+const SANDBOX_COMPLAINTS_FILE = path.join(SANDBOX_DIR, 'complaints.test.json');
+const SANDBOX_SPAM_REVIEWS_FILE = path.join(SANDBOX_DIR, 'spam_reviews.test.json');
+const SANDBOX_AUDIT_FILE = path.join(SANDBOX_DIR, 'audit_logs.test.json');
+const SANDBOX_INCIDENTS_FILE = path.join(SANDBOX_DIR, 'incidents.test.json');
+const SANDBOX_SUBTASKS_FILE = path.join(SANDBOX_DIR, 'subtasks.test.json');
+const SANDBOX_APPEALS_FILE = path.join(SANDBOX_DIR, 'appeals.test.json');
+const SANDBOX_REOPENINGS_FILE = path.join(SANDBOX_DIR, 'reopenings.test.json');
 
 describe('Production Bug Fixes Regression Suite (Problems A - G & MongoDB Persistence)', () => {
   // Test Actors
@@ -55,6 +70,46 @@ describe('Production Bug Fixes Regression Suite (Problems A - G & MongoDB Persis
     role: 'citizen',
     name: 'Citizen Ramesh'
   };
+
+  before(async () => {
+    await fs.mkdir(SANDBOX_DIR, { recursive: true });
+    await fs.copyFile(config.dataPath.complaints, SANDBOX_COMPLAINTS_FILE);
+    await fs.copyFile(config.dataPath.spamReviews, SANDBOX_SPAM_REVIEWS_FILE);
+    await fs.copyFile(config.dataPath.auditLogs, SANDBOX_AUDIT_FILE);
+    await fs.copyFile(config.dataPath.incidents, SANDBOX_INCIDENTS_FILE);
+    await fs.copyFile(config.dataPath.subtasks, SANDBOX_SUBTASKS_FILE);
+    await fs.copyFile(config.dataPath.appeals, SANDBOX_APPEALS_FILE);
+    await fs.copyFile(config.dataPath.reopeningRequests, SANDBOX_REOPENINGS_FILE);
+
+    jsonComplaintRepository.setFilePath(SANDBOX_COMPLAINTS_FILE);
+    complaintRepository.setFilePath(SANDBOX_COMPLAINTS_FILE);
+    jsonSpamReviewRepository.setFilePath(SANDBOX_SPAM_REVIEWS_FILE);
+    spamReviewRepository.setFilePath(SANDBOX_SPAM_REVIEWS_FILE);
+    auditLogRepository.setFilePath(SANDBOX_AUDIT_FILE);
+    incidentRepository.setFilePath(SANDBOX_INCIDENTS_FILE);
+    subtaskRepository.setFilePath(SANDBOX_SUBTASKS_FILE);
+    jsonAppealRepository.setFilePath(SANDBOX_APPEALS_FILE);
+    appealRepository.setFilePath(SANDBOX_APPEALS_FILE);
+    jsonReopeningRequestRepository.setFilePath(SANDBOX_REOPENINGS_FILE);
+    reopeningRequestRepository.setFilePath(SANDBOX_REOPENINGS_FILE);
+  });
+
+  after(async () => {
+    try {
+      jsonComplaintRepository.resetFilePath();
+      complaintRepository.resetFilePath();
+      jsonSpamReviewRepository.resetFilePath();
+      spamReviewRepository.resetFilePath();
+      auditLogRepository.resetFilePath();
+      incidentRepository.resetFilePath();
+      subtaskRepository.resetFilePath();
+      jsonAppealRepository.resetFilePath();
+      appealRepository.resetFilePath();
+      jsonReopeningRequestRepository.resetFilePath();
+      reopeningRequestRepository.resetFilePath();
+      await fs.rm(SANDBOX_DIR, { recursive: true, force: true });
+    } catch {}
+  });
 
   // Valid 1x1 PNG Base64 with real PNG signature (89 50 4E 47)
   const validPngBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';

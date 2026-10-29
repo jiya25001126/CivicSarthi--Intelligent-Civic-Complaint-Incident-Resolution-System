@@ -10,6 +10,12 @@ export class MongoNotificationLogRepository {
     return doc.toObject();
   }
 
+  async findByProviderMessageId(providerMessageId) {
+    if (!providerMessageId) return null;
+    const doc = await NotificationLog.findOne({ providerMessageId }).lean();
+    return doc || null;
+  }
+
   async findById(id) {
     const doc = await NotificationLog.findOne({ id }).lean();
     return doc;

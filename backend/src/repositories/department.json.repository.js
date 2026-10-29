@@ -6,15 +6,23 @@ import config from '../config/app.config.js';
  */
 export class JsonDepartmentRepository {
   constructor(customFilePath = null) {
-    this.filePath = customFilePath || config.dataPath.departments;
+    this._customFilePath = customFilePath;
+  }
+
+  get filePath() {
+    return this._customFilePath || config.dataPath.departments;
+  }
+
+  set filePath(path) {
+    this._customFilePath = path;
   }
 
   setFilePath(customPath) {
-    this.filePath = customPath;
+    this._customFilePath = customPath;
   }
 
   resetFilePath() {
-    this.filePath = config.dataPath.departments;
+    this._customFilePath = null;
   }
 
   async _readFile() {

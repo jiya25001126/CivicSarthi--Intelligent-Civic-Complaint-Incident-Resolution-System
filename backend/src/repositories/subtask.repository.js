@@ -20,6 +20,10 @@ export class SubtaskRepository {
     }
   }
 
+  get filePath() {
+    return (this._customJsonRepo || jsonSubtaskRepository).filePath;
+  }
+
   resetFilePath() {
     if (this._customJsonRepo) {
       this._customJsonRepo.resetFilePath();

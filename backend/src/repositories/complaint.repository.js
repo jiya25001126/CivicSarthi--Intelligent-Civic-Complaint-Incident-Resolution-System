@@ -22,6 +22,10 @@ export class ComplaintRepository {
     }
   }
 
+  get filePath() {
+    return (this._customJsonRepo || jsonComplaintRepository).filePath;
+  }
+
   resetFilePath() {
     if (this._customJsonRepo) {
       this._customJsonRepo.resetFilePath();

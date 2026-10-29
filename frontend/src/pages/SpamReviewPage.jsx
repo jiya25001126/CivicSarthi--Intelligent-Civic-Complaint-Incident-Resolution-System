@@ -345,8 +345,30 @@ export default function SpamReviewPage() {
           <ShieldCheck size={36} className="mx-auto mb-3 text-emerald-500" />
           <p className="text-base font-semibold text-slate-700">{t.spamReview.noFlaggedFound || 'No flagged complaints found'}</p>
           <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
-            {t.spamReview.noFlaggedDesc || 'All submitted grievances in your authorized scope are either clean or have already been reviewed by an officer.'}
+            {user?.role === 'officer' && user?.departmentId
+              ? `There are currently no suspicious or flagged complaints requiring review for department ${user.departmentId}.`
+              : (t.spamReview?.noFlaggedDesc || 'All submitted grievances in your authorized administrative scope are either clean or have already been reviewed.')}
           </p>
+          {user?.role === 'officer' && (
+            <p className="text-[11px] text-slate-400 mt-1 max-w-md mx-auto italic">
+              Notice: Your review desk is strictly scoped to your assigned department. System administrators retain cross-department oversight across all municipal departments.
+            </p>
+          )}
+          {(statusFilter !== 'ALL' || riskFilter !== 'ALL' || searchTerm) && (
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setStatusFilter('ALL');
+                  setRiskFilter('ALL');
+                  setSearchTerm('');
+                }}
+                className="text-xs font-semibold text-blue-600 hover:text-blue-800 underline"
+              >
+                Clear active filters to view all records
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -583,24 +605,53 @@ export default function SpamReviewPage() {
                 </div>
 
                 {/* Structured Risk Indicators (Feature B Explainability) */}
-                {(selectedReview.riskIndicators || selectedReview.complaint?.screeningResult?.riskIndicators) && (
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Explainable Risk Factors & Heuristic Weights</h4>
-                    <div className="grid grid-cols-1 gap-2">
-                      {(selectedReview.riskIndicators || selectedReview.complaint?.screeningResult?.riskIndicators || []).map((ind, i) => (
-                        <div key={i} className="p-3 rounded-lg border border-slate-200 bg-slate-50 text-xs flex flex-col gap-1">
-                          <div className="flex items-center justify-between font-semibold">
-                            <span className="text-slate-900 font-mono">{ind.signal || ind.code}</span>
-                            <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-800 font-bold">+{ind.weight || ind.score} pts</span>
-                          </div>
-                          <p className="text-slate-700">{ind.description}</p>
-                          {ind.evidence && <p className="text-[11px] text-slate-500 font-medium">Evidence: {ind.evidence}</p>}
-                          {ind.recommendation && <p className="text-[11px] text-blue-700 font-medium">Recommendation: {ind.recommendation}</p>}
+                {(() => {
+                  const indicators = selectedReview.riskIndicators || selectedReview.complaint?.screeningResult?.riskIndicators;
+                  const hasIndicators = Array.isArray(indicators) && indicators.length > 0;
+                  const hasReasons = Array.isArray(selectedReview.reasons) && selectedReview.reasons.length > 0;
+                  const signals = selectedReview.screeningSignals || selectedReview.complaint?.screeningResult?.signals;
+
+                  if (hasIndicators) {
+                    return (
+                      <div className="space-y-2">
+                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Explainable Risk Factors & Heuristic Weights</h4>
+                        <div className="grid grid-cols-1 gap-2">
+                          {indicators.map((ind, i) => (
+                            <div key={i} className="p-3 rounded-lg border border-slate-200 bg-slate-50 text-xs flex flex-col gap-1">
+                              <div className="flex items-center justify-between font-semibold">
+                                <span className="text-slate-900 font-mono">{ind.signal || ind.code}</span>
+                                <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-800 font-bold">+{ind.weight || ind.score} pts</span>
+                              </div>
+                              <p className="text-slate-700">{ind.description}</p>
+                              {ind.evidence && <p className="text-[11px] text-slate-500 font-medium">Evidence: {ind.evidence}</p>}
+                              {ind.recommendation && <p className="text-[11px] text-blue-700 font-medium">Recommendation: {ind.recommendation}</p>}
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      </div>
+                    );
+                  }
+
+                  if (hasReasons || signals) {
+                    return (
+                      <div className="space-y-2">
+                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Explainable Risk Factors & Heuristic Evaluation</h4>
+                        <div className="p-3 rounded-lg border border-amber-200 bg-amber-50/70 text-xs text-amber-900 space-y-1">
+                          <p className="font-semibold text-amber-950">Heuristic Signals Breakdown</p>
+                          <p className="text-[11px] text-amber-800">
+                            Evaluated with rule-based screening score ({selectedReview.score || 0}/100) prior to granular weight tracking. Triggered reason signals are detailed below:
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="p-3 rounded-lg border border-slate-200 bg-slate-50 text-xs text-slate-500 italic">
+                      No automated heuristic weights or screening risk indicators recorded for this complaint.
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {selectedReview.reasons && selectedReview.reasons.length > 0 ? (
                   <div className="space-y-2">

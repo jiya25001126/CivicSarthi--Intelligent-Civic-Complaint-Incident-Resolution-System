@@ -94,7 +94,8 @@ export class SpamReviewService {
         category: complaint.category,
         locality: complaint.locality,
         status: complaint.status,
-        createdAt: complaint.createdAt
+        createdAt: complaint.createdAt,
+        screeningResult: complaint.screeningResult || null
       } : null,
       citizenReputation: reputation ? {
         standing: reputation.standing,

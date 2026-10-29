@@ -15,6 +15,10 @@ export class AppealRepository {
     }
   }
 
+  get filePath() {
+    return (this._customJsonRepo || jsonAppealRepository).filePath;
+  }
+
   resetFilePath() {
     if (this._customJsonRepo) {
       this._customJsonRepo.resetFilePath();

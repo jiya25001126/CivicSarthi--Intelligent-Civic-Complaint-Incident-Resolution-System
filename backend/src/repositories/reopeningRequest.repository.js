@@ -20,6 +20,10 @@ export class ReopeningRequestRepository {
     }
   }
 
+  get filePath() {
+    return (this._customJsonRepo || jsonReopeningRequestRepository).filePath;
+  }
+
   resetFilePath() {
     if (this._customJsonRepo) {
       this._customJsonRepo.resetFilePath();

@@ -170,6 +170,7 @@ describe('UX Copy & Production Readiness Audit', () => {
       customAnalyticsService.getDepartmentPerformance = async () => ({ departments: [] });
       customAnalyticsService.getCategoryAndGeography = async () => ({ categories: [], geography: [] });
       customAnalyticsService.getWorkflowAndQuality = async () => mockWorkflow;
+      customAnalyticsService.auditRepo = { log: async () => ({}) };
 
       const report = await customAnalyticsService.exportReport(
         { reportType: 'all' },

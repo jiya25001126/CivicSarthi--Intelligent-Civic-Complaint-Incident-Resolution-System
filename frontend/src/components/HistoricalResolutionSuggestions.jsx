@@ -13,19 +13,35 @@ import {
   RefreshCw
 } from 'lucide-react';
 
-export default function HistoricalResolutionSuggestions({ complaintId, onApplyTemplate }) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+// In-memory module cache to prevent duplicate API requests when rendered in multiple locations
+const suggestionsCache = new Map();
+
+export default function HistoricalResolutionSuggestions({
+  complaintId,
+  onApplyTemplate,
+  title = 'Historical Resolution Suggestions',
+  subtitle = 'Assists officers with proven remediation strategies from prior resolved cases.',
+  badgeText = null
+}) {
+  const [data, setData] = useState(() => (complaintId ? suggestionsCache.get(complaintId) || null : null));
+  const [loading, setLoading] = useState(() => (complaintId ? !suggestionsCache.has(complaintId) : false));
   const [error, setError] = useState(null);
   const [copiedIndex, setCopiedIndex] = useState(null);
 
-  const loadSuggestions = async () => {
+  const loadSuggestions = async (force = false) => {
     if (!complaintId) return;
+    if (!force && suggestionsCache.has(complaintId)) {
+      setData(suggestionsCache.get(complaintId));
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
       const res = await fetchHistoricalResolutionSuggestions(complaintId);
-      setData(res.data);
+      const resData = res?.data || null;
+      suggestionsCache.set(complaintId, resData);
+      setData(resData);
     } catch (err) {
       setError(err.message || 'Failed to load historical resolution suggestions');
     } finally {
@@ -34,7 +50,9 @@ export default function HistoricalResolutionSuggestions({ complaintId, onApplyTe
   };
 
   useEffect(() => {
-    loadSuggestions();
+    if (complaintId) {
+      loadSuggestions(false);
+    }
   }, [complaintId]);
 
   const handleApply = (summary, index) => {
@@ -62,7 +80,8 @@ export default function HistoricalResolutionSuggestions({ complaintId, onApplyTe
           <span>{error}</span>
         </div>
         <button
-          onClick={loadSuggestions}
+          type="button"
+          onClick={() => loadSuggestions(true)}
           className="text-xs font-semibold text-amber-900 underline hover:no-underline"
         >
           Retry
@@ -78,29 +97,38 @@ export default function HistoricalResolutionSuggestions({ complaintId, onApplyTe
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="p-1.5 rounded-lg bg-indigo-600 text-white">
+          <span className="p-1.5 rounded-lg bg-indigo-600 text-white shrink-0 shadow-sm">
             <Sparkles size={16} />
           </span>
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-950">
-              Historical Resolution Suggestions
-            </h4>
+            <div className="flex items-center gap-2">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-950">
+                {title}
+              </h4>
+              {badgeText && (
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-200 text-indigo-900">
+                  {badgeText}
+                </span>
+              )}
+            </div>
             <p className="text-[11px] text-indigo-800/80">
-              Assists officers with proven remediation strategies from prior resolved cases.
+              {subtitle}
             </p>
           </div>
         </div>
         <button
-          onClick={loadSuggestions}
-          className="text-indigo-600 hover:text-indigo-800 text-xs font-medium flex items-center gap-1"
+          type="button"
+          onClick={() => loadSuggestions(true)}
+          className="text-indigo-600 hover:text-indigo-800 text-xs font-medium flex items-center gap-1 p-1 rounded hover:bg-indigo-100/60 transition"
           title="Refresh suggestions"
         >
           <RefreshCw size={12} />
+          <span className="text-[10px] hidden sm:inline">Refresh</span>
         </button>
       </div>
 
       {/* Advisory Banner */}
-      <div className="p-2 rounded-lg bg-white border border-indigo-100 text-[11px] text-slate-600 flex items-center gap-1.5">
+      <div className="p-2 rounded-lg bg-white border border-indigo-100 text-[11px] text-slate-600 flex items-center gap-1.5 shadow-sm">
         <ShieldCheck size={14} className="text-indigo-600 shrink-0" />
         <span>Advisory Intelligence: Suggestions are strictly decision-support. Officers retain full operational authority.</span>
       </div>
@@ -195,4 +223,3 @@ export default function HistoricalResolutionSuggestions({ complaintId, onApplyTe
     </div>
   );
 }
-

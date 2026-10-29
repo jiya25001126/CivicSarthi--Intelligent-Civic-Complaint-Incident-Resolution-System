@@ -1,5 +1,5 @@
 import fs from 'fs/promises';
-import config from '../config/app.config.js';
+import config, { assertSafeWritePath } from '../config/app.config.js';
 import { CLARIFICATION_STATUS } from '../constants/clarification.constants.js';
 
 class AsyncMutex {
@@ -16,16 +16,24 @@ class AsyncMutex {
 
 export class JsonClarificationRepository {
   constructor(customFilePath = null) {
-    this.filePath = customFilePath || config.dataPath.clarifications;
+    this._customFilePath = customFilePath;
     this._mutex = new AsyncMutex();
   }
 
+  get filePath() {
+    return this._customFilePath || config.dataPath.clarifications;
+  }
+
+  set filePath(path) {
+    this._customFilePath = path;
+  }
+
   setFilePath(customPath) {
-    this.filePath = customPath;
+    this._customFilePath = customPath;
   }
 
   resetFilePath() {
-    this.filePath = config.dataPath.clarifications;
+    this._customFilePath = null;
   }
 
   async _readFile() {
@@ -46,6 +54,7 @@ export class JsonClarificationRepository {
   }
 
   async _writeFile(data) {
+    assertSafeWritePath(this.filePath);
     const content = JSON.stringify(data, null, 2);
     const tempPath = `${this.filePath}.tmp.${Date.now()}.${Math.random().toString(36).slice(2)}`;
     await fs.writeFile(tempPath, content, 'utf-8');
