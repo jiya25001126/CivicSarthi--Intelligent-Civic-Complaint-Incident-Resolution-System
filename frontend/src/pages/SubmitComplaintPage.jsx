@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { createComplaint, fetchDepartments, analyzeGrievancePreview, uploadAttachment } from '../api/client';
 import { useLanguage } from '../context/LanguageContext';
+import LocationPickerMap from '../components/LocationPickerMap';
 import {
   FilePlus,
   Send,
@@ -20,7 +21,8 @@ import {
   UploadCloud,
   X,
   Image as ImageIcon,
-  Trash2
+  Trash2,
+  MapPin
 } from 'lucide-react';
 
 const INDIAN_STATES = [
@@ -59,6 +61,25 @@ export default function SubmitComplaintPage() {
   const [preferredLanguage, setPreferredLanguage] = useState(lang || 'en');
   const [departmentId, setDepartmentId] = useState('');
   const [evidenceName, setEvidenceName] = useState('');
+
+  // GIS Coordinate State (Optional)
+  const [coordinates, setCoordinates] = useState(null);
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState(null);
+  const [showMap, setShowMap] = useState(true);
+  const [showManualCoords, setShowManualCoords] = useState(false);
+  const [manualLat, setManualLat] = useState('');
+  const [manualLng, setManualLng] = useState('');
+  const locateRequestIdRef = useRef(0);
+
+  const handleMapLocationSelect = (newCoords) => {
+    locateRequestIdRef.current += 1;
+    setLocating(false)
+    setLocationError(null);
+    setCoordinates(newCoords);
+    setManualLat(String(newCoords.lat));
+    setManualLng(String(newCoords.lng));
+  };
 
   // Photo Attachment State
   const [selectedFile, setSelectedFile] = useState(null);
@@ -185,6 +206,174 @@ export default function SubmitComplaintPage() {
     };
   }, [filePreview]);
 
+  // Invalidate any pending geolocation request on component unmount
+  useEffect(() => {
+    return () => {
+      locateRequestIdRef.current += 1;
+    };
+  }, []);
+
+  const handleLocateMe = () => {
+    setLocationError(null);
+    if (!navigator.geolocation) {
+      setLocationError(
+        lang === 'hi'
+          ? 'आपके ब्राउज़र में भौगोलिक स्थान (Geolocation) समर्थित नहीं है।'
+          : 'Geolocation is not supported by your browser.'
+      );
+      return;
+    }
+
+    locateRequestIdRef.current += 1;
+    const currentRequestId = locateRequestIdRef.current;
+    setLocating(true);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        if (currentRequestId !== locateRequestIdRef.current) return;
+        const rawLat = position?.coords?.latitude;
+        const rawLng = position?.coords?.longitude;
+
+        if (
+          typeof rawLat !== 'number' ||
+          typeof rawLng !== 'number' ||
+          !Number.isFinite(rawLat) ||
+          !Number.isFinite(rawLng) ||
+          rawLat < -90 ||
+          rawLat > 90 ||
+          rawLng < -180 ||
+          rawLng > 180
+        ) {
+          setLocating(false);
+          setLocationError(
+            lang === 'hi'
+              ? 'ब्राउज़र से प्राप्त जीपीएस निर्देशांक अमान्य हैं।'
+              : 'GPS coordinates received from browser are invalid.'
+          );
+          return;
+        }
+
+        const lat = Number(rawLat.toFixed(6));
+        const lng = Number(rawLng.toFixed(6));
+        setCoordinates({ lat, lng });
+        setManualLat(String(lat));
+        setManualLng(String(lng));
+        setLocating(false);
+      },
+      (err) => {
+        if (currentRequestId !== locateRequestIdRef.current) return;
+        setLocating(false);
+        let msg = lang === 'hi'
+          ? 'स्थान प्राप्त करने में असमर्थ। कृपया मैन्युअल रूप से दर्ज करें।'
+          : 'Unable to retrieve location. Please enter manually.';
+        if (err.code === 1) { // PERMISSION_DENIED
+          msg = lang === 'hi'
+            ? 'स्थान अनुमति अस्वीकृत कर दी गई थी। कृपया अनुमति सक्षम करें या मैन्युअल रूप से दर्ज करें।'
+            : 'Location permission was denied. Please allow access or enter coordinates manually.';
+        } else if (err.code === 2) { // POSITION_UNAVAILABLE
+          msg = lang === 'hi'
+            ? 'स्थान की जानकारी अनुपलब्ध है।'
+            : 'Location information is unavailable.';
+        } else if (err.code === 3) { // TIMEOUT
+          msg = lang === 'hi'
+            ? 'स्थान अनुरोध का समय समाप्त हो गया।'
+            : 'Location request timed out.';
+        }
+        setLocationError(msg);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
+
+  const handleClearCoordinates = () => {
+    locateRequestIdRef.current += 1;
+    setLocating(false);
+    setCoordinates(null);
+    setManualLat('');
+    setManualLng('');
+    setLocationError(null);
+  };
+
+  const handleManualLatChange = (e) => {
+    locateRequestIdRef.current += 1;
+    setLocating(false);
+    setManualLat(e.target.value);
+    setCoordinates(null);
+    setLocationError(null);
+  };
+
+  const handleManualLngChange = (e) => {
+    locateRequestIdRef.current += 1;
+    setLocating(false);
+    setManualLng(e.target.value);
+    setCoordinates(null);
+    setLocationError(null);
+  };
+
+  const handleApplyManualCoordinates = () => {
+    locateRequestIdRef.current += 1;
+    setLocating(false);
+    setLocationError(null);
+
+    const latStr = manualLat.trim();
+    const lngStr = manualLng.trim();
+
+    if (!latStr || !lngStr) {
+      setLocationError(
+        lang === 'hi'
+          ? 'कृपया दोनों अक्षांश (Latitude) और देशांतर (Longitude) दर्ज करें।'
+          : 'Please enter both latitude and longitude.'
+      );
+      return;
+    }
+
+    const floatRegex = /^-?\d+(\.\d+)?$/;
+    if (!floatRegex.test(latStr) || !floatRegex.test(lngStr)) {
+      setLocationError(
+        lang === 'hi'
+          ? 'अक्षांश और देशांतर मान्य दशमलव संख्याएँ होनी चाहिए।'
+          : 'Latitude and longitude must be valid decimal numbers.'
+      );
+      return;
+    }
+
+    const lat = Number(latStr);
+    const lng = Number(lngStr);
+
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
+      setLocationError(
+        lang === 'hi'
+          ? 'अक्षांश (Latitude) -90 और 90 के बीच होना चाहिए।'
+          : 'Latitude must be between -90 and 90.'
+      );
+      return;
+    }
+
+    if (!Number.isFinite(lng) || lng < -180 || lng > 180) {
+      setLocationError(
+        lang === 'hi'
+          ? 'देशांतर (Longitude) -180 और 180 के बीच होना चाहिए।'
+          : 'Longitude must be between -180 and 180.'
+      );
+      return;
+    }
+
+    setCoordinates({
+      lat: Number(lat.toFixed(6)),
+      lng: Number(lng.toFixed(6))
+    });
+  };
+
+  const handleToggleManualCoords = () => {
+    if (!showManualCoords) {
+      locateRequestIdRef.current += 1;
+      setLocating(false);
+      setShowManualCoords(true);
+    } else {
+      setShowManualCoords(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (submitting) return; // Prevent duplicate click
@@ -267,7 +456,10 @@ export default function SubmitComplaintPage() {
         locality: trimmedLocality || undefined,
         preferredLanguage,
         departmentId: departmentId || undefined,
-        evidence: evidenceList
+        evidence: evidenceList,
+        coordinates: coordinates && typeof coordinates.lat === 'number' && typeof coordinates.lng === 'number'
+          ? { lat: coordinates.lat, lng: coordinates.lng }
+          : undefined
       };
 
       const res = await createComplaint(payload, idempotencyKey);
@@ -593,6 +785,152 @@ export default function SubmitComplaintPage() {
                 className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:opacity-60"
               />
             </div>
+          </div>
+
+          {/* GIS Location Picker & Coordinates (Optional) */}
+          <div className="pt-3 border-t border-slate-200/80 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                <MapPin size={14} className="text-blue-600 shrink-0" aria-hidden="true" />
+                <span>
+                  {lang === 'hi' ? 'जीपीएस निर्देशांक (वैकल्पिक)' : 'GPS Coordinates (Optional)'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleLocateMe}
+                  disabled={submitting || locating}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg transition disabled:opacity-50"
+                >
+                  <MapPin size={12} className={locating ? 'animate-bounce' : ''} aria-hidden="true" />
+                  <span>
+                    {locating
+                      ? (lang === 'hi' ? 'स्थान प्राप्त हो रहा है...' : 'Locating...')
+                      : (lang === 'hi' ? 'मेरा वर्तमान स्थान उपयोग करें' : 'Use Current Location')}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowMap(!showMap)}
+                  disabled={submitting}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300 rounded-lg transition disabled:opacity-50"
+                >
+                  <span>
+                    {showMap
+                      ? (lang === 'hi' ? 'मानचित्र छिपाएं' : 'Hide Map')
+                      : (lang === 'hi' ? 'मानचित्र दिखाएं' : 'Show Map')}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleToggleManualCoords}
+                  disabled={submitting}
+                  className="text-xs text-slate-500 hover:text-slate-800 underline transition"
+                >
+                  {showManualCoords
+                    ? (lang === 'hi' ? 'निर्देशांक छिपाएं' : 'Hide Manual Entry')
+                    : (lang === 'hi' ? 'निर्देशांक दर्ज करें' : 'Enter Coordinates')}
+                </button>
+              </div>
+            </div>
+
+            {/* Interactive Leaflet Map Picker */}
+            {showMap && (
+              <LocationPickerMap
+                coordinates={coordinates}
+                onLocationSelect={handleMapLocationSelect}
+                onClear={handleClearCoordinates}
+                lang={lang}
+                disabled={submitting}
+              />
+            )}
+
+            {/* Status indicator when coordinates are attached */}
+            {coordinates && (
+              <div className="flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={15} className="text-emerald-600 shrink-0" aria-hidden="true" />
+                  <span>
+                    {lang === 'hi' ? 'स्थान संलग्न:' : 'Location Attached:'}{' '}
+                    <strong className="font-mono">{coordinates.lat.toFixed(5)}, {coordinates.lng.toFixed(5)}</strong>
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleClearCoordinates}
+                  disabled={submitting}
+                  aria-label={lang === 'hi' ? 'संलग्न स्थान हटाएं' : 'Remove attached location'}
+                  className="text-slate-400 hover:text-rose-600 p-0.5 rounded transition"
+                >
+                  <X size={14} aria-hidden="true" />
+                </button>
+              </div>
+            )}
+
+            {/* Manual input panel */}
+            {showManualCoords && (
+              <div className="p-3 bg-white border border-slate-200 rounded-lg space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label htmlFor="complaint-manual-lat" className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">
+                      {lang === 'hi' ? 'अक्षांश (Latitude: -90 से 90)' : 'Latitude (-90 to 90)'}
+                    </label>
+                    <input
+                      id="complaint-manual-lat"
+                      type="text"
+                      placeholder="e.g. 18.5204"
+                      value={manualLat}
+                      onChange={handleManualLatChange}
+                      disabled={submitting}
+                      className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-600 disabled:opacity-60 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="complaint-manual-lng" className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">
+                      {lang === 'hi' ? 'देशांतर (Longitude: -180 से 180)' : 'Longitude (-180 to 180)'}
+                    </label>
+                    <input
+                      id="complaint-manual-lng"
+                      type="text"
+                      placeholder="e.g. 73.8567"
+                      value={manualLng}
+                      onChange={handleManualLngChange}
+                      disabled={submitting}
+                      className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-600 disabled:opacity-60 font-mono"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleApplyManualCoordinates}
+                    disabled={submitting}
+                    className="px-3 py-1 bg-slate-800 hover:bg-slate-900 text-white text-xs font-medium rounded transition disabled:opacity-50"
+                  >
+                    {lang === 'hi' ? 'लागू करें' : 'Apply'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Geolocation or input error notice */}
+            {locationError && (
+              <div
+                role="alert"
+                aria-live="polite"
+                className="flex items-center gap-1.5 text-xs text-rose-600 bg-rose-50 p-2 rounded-lg border border-rose-200"
+              >
+                <AlertCircle size={14} className="shrink-0" aria-hidden="true" />
+                <span>{locationError}</span>
+              </div>
+            )}
+
+            <p className="text-[11px] text-slate-400">
+              {lang === 'hi'
+                ? 'जीपीएस निर्देशांक संलग्न करना वैकल्पिक है। निर्देशांक आपकी शिकायत के साथ केवल तभी भेजे जाते हैं जब आप उन्हें संलग्न करना चुनते हैं। सटीक निर्देशांक त्वरित जमीनी सत्यापन में सहायता करते हैं।'
+                : 'Attaching GPS coordinates is optional. Coordinates are sent with your complaint only when you choose to attach them. Precise coordinates help field officers locate and resolve grievances faster.'}
+            </p>
           </div>
         </div>
 

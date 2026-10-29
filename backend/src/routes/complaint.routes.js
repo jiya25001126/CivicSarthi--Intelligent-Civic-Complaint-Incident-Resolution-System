@@ -65,6 +65,21 @@ const getComplaintByRefSchema = {
   })
 };
 
+export const coordinatesSchema = z.object({
+  lat: z.number({
+    required_error: 'Latitude (lat) is required when coordinates are provided',
+    invalid_type_error: 'Latitude (lat) must be a valid number'
+  })
+    .min(-90, 'Latitude must be between -90 and 90 degrees')
+    .max(90, 'Latitude must be between -90 and 90 degrees'),
+  lng: z.number({
+    required_error: 'Longitude (lng) is required when coordinates are provided',
+    invalid_type_error: 'Longitude (lng) must be a valid number'
+  })
+    .min(-180, 'Longitude must be between -180 and 180 degrees')
+    .max(180, 'Longitude must be between -180 and 180 degrees')
+});
+
 const createComplaintSchema = {
   body: z.object({
     title: z.string().trim().min(3, 'Title must be at least 3 characters').max(200, 'Title cannot exceed 200 characters'),
@@ -73,6 +88,7 @@ const createComplaintSchema = {
     state: z.string().min(2, 'State is required'),
     district: z.string().min(2, 'District is required'),
     locality: z.string().max(300, 'Locality cannot exceed 300 characters').optional(),
+    coordinates: coordinatesSchema.nullable().optional(),
     preferredLanguage: z.string().max(20).optional(),
     departmentId: z.string().optional(),
     evidence: z.array(
