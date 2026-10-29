@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import config from '../config/app.config.js';
+import config, { assertSafeWritePath } from '../config/app.config.js';
 import { isConnected, getConfiguredPersistenceMode } from '../config/database.js';
 import { AuditLogModel } from '../models/auditLog.model.js';
 
@@ -22,19 +22,28 @@ class AsyncMutex {
 
 export class JsonAuditLogRepository {
   constructor(customFilePath = null) {
-    this.filePath = customFilePath || config.dataPath.auditLogs;
+    this._customFilePath = customFilePath;
     this._mutex = new AsyncMutex();
   }
 
+  get filePath() {
+    return this._customFilePath || config.dataPath.auditLogs;
+  }
+
+  set filePath(path) {
+    this._customFilePath = path;
+  }
+
   setFilePath(customPath) {
-    this.filePath = customPath;
+    this._customFilePath = customPath;
   }
 
   resetFilePath() {
-    this.filePath = config.dataPath.auditLogs;
+    this._customFilePath = null;
   }
 
   async _ensureFile() {
+    assertSafeWritePath(this.filePath);
     try {
       await fs.access(this.filePath);
     } catch {
@@ -62,6 +71,7 @@ export class JsonAuditLogRepository {
   }
 
   async _writeFile(data) {
+    assertSafeWritePath(this.filePath);
     const content = JSON.stringify(data, null, 2);
     const tempPath = `${this.filePath}.tmp.${Date.now()}.${Math.random().toString(36).slice(2)}`;
     await fs.writeFile(tempPath, content, 'utf-8');
@@ -178,6 +188,10 @@ export class AuditLogRepository {
 
   resetFilePath() {
     this._jsonRepo.resetFilePath();
+  }
+
+  get filePath() {
+    return this._jsonRepo.filePath;
   }
 
   _getActiveAdapter() {

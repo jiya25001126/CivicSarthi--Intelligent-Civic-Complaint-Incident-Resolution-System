@@ -227,6 +227,9 @@ export class AuthService {
       role: user.role,
       departmentId: user.departmentId || null,
       isActive: user.isActive !== undefined ? user.isActive : true,
+      phone: user.phone || user.phoneNumber || null,
+      phoneNumber: user.phoneNumber || user.phone || null,
+      notificationPreferences: user.notificationPreferences || null,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt
     };

@@ -50,6 +50,55 @@ if (env === 'production' && (!jwtSecret || jwtSecret.length < 16)) {
   process.exit(1);
 }
 
+/**
+ * Robustly detects whether the runtime context is currently executing automated tests.
+ */
+export function isTestEnvironment() {
+  return (
+    process.env.NODE_ENV === 'test' ||
+    Boolean(process.env.DATA_DIR && process.env.DATA_DIR.includes('sandbox')) ||
+    (process.execArgv && process.execArgv.some(a => a.includes('--test'))) ||
+    (process.argv && process.argv.some(a => a.includes('test') || a.includes('node:test')))
+  );
+}
+
+/**
+ * Resolves the active data storage directory:
+ * - Uses process.env.DATA_DIR if explicitly configured
+ * - In test environment, automatically routes to dedicated test sandbox
+ * - In standard runtime (dev/prod), routes to application data directory
+ */
+export function getResolvedDataDir() {
+  if (process.env.DATA_DIR) {
+    return path.resolve(process.env.DATA_DIR);
+  }
+  if (isTestEnvironment()) {
+    return path.resolve(__dirname, '../../tests/sandbox-test-data');
+  }
+  return path.resolve(__dirname, '../../../data');
+}
+
+/**
+ * Anti-silent-fallback safety guard.
+ * Refuses to allow tests to write to the live application data directory.
+ */
+export function assertSafeWritePath(targetPath) {
+  if (!targetPath) return;
+  if (isTestEnvironment()) {
+    const liveDataDir = path.resolve(__dirname, '../../../data');
+    const resolved = path.resolve(targetPath);
+    if (resolved.startsWith(liveDataDir) && !resolved.includes('sandbox') && !resolved.includes('.test.')) {
+      throw new Error(
+        `[Test Data Safety Error] Anti-silent-fallback triggered: Test environment attempted to write to protected live data directory: ${resolved}`
+      );
+    }
+  }
+}
+
+export function resolveDataPath(filename) {
+  return path.resolve(getResolvedDataDir(), filename);
+}
+
 export const config = {
   appName: 'CivicSarthi',
   version: '1.0.0',
@@ -73,22 +122,22 @@ export const config = {
     mode: (process.env.PERSISTENCE_MODE || (process.env.MONGODB_URI ? 'mongodb' : 'json')).toLowerCase()
   },
   dataPath: {
-    complaints: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'complaints.json'),
-    departments: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'departments.json'),
-    officers: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'officers.json'),
-    incidents: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'incidents.json'),
-    subtasks: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'subtasks.json'),
-    statusHistory: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'status_history.json'),
-    users: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'users.json'),
-    auditLogs: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'audit_logs.json'),
-    feedback: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'feedback.json'),
-    appeals: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'appeals.json'),
-    reopeningRequests: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'reopening_requests.json'),
-    spamReviews: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'spam_reviews.json'),
-    citizenReputations: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'citizen_reputations.json'),
-    clarifications: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'clarifications.json'),
-    reminders: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'reminders.json'),
-    notifications: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'notifications.json')
+    get complaints() { return resolveDataPath('complaints.json'); },
+    get departments() { return resolveDataPath('departments.json'); },
+    get officers() { return resolveDataPath('officers.json'); },
+    get incidents() { return resolveDataPath('incidents.json'); },
+    get subtasks() { return resolveDataPath('subtasks.json'); },
+    get statusHistory() { return resolveDataPath('status_history.json'); },
+    get users() { return resolveDataPath('users.json'); },
+    get auditLogs() { return resolveDataPath('audit_logs.json'); },
+    get feedback() { return resolveDataPath('feedback.json'); },
+    get appeals() { return resolveDataPath('appeals.json'); },
+    get reopeningRequests() { return resolveDataPath('reopening_requests.json'); },
+    get spamReviews() { return resolveDataPath('spam_reviews.json'); },
+    get citizenReputations() { return resolveDataPath('citizen_reputations.json'); },
+    get clarifications() { return resolveDataPath('clarifications.json'); },
+    get reminders() { return resolveDataPath('reminders.json'); },
+    get notifications() { return resolveDataPath('notifications.json'); }
   },
   reminders: {
     cooldownHours: Number(process.env.REMINDER_COOLDOWN_HOURS || 24)

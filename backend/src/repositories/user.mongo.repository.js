@@ -48,7 +48,15 @@ export class MongoUserRepository {
       name: userData.name.trim(),
       role: userData.role || 'citizen',
       departmentId: userData.departmentId || null,
-      isActive: userData.isActive !== undefined ? userData.isActive : true
+      isActive: userData.isActive !== undefined ? userData.isActive : true,
+      phone: userData.phone || userData.phoneNumber || null,
+      phoneNumber: userData.phoneNumber || userData.phone || null,
+      notificationPreferences: userData.notificationPreferences || {
+        enabled: true,
+        smsOptOut: false,
+        whatsappOptOut: false,
+        preferredChannel: 'both'
+      }
     });
 
     return doc.toObject();
@@ -74,6 +82,17 @@ export class MongoUserRepository {
     if (updates.role !== undefined) current.role = updates.role;
     if (updates.departmentId !== undefined) current.departmentId = updates.departmentId;
     if (updates.isActive !== undefined) current.isActive = updates.isActive;
+    if (updates.phone !== undefined) current.phone = updates.phone;
+    if (updates.phoneNumber !== undefined) current.phoneNumber = updates.phoneNumber;
+    if (updates.notificationPreferences !== undefined) {
+      current.notificationPreferences = {
+        ...(current.notificationPreferences || {}),
+        ...updates.notificationPreferences
+      };
+      if (typeof current.markModified === 'function') {
+        current.markModified('notificationPreferences');
+      }
+    }
 
     await current.save();
     return current.toObject();

@@ -15,6 +15,10 @@ export class UserRepository {
     }
   }
 
+  get filePath() {
+    return (this._customJsonRepo || jsonUserRepository).filePath;
+  }
+
   resetFilePath() {
     if (this._customJsonRepo) {
       this._customJsonRepo.resetFilePath();

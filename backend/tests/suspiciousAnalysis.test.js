@@ -327,6 +327,42 @@ describe('Feature B: Explainable False / Suspicious Complaint Analysis', () => {
         /outside your authorized department scope/
       );
     });
+
+    test('getReviewDetail projects complaint screeningResult for transparent explainability', async () => {
+      const complaintId = 'cmp_screening_test';
+      const mockScreeningResult = {
+        score: 65,
+        riskLevel: 'HIGH',
+        riskIndicators: [
+          { code: 'PROMOTIONAL_PHISHING_SPAM', signal: 'PROMOTIONAL_PHISHING_SPAM', weight: 45, score: 45 }
+        ]
+      };
+      complaintRepo.complaints.set(complaintId, {
+        id: complaintId,
+        referenceNumber: 'CS-2026-TEST',
+        title: 'Suspicious Offer',
+        description: 'Check out this loan offer',
+        departmentId: 'DEPT_ROADS',
+        status: 'SUBMITTED',
+        screeningResult: mockScreeningResult
+      });
+
+      const review = await spamReviewRepo.create({
+        complaintId,
+        departmentId: 'DEPT_ROADS',
+        citizenId: 'cit_101',
+        riskLevel: 'HIGH',
+        score: 65
+      });
+
+      const roadsOfficer = { id: 'off_roads', role: 'officer', departmentId: 'DEPT_ROADS' };
+      const detail = await reviewService.getReviewDetail(review.id, roadsOfficer);
+
+      assert.ok(detail.complaint);
+      assert.ok(detail.complaint.screeningResult);
+      assert.strictEqual(detail.complaint.screeningResult.score, 65);
+      assert.strictEqual(detail.complaint.screeningResult.riskIndicators.length, 1);
+    });
   });
 });
 

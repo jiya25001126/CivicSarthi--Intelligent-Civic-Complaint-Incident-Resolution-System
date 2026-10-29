@@ -15,7 +15,7 @@
     "migrate:mongo": "node src/scripts/migrate.js",
     "init:cloud": "node src/scripts/init-cloud-demo.js",
     "seed:mongo:demo": "node src/scripts/seed-mongo-demo-complaints.js",
-    "test": "node --test tests/*.test.js tests/**/*.test.js"
+    "test": "node --import ./tests/test-env.js --test --test-concurrency=1 tests/"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

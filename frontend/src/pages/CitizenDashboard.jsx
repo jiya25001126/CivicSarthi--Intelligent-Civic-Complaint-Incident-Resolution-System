@@ -23,6 +23,7 @@ import {
   Flame
 } from 'lucide-react';
 import { formatOutcomeType } from '../constants/resolutionQuality.constants';
+import NotificationPreferencesCard from '../components/NotificationPreferencesCard';
 
 export default function CitizenDashboard() {
   const [complaints, setComplaints] = useState([]);
@@ -496,6 +497,9 @@ export default function CitizenDashboard() {
           </div>
         )}
       </div>
+
+      {/* Feature A: Citizen Notification Preferences & Delivery Audit */}
+      <NotificationPreferencesCard />
     </div>
   );
 }

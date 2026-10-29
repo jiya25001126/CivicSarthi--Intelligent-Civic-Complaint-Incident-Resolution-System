@@ -86,6 +86,17 @@ export class NotificationService {
         return { allowed: false, reason: 'Citizen opted out of WhatsApp messages', preferences: prefs };
       }
 
+      // Preferred dispatch channel enforcement
+      if (prefs.preferredChannel && prefs.preferredChannel !== 'both') {
+        const pref = String(prefs.preferredChannel).toLowerCase();
+        if (pref === 'sms' && channel !== NOTIFICATION_CHANNEL.SMS) {
+          return { allowed: false, reason: 'Citizen preferred dispatch channel is SMS only', preferences: prefs };
+        }
+        if (pref === 'whatsapp' && channel !== NOTIFICATION_CHANNEL.WHATSAPP) {
+          return { allowed: false, reason: 'Citizen preferred dispatch channel is WhatsApp only', preferences: prefs };
+        }
+      }
+
       return { allowed: true, preferences: prefs, user };
     } catch {
       return { allowed: true, preferences: null };
@@ -105,7 +116,18 @@ export class NotificationService {
     templateParams = {},
     stateIdentifier = ''
   }) {
-    const normalizedPhone = this.normalizePhoneNumber(recipientPhone);
+    // Fallback if recipientPhone was not passed directly but citizenId is available
+    let phoneToUse = recipientPhone;
+    if (!phoneToUse && citizenId && this.userRepo) {
+      try {
+        const user = await this.userRepo.findById(citizenId);
+        if (user) {
+          phoneToUse = user.phone || user.phoneNumber || null;
+        }
+      } catch {}
+    }
+
+    const normalizedPhone = this.normalizePhoneNumber(phoneToUse);
     const idempotencyKey = this.generateIdempotencyKey(
       eventType,
       complaintId || citizenId || normalizedPhone,
@@ -150,7 +172,7 @@ export class NotificationService {
       const elapsed = Date.now() - new Date(existingRecent.createdAt).getTime();
       if (
         elapsed < NOTIFICATION_CONFIG.DEDUPLICATION_WINDOW_MS &&
-        (existingRecent.status === NOTIFICATION_STATUS.SENT || existingRecent.status === NOTIFICATION_STATUS.DELIVERED)
+        (existingRecent.status === NOTIFICATION_STATUS.SENT || existingRecent.status === NOTIFICATION_STATUS.DELIVERED || existingRecent.status === NOTIFICATION_STATUS.SIMULATED)
       ) {
         return this.logRepo.create({
           recipientPhone: normalizedPhone,
@@ -221,8 +243,18 @@ export class NotificationService {
         });
       }
 
+      // Distinguish simulated dispatch, provider gateway acceptance, and verified delivery receipt
+      let finalStatus = NOTIFICATION_STATUS.SENT;
+      if (receipt.provider === 'mock' || receipt.simulated) {
+        finalStatus = NOTIFICATION_STATUS.SIMULATED;
+      } else if (receipt.status === 'delivered') {
+        finalStatus = NOTIFICATION_STATUS.DELIVERED;
+      } else {
+        finalStatus = NOTIFICATION_STATUS.SENT;
+      }
+
       return await this.logRepo.update(logEntry.id, {
-        status: NOTIFICATION_STATUS.DELIVERED,
+        status: finalStatus,
         provider: receipt.provider || 'mock',
         providerMessageId: receipt.providerMessageId || null,
         sentAt: receipt.timestamp || new Date().toISOString()
@@ -239,8 +271,20 @@ export class NotificationService {
    * Helper to dispatch across enabled channels (SMS & WhatsApp)
    */
   async notifyCitizen({ citizenId, recipientPhone, eventType, complaint, templateParams = {}, stateIdentifier = '' }) {
-    const phone = recipientPhone || complaint?.citizenPhone || complaint?.contactPhone || null;
+    let phone = recipientPhone || complaint?.citizenPhone || complaint?.contactPhone || null;
     const cid = citizenId || complaint?.citizenId || null;
+
+    // Fallback: If phone is not on complaint, look up citizen profile from userRepo
+    if (!phone && cid && this.userRepo) {
+      try {
+        const user = await this.userRepo.findById(cid);
+        if (user) {
+          phone = user.phone || user.phoneNumber || null;
+        }
+      } catch (err) {
+        console.warn(`[NotificationService] Failed to look up citizen phone for ${cid}:`, err.message);
+      }
+    }
     const ref = complaint?.referenceNumber || complaint?.id || null;
 
     const channels = [NOTIFICATION_CHANNEL.SMS, NOTIFICATION_CHANNEL.WHATSAPP];
@@ -372,6 +416,30 @@ export class NotificationService {
       },
       stateIdentifier: 'RESOLVED'
     });
+  }
+
+  /**
+   * Processes carrier delivery receipt to transition message from SENT to DELIVERED or FAILED
+   */
+  async processDeliveryReceipt({ providerMessageId, status, error = null, timestamp = null }) {
+    if (!providerMessageId) {
+      throw new Error('providerMessageId is required to process delivery receipt');
+    }
+    const log = typeof this.logRepo.findByProviderMessageId === 'function'
+      ? await this.logRepo.findByProviderMessageId(providerMessageId)
+      : (await this.logRepo.findAll({ providerMessageId }))[0];
+
+    if (!log) {
+      return null;
+    }
+
+    const updates = {
+      status: status || NOTIFICATION_STATUS.DELIVERED,
+      ...(error ? { error } : {}),
+      sentAt: timestamp || new Date().toISOString()
+    };
+
+    return this.logRepo.update(log.id, updates);
   }
 
   /**

@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import config from '../config/app.config.js';
+import config, { assertSafeWritePath } from '../config/app.config.js';
 
 class AsyncMutex {
   constructor() {
@@ -21,19 +21,28 @@ class AsyncMutex {
 
 export class JsonUserRepository {
   constructor(customFilePath = null) {
-    this.filePath = customFilePath || config.dataPath.users;
+    this._customFilePath = customFilePath;
     this._mutex = new AsyncMutex();
   }
 
+  get filePath() {
+    return this._customFilePath || config.dataPath.users;
+  }
+
+  set filePath(path) {
+    this._customFilePath = path;
+  }
+
   setFilePath(customPath) {
-    this.filePath = customPath;
+    this._customFilePath = customPath;
   }
 
   resetFilePath() {
-    this.filePath = config.dataPath.users;
+    this._customFilePath = null;
   }
 
   async _ensureFile() {
+    assertSafeWritePath(this.filePath);
     try {
       await fs.access(this.filePath);
     } catch {
@@ -61,6 +70,7 @@ export class JsonUserRepository {
   }
 
   async _writeFile(data) {
+    assertSafeWritePath(this.filePath);
     const content = JSON.stringify(data, null, 2);
     const tempPath = `${this.filePath}.tmp.${Date.now()}.${Math.random().toString(36).slice(2)}`;
     await fs.writeFile(tempPath, content, 'utf-8');
@@ -138,6 +148,14 @@ export class JsonUserRepository {
         role: userData.role || 'citizen',
         departmentId: userData.departmentId || null,
         isActive: userData.isActive !== undefined ? userData.isActive : true,
+        phone: userData.phone || userData.phoneNumber || null,
+        phoneNumber: userData.phoneNumber || userData.phone || null,
+        notificationPreferences: userData.notificationPreferences || {
+          enabled: true,
+          smsOptOut: false,
+          whatsappOptOut: false,
+          preferredChannel: 'both'
+        },
         createdAt: now,
         updatedAt: now
       };
@@ -179,6 +197,14 @@ export class JsonUserRepository {
       if (updates.role !== undefined) current.role = updates.role;
       if (updates.departmentId !== undefined) current.departmentId = updates.departmentId;
       if (updates.isActive !== undefined) current.isActive = updates.isActive;
+      if (updates.phone !== undefined) current.phone = updates.phone;
+      if (updates.phoneNumber !== undefined) current.phoneNumber = updates.phoneNumber;
+      if (updates.notificationPreferences !== undefined) {
+        current.notificationPreferences = {
+          ...(current.notificationPreferences || {}),
+          ...updates.notificationPreferences
+        };
+      }
       current.updatedAt = now;
 
       data.users[index] = current;

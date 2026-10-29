@@ -241,7 +241,7 @@ export const createComplaint = async (req, res, next) => {
       citizenId: req.user.id,
       citizenName: req.body.citizenName || req.user.name,
       citizenEmail: req.body.citizenEmail || req.user.email,
-      citizenPhone: req.body.citizenPhone || undefined
+      citizenPhone: req.body.citizenPhone || req.user.phone || req.user.phoneNumber || undefined
     };
 
     const complaint = await complaintService.createComplaint(complaintData);

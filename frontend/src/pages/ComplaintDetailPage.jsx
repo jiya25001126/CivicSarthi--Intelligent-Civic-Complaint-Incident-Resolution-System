@@ -2172,6 +2172,20 @@ export default function ComplaintDetailPage() {
             </div>
           </div>
 
+          {/* Feature C: Historical Resolution Suggestions (Investigation Precedents Placement) */}
+          <div className="pt-2">
+            <HistoricalResolutionSuggestions
+              complaintId={complaint.id}
+              title={lang === 'hi' ? 'पूर्व विभागीय निवारण सुझाव (जाँच संदर्भ)' : 'Historical Resolution Suggestions (Investigation Precedents)'}
+              subtitle={lang === 'hi' ? 'विभागीय पूर्व मामलों से सिद्ध निवारण रणनीतियाँ जो जाँच और निवारण योजना में सहायता करती हैं।' : 'Proven departmental resolution strategies and precedents to guide investigation and action planning.'}
+              badgeText={lang === 'hi' ? 'जाँच सहायता' : 'Investigation Support'}
+              onApplyTemplate={(summary) => {
+                setStatusRemarks(summary);
+                setClosureRemarks(summary);
+              }}
+            />
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Status Transition Control */}
             <form onSubmit={handleStatusUpdate} className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">

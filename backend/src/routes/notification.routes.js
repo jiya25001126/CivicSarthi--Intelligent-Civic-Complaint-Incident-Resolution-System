@@ -8,7 +8,8 @@ import { authenticate, requireRole } from '../middleware/auth.middleware.js';
 import {
   getNotificationLogs,
   getPreferences,
-  updatePreferences
+  updatePreferences,
+  processDeliveryReceiptWebhook
 } from '../controllers/notification.controller.js';
 
 const router = express.Router();
@@ -19,5 +20,8 @@ router.put('/preferences', authenticate, updatePreferences);
 
 // Delivery logs (officers, admins, or citizen reading own logs)
 router.get('/logs', authenticate, getNotificationLogs);
+
+// Provider delivery receipt webhook (public callback from carrier gateway)
+router.post('/webhook/delivery-receipt', processDeliveryReceiptWebhook);
 
 export default router;

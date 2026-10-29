@@ -20,6 +20,10 @@ export class IncidentRepository {
     }
   }
 
+  get filePath() {
+    return (this._customJsonRepo || jsonIncidentRepository).filePath;
+  }
+
   resetFilePath() {
     if (this._customJsonRepo) {
       this._customJsonRepo.resetFilePath();
