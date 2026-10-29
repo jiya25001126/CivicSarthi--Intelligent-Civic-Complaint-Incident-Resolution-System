@@ -41,6 +41,25 @@ const userSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true
+    },
+    phone: {
+      type: String,
+      default: null,
+      trim: true
+    },
+    phoneNumber: {
+      type: String,
+      default: null,
+      trim: true
+    },
+    notificationPreferences: {
+      type: mongoose.Schema.Types.Mixed,
+      default: () => ({
+        enabled: true,
+        smsOptOut: false,
+        whatsappOptOut: false,
+        preferredChannel: 'both'
+      })
     }
   },
   {

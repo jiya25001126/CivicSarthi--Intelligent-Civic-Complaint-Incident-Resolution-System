@@ -688,7 +688,20 @@ export async function fetchNotificationPreferences() {
 }
 
 export async function updateNotificationPreferences(data) {
-  const res = await api.put('/notifications/preferences', data);
+  let csrf = getCookie('civicsarthi_csrf');
+  if (!csrf && typeof window !== 'undefined') {
+    try {
+      csrf = localStorage.getItem('civicsarthi_csrf');
+    } catch {}
+  }
+  if (!csrf) {
+    csrf = await fetchCsrfToken();
+  }
+  const headers = {};
+  if (csrf) {
+    headers['x-csrf-token'] = csrf;
+  }
+  const res = await api.put('/notifications/preferences', data, { headers });
   return res.data;
 }
 

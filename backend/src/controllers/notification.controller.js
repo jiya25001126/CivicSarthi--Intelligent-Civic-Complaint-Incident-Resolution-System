@@ -4,6 +4,7 @@
  */
 
 import { notificationService } from '../services/notification/notification.service.js';
+import { NOTIFICATION_STATUS } from '../constants/notification.constants.js';
 import { userRepository } from '../repositories/user.repository.js';
 import { auditLogRepository } from '../repositories/auditLog.repository.js';
 
@@ -73,8 +74,17 @@ export async function updatePreferences(req, res, next) {
     };
 
     const updates = { notificationPreferences: updatedPrefs };
-    if (phone !== undefined) {
-      updates.phone = phone ? String(phone).trim() : null;
+    // Do not overwrite an existing registered number unless user explicitly requests removal
+    if (req.body.removePhone === true || req.body.action === 'remove_phone') {
+      updates.phone = null;
+      updates.phoneNumber = null;
+    } else if (phone !== undefined && phone !== null) {
+      const trimmed = String(phone).trim();
+      if (trimmed) {
+        const normalized = notificationService.normalizePhoneNumber(trimmed);
+        updates.phone = normalized || trimmed;
+        updates.phoneNumber = updates.phone;
+      }
     }
 
     const updatedUser = await userRepository.update(user.id, updates);
@@ -91,13 +101,17 @@ export async function updatePreferences(req, res, next) {
       });
     } catch {}
 
+    const preservedPhone = (updates.phone === null)
+      ? null
+      : (updatedUser?.phone || updatedUser?.phoneNumber || user.phone || user.phoneNumber || null);
+
     res.json({
       success: true,
       message: 'Notification preferences updated successfully',
       data: {
         citizenId: user.id,
-        phone: updatedUser.phone || null,
-        preferences: updatedPrefs
+        phone: preservedPhone,
+        preferences: updatedUser?.notificationPreferences || updatedPrefs
       }
     });
   } catch (err) {
@@ -105,3 +119,47 @@ export async function updatePreferences(req, res, next) {
   }
 }
 
+
+export async function processDeliveryReceiptWebhook(req, res, next) {
+  try {
+    const payload = req.body || {};
+    const providerMessageId = payload.MessageSid || payload.SmsSid || payload.messageId || payload.id || payload.providerMessageId;
+    const rawStatus = (payload.MessageStatus || payload.SmsStatus || payload.status || '').toLowerCase();
+
+    if (!providerMessageId) {
+      return res.status(400).json({ success: false, error: 'providerMessageId is required' });
+    }
+
+    let status = NOTIFICATION_STATUS.DELIVERED;
+    if (['failed', 'undelivered'].includes(rawStatus)) {
+      status = NOTIFICATION_STATUS.FAILED;
+    } else if (['sent', 'queued', 'accepted'].includes(rawStatus)) {
+      status = NOTIFICATION_STATUS.SENT;
+    } else if (rawStatus === 'delivered') {
+      status = NOTIFICATION_STATUS.DELIVERED;
+    }
+
+    const updated = await notificationService.processDeliveryReceipt({
+      providerMessageId,
+      status,
+      error: payload.ErrorMessage || payload.error || null,
+      timestamp: new Date().toISOString()
+    });
+
+    if (!updated) {
+      return res.status(404).json({ success: false, error: 'Notification record not found' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Delivery receipt processed successfully',
+      data: {
+        id: updated.id,
+        status: updated.status,
+        providerMessageId
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+}

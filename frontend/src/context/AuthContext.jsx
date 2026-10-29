@@ -74,8 +74,25 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const updateUser = (updates) => {
+    setUser((prev) => (prev ? { ...prev, ...updates } : prev));
+  };
+
+  const refreshUser = async () => {
+    try {
+      const response = await fetchCurrentUser();
+      if (response?.data) {
+        setUser(response.data);
+        return response.data;
+      }
+    } catch {}
+    return null;
+  };
+
   const value = {
     user,
+    updateUser,
+    refreshUser,
     loading,
     error,
     login,
