@@ -234,6 +234,7 @@ export const createComplaint = async (req, res, next) => {
       state: req.body.state,
       district: req.body.district,
       locality: req.body.locality ? req.body.locality.trim() : '',
+      coordinates: req.body.coordinates || undefined,
       preferredLanguage: req.body.preferredLanguage || 'en',
       departmentId: req.body.departmentId,
       evidence: Array.isArray(req.body.evidence) ? req.body.evidence : [],

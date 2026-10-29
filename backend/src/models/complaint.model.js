@@ -101,6 +101,10 @@ const complaintSchema = new mongoose.Schema(
       type: String,
       default: ''
     },
+    coordinates: {
+      lat: { type: Number, default: null },
+      lng: { type: Number, default: null }
+    },
     preferredLanguage: {
       type: String,
       default: 'en'

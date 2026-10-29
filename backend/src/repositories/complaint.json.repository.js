@@ -233,6 +233,7 @@ export class JsonComplaintRepository {
         state: complaintData.state || 'Maharashtra',
         district: complaintData.district || 'Pune',
         locality: complaintData.locality || '',
+        coordinates: complaintData.coordinates || null,
         preferredLanguage: complaintData.preferredLanguage || complaintData.language || 'en',
         language: complaintData.preferredLanguage || complaintData.language || 'en',
         departmentId: complaintData.departmentId || complaintData.department || 'DEPT_ROADS',

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { fetchComplaints, fetchDepartments } from '../api/client';
 import { useLanguage } from '../context/LanguageContext';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
+import ComplaintLocationModal, { isValidCoordinate } from '../components/ComplaintLocationModal';
 import {
   Search,
   Filter,
@@ -14,7 +15,8 @@ import {
   Repeat,
   AlertTriangle,
   Link as LinkIcon,
-  Sparkles
+  Sparkles,
+  MapPin
 } from 'lucide-react';
 
 export default function OfficerComplaintManagement() {
@@ -31,6 +33,7 @@ export default function OfficerComplaintManagement() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [priorityFilter, setPriorityFilter] = useState('ALL');
   const [sortOrder, setSortOrder] = useState('createdAt_desc');
+  const [selectedComplaintLocation, setSelectedComplaintLocation] = useState(null);
 
   const loadData = async () => {
     try {
@@ -269,6 +272,22 @@ export default function OfficerComplaintManagement() {
                       <p className="text-[11px] text-slate-500 line-clamp-1">
                         {item.locality ? `${item.locality}, ` : ''}{item.district}, {item.state}
                       </p>
+                      <div>
+                        {isValidCoordinate(item.coordinates) ? (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedComplaintLocation(item)}
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800 hover:underline mt-1 cursor-pointer"
+                          >
+                            <MapPin size={11} className="text-blue-500 shrink-0" />
+                            <span>{lang === 'hi' ? 'स्थान देखें' : 'View Location'}</span>
+                          </button>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] text-slate-400 italic mt-1">
+                            <span>{lang === 'hi' ? 'स्थान प्रदान नहीं किया गया' : 'Location not provided'}</span>
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-3 py-3.5 whitespace-nowrap">
                       <StatusBadge status={item.status} />
@@ -306,7 +325,19 @@ export default function OfficerComplaintManagement() {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                    <td className="px-4 py-3.5 text-right whitespace-nowrap space-x-1.5">
+                      {isValidCoordinate(item.coordinates) && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedComplaintLocation(item)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold text-xs transition cursor-pointer"
+                          title={lang === 'hi' ? 'स्थान देखें' : 'View Location'}
+                          aria-label={lang === 'hi' ? 'स्थान देखें' : 'View Location'}
+                        >
+                          <MapPin size={12} className="text-blue-600" />
+                          <span>{lang === 'hi' ? 'स्थान' : 'View Location'}</span>
+                        </button>
+                      )}
                       <Link
                         to={`/officer/complaints/${encodeURIComponent(item.id)}`}
                         className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg font-bold text-xs transition"
@@ -322,6 +353,14 @@ export default function OfficerComplaintManagement() {
           </div>
         )}
       </div>
+
+      {selectedComplaintLocation && (
+        <ComplaintLocationModal
+          complaint={selectedComplaintLocation}
+          onClose={() => setSelectedComplaintLocation(null)}
+          lang={lang}
+        />
+      )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { fetchComplaints, fetchComplaintStats } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
+import ComplaintLocationModal, { isValidCoordinate } from '../components/ComplaintLocationModal';
 import {
   ShieldCheck,
   Flame,
@@ -47,6 +48,7 @@ export default function OfficerDashboard() {
   const [error, setError] = useState(null);
   const [filterTab, setFilterTab] = useState('URGENT');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedComplaintLocation, setSelectedComplaintLocation] = useState(null);
 
   const loadData = async () => {
     try {
@@ -480,6 +482,22 @@ export default function OfficerDashboard() {
                           <span>{item.location?.ward || item.location?.landmark || item.locality}</span>
                         </div>
                       )}
+                      <div>
+                        {isValidCoordinate(item.coordinates) ? (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedComplaintLocation(item)}
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800 hover:underline mt-1 cursor-pointer"
+                          >
+                            <MapPin size={11} className="text-blue-500 shrink-0" />
+                            <span>{lang === 'hi' ? 'स्थान देखें' : 'View Location'}</span>
+                          </button>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] text-slate-400 italic mt-1">
+                            <span>{lang === 'hi' ? 'स्थान प्रदान नहीं किया गया' : 'Location not provided'}</span>
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-3.5 max-w-sm">
                       <p className="font-semibold text-slate-900 line-clamp-1">
@@ -519,6 +537,18 @@ export default function OfficerDashboard() {
                       )}
                     </td>
                     <td className="px-4 py-3.5 text-right whitespace-nowrap space-x-1.5">
+                      {isValidCoordinate(item.coordinates) && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedComplaintLocation(item)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold text-xs transition cursor-pointer"
+                          title={lang === 'hi' ? 'स्थान देखें' : 'View Location'}
+                          aria-label={lang === 'hi' ? 'स्थान देखें' : 'View Location'}
+                        >
+                          <MapPin size={12} className="text-blue-600" />
+                          <span>{lang === 'hi' ? 'स्थान' : 'View Location'}</span>
+                        </button>
+                      )}
                       <Link
                         to={`/officer/complaints/${encodeURIComponent(item.id)}`}
                         className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg font-bold text-xs transition"
@@ -534,6 +564,14 @@ export default function OfficerDashboard() {
           </div>
         )}
       </div>
+
+      {selectedComplaintLocation && (
+        <ComplaintLocationModal
+          complaint={selectedComplaintLocation}
+          onClose={() => setSelectedComplaintLocation(null)}
+          lang={lang}
+        />
+      )}
     </div>
   );
 }
