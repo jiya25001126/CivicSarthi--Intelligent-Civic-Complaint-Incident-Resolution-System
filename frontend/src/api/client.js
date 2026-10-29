@@ -536,5 +536,20 @@ export async function exportAnalyticsReport(params = {}) {
   return res;
 }
 
+/**
+ * Voice transcription uses the requested root API path (/api/voice/transcribe),
+ * not the versioned /api/v1 resource prefix used by the standard client.
+ */
+export async function transcribeVoice(formData) {
+  const csrfToken = getCookie('civicsarthi_csrf');
+  const headers = csrfToken ? { 'x-csrf-token': csrfToken } : {};
+  const res = await axios.post(`${API_BASE_URL}/api/voice/transcribe`, formData, {
+    withCredentials: true,
+    timeout: 60000,
+    headers
+  });
+  return res.data;
+}
+
 export { API_BASE_URL };
 export default api;
