@@ -34,6 +34,9 @@ export const SPAM_REVIEW_OUTCOMES = Object.freeze({
   LEGITIMATE: 'LEGITIMATE',
   NEEDS_MORE_INFORMATION: 'NEEDS_MORE_INFORMATION',
   CONFIRMED_ABUSE: 'CONFIRMED_ABUSE',
+  DISMISSED: 'LEGITIMATE',
+  CLARIFICATION_REQUESTED: 'NEEDS_MORE_INFORMATION',
+  REVIEWED_FINDING: 'CONFIRMED_ABUSE',
   ESCALATED: 'ESCALATED'
 });
 
@@ -55,7 +58,11 @@ export const SPAM_REASON_CODES = Object.freeze({
   REPETITIVE_CHARACTERS: 'REPETITIVE_CHARACTERS',
   GIBBERISH_NONSENSE_DETECTED: 'REPETITIVE_CHARACTERS',
   LOW_INFORMATION_DENSITY: 'LOW_INFORMATION_DENSITY',
-  RAPID_CATEGORY_CYCLING: 'RAPID_CATEGORY_CYCLING'
+  RAPID_CATEGORY_CYCLING: 'RAPID_CATEGORY_CYCLING',
+  MALFORMED_CONTENT: 'MALFORMED_CONTENT',
+  EXCESSIVE_PUNCTUATION_SYMBOLS: 'EXCESSIVE_PUNCTUATION_SYMBOLS',
+  AUTOMATED_SPAM_PATTERNS: 'AUTOMATED_SPAM_PATTERNS',
+  COORDINATED_REPETITION: 'COORDINATED_REPETITION'
 });
 
 export const SPAM_REASON_DESCRIPTIONS = Object.freeze({
@@ -65,7 +72,11 @@ export const SPAM_REASON_DESCRIPTIONS = Object.freeze({
   PHASE6_DUPLICATE_MATCH: 'Automated duplicate detection identified high-confidence duplicate candidate',
   REPETITIVE_CHARACTERS: 'Repetitive keyboard patterns, character mash, or automated nonsensical strings',
   LOW_INFORMATION_DENSITY: 'Extremely sparse or uninformative text failing to describe actionable civic defect',
-  RAPID_CATEGORY_CYCLING: 'Multiple distinct departments targeted with identical metadata within minutes'
+  RAPID_CATEGORY_CYCLING: 'Multiple distinct departments targeted with identical metadata within minutes',
+  MALFORMED_CONTENT: 'Malformed grievance body containing non-lexical entropy or unreadable formatting',
+  EXCESSIVE_PUNCTUATION_SYMBOLS: 'High density of repeated symbols, punctuation floods, or markup artifacts',
+  AUTOMATED_SPAM_PATTERNS: 'Commercial, phishing, or automated advertising syntax detected in civic complaint',
+  COORDINATED_REPETITION: 'Coordinated identical copy-paste campaign detected across submission records'
 });
 
 export const CITIZEN_REPUTATION_STATUS = Object.freeze({
@@ -95,5 +106,9 @@ export const DEFAULT_SPAM_CONFIG = Object.freeze({
   phase6DuplicateWeight: 30,
   gibberishPatternWeight: 35,
   rapidCategoryCyclingWeight: 25,
+  malformedContentWeight: 35,
+  symbolFloodWeight: 20,
+  promotionalSpamWeight: 40,
+  coordinatedRepetitionWeight: 30,
   flagThreshold: 60
 });

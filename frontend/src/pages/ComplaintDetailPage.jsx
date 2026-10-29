@@ -33,6 +33,7 @@ import {
   API_BASE_URL
 } from '../api/client';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
+import HistoricalResolutionSuggestions from '../components/HistoricalResolutionSuggestions';
 import {
   ArrowLeft,
   ArrowRight,
@@ -2505,6 +2506,12 @@ export default function ComplaintDetailPage() {
                       {VERIFICATION_METHOD_OPTIONS.find((m) => m.value === verificationMethod)?.description}
                     </p>
                   </div>
+
+                  {/* Feature C: Historical Resolution Suggestions */}
+                  <HistoricalResolutionSuggestions
+                    complaintId={complaint.id}
+                    onApplyTemplate={(summary) => setClosureRemarks(summary)}
+                  />
 
                   {/* Field 3: Closure Remarks */}
                   <div>

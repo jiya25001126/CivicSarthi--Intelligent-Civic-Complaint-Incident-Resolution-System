@@ -175,6 +175,7 @@ export const createSubmissionRateLimiter = (customMax = null) => {
 };
 
 export const submissionRateLimiter = createSubmissionRateLimiter();
+export const requireAuth = authenticate;
 
 export default {
   authenticate,

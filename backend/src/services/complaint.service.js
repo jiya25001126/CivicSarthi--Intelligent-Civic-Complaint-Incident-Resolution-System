@@ -8,6 +8,7 @@ import { RESOLUTION_EXCEPTION_REASONS } from '../constants/resolutionQuality.con
 import { spamScreeningService } from './spamScreening.service.js';
 import { spamReviewRepository as defaultSpamReviewRepository } from '../repositories/spamReview.repository.js';
 import { citizenReputationService as defaultCitizenReputationService } from './citizenReputation.service.js';
+import { notificationService as defaultNotificationService } from './notification/notification.service.js';
 
 export class ComplaintService {
   constructor(
@@ -15,13 +16,15 @@ export class ComplaintService {
     incidentRepo = defaultIncidentRepository,
     spamScreening = spamScreeningService,
     spamReviewRepo = defaultSpamReviewRepository,
-    reputationService = defaultCitizenReputationService
+    reputationService = defaultCitizenReputationService,
+    notifService = defaultNotificationService
   ) {
     this.complaintRepo = complaintRepo;
     this.incidentRepo = incidentRepo;
     this.spamScreening = spamScreening;
     this.spamReviewRepo = spamReviewRepo;
     this.reputationService = reputationService;
+    this.notificationService = notifService;
   }
 
   /**
@@ -349,18 +352,21 @@ export class ComplaintService {
       console.warn('[ComplaintService] Non-fatal review queue warning:', queueErr.message);
     }
 
+    try { if (this.notificationService && typeof this.notificationService.notifyComplaintCreated === 'function') { this.notificationService.notifyComplaintCreated(created).catch(() => {}); } } catch {}
     return this.enrichWithSlaMetrics(created);
   }
 
   async updateComplaintPriority(idOrRef, { priority, remarks, actorType }) {
     const updated = await this.complaintRepo.updatePriority(idOrRef, { priority, remarks, actorType });
     if (!updated) return null;
+    try { if (this.notificationService && typeof this.notificationService.notifyStatusChanged === 'function') { this.notificationService.notifyStatusChanged(updated, updated.status, this.getStatusDescription(updated.status)).catch(() => {}); } } catch {}
     return this.enrichWithSlaMetrics(updated);
   }
 
   async linkDuplicateComplaint(idOrRef, { duplicateOf, remarks, actorType }) {
     const updated = await this.complaintRepo.linkDuplicate(idOrRef, { duplicateOf, remarks, actorType });
     if (!updated) return null;
+    try { if (this.notificationService && typeof this.notificationService.notifyStatusChanged === 'function') { this.notificationService.notifyStatusChanged(updated, updated.status, this.getStatusDescription(updated.status)).catch(() => {}); } } catch {}
     return this.enrichWithSlaMetrics(updated);
   }
 
@@ -581,12 +587,14 @@ export class ComplaintService {
     });
 
     if (!updated) return null;
+    try { if (this.notificationService && typeof this.notificationService.notifyStatusChanged === 'function') { this.notificationService.notifyStatusChanged(updated, updated.status, this.getStatusDescription(updated.status)).catch(() => {}); } } catch {}
     return this.enrichWithSlaMetrics(updated);
   }
 
   async updateComplaintDepartment(idOrRef, { departmentId, remarks, actorType }) {
     const updated = await this.complaintRepo.updateDepartment(idOrRef, { departmentId, remarks, actorType });
     if (!updated) return null;
+    try { if (this.notificationService && typeof this.notificationService.notifyStatusChanged === 'function') { this.notificationService.notifyStatusChanged(updated, updated.status, this.getStatusDescription(updated.status)).catch(() => {}); } } catch {}
     return this.enrichWithSlaMetrics(updated);
   }
 

@@ -576,6 +576,32 @@ export default function SpamReviewPage() {
                   {t.spamReview.signalsEvidenceTitle || 'Screening Signals & Evidence Factors'}
                 </h3>
 
+                {/* Data Preservation Guarantee */}
+                <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+                  <ShieldCheck size={16} className="shrink-0 text-emerald-600" />
+                  <span>Data Preservation Guarantee: Flagging or reviewing a complaint never deletes, alters, or hides its original filing record or lifecycle history.</span>
+                </div>
+
+                {/* Structured Risk Indicators (Feature B Explainability) */}
+                {(selectedReview.riskIndicators || selectedReview.complaint?.screeningResult?.riskIndicators) && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Explainable Risk Factors & Heuristic Weights</h4>
+                    <div className="grid grid-cols-1 gap-2">
+                      {(selectedReview.riskIndicators || selectedReview.complaint?.screeningResult?.riskIndicators || []).map((ind, i) => (
+                        <div key={i} className="p-3 rounded-lg border border-slate-200 bg-slate-50 text-xs flex flex-col gap-1">
+                          <div className="flex items-center justify-between font-semibold">
+                            <span className="text-slate-900 font-mono">{ind.signal || ind.code}</span>
+                            <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-800 font-bold">+{ind.weight || ind.score} pts</span>
+                          </div>
+                          <p className="text-slate-700">{ind.description}</p>
+                          {ind.evidence && <p className="text-[11px] text-slate-500 font-medium">Evidence: {ind.evidence}</p>}
+                          {ind.recommendation && <p className="text-[11px] text-blue-700 font-medium">Recommendation: {ind.recommendation}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {selectedReview.reasons && selectedReview.reasons.length > 0 ? (
                   <div className="space-y-2">
                     {selectedReview.reasons.map((r, idx) => (

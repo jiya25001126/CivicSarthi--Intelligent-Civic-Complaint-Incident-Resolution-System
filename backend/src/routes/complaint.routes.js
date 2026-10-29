@@ -35,6 +35,7 @@ import { createReopeningRequest, getComplaintReopeningRequests } from '../contro
 import { createClarification, getComplaintClarifications } from '../controllers/clarification.controller.js';
 import { requestReminder, checkReminderEligibility, getComplaintReminders } from '../controllers/reminder.controller.js';
 import { getStatusExplanation } from '../controllers/statusTranslator.controller.js';
+import { getHistoricalSuggestions } from '../controllers/historicalResolution.controller.js';
 import { CLARIFICATION_TYPE } from '../constants/clarification.constants.js';
 
 const router = express.Router();
@@ -282,5 +283,8 @@ router.get('/:id/clarifications', authenticate, validate(getComplaintSchema), ge
 router.post('/:id/reminders', authenticate, requireRole('citizen'), validate(getComplaintSchema), requestReminder);
 router.get('/:id/reminders/eligibility', authenticate, validate(getComplaintSchema), checkReminderEligibility);
 router.get('/:id/reminders', authenticate, validate(getComplaintSchema), getComplaintReminders);
+
+// Feature C: Historical Resolution Suggestions
+router.get('/:id/historical-resolutions', authenticate, requireRole('officer', 'admin'), validate(getComplaintSchema), getHistoricalSuggestions);
 
 export default router;

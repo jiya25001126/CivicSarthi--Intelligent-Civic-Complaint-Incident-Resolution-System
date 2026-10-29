@@ -668,5 +668,29 @@ export async function exportAnalyticsReport(params = {}) {
   return res;
 }
 
+// ==========================================
+// Features A & C: Notifications & Historical Resolution Suggestions
+// ==========================================
+
+export async function fetchHistoricalResolutionSuggestions(complaintId, params = {}) {
+  const res = await api.get(`/complaints/${encodeURIComponent(complaintId)}/historical-resolutions`, { params });
+  return res.data;
+}
+
+export async function fetchNotificationLogs(params = {}) {
+  const res = await api.get('/notifications/logs', { params });
+  return res.data;
+}
+
+export async function fetchNotificationPreferences() {
+  const res = await api.get('/notifications/preferences');
+  return res.data;
+}
+
+export async function updateNotificationPreferences(data) {
+  const res = await api.put('/notifications/preferences', data);
+  return res.data;
+}
+
 export { API_BASE_URL };
 export default api;
