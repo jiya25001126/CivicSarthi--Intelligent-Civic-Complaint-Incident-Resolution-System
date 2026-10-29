@@ -103,6 +103,9 @@ export class JsonReopeningRequestRepository {
 
       const id = data.id || this.generateRequestId(list);
       const referenceNumber = data.referenceNumber || this.generateRequestReference(list);
+      const requesterId = data.requesterId || data.citizenId;
+      const citizenId = data.citizenId || data.requesterId;
+      const complaintReference = data.complaintReference || data.complaintId;
       const now = new Date().toISOString();
 
       const initialStatus = data.status || REOPENING_STATUS.PENDING_REVIEW;
@@ -110,7 +113,7 @@ export class JsonReopeningRequestRepository {
         {
           status: initialStatus,
           timestamp: now,
-          actorId: data.requesterId || 'SYSTEM',
+          actorId: requesterId || 'SYSTEM',
           actorRole: 'citizen',
           remarks: 'Reopening request submitted by citizen complainant'
         }
@@ -120,6 +123,9 @@ export class JsonReopeningRequestRepository {
         ...data,
         id,
         referenceNumber,
+        requesterId,
+        citizenId,
+        complaintReference,
         status: initialStatus,
         statusHistory: initialHistory,
         decision: data.decision || null,
@@ -146,9 +152,11 @@ export class JsonReopeningRequestRepository {
   async findPendingByComplaintId(complaintId) {
     const fileData = await this._readFile();
     const list = fileData.reopeningRequests || [];
+    const target = String(complaintId).trim().toLowerCase();
     const found = list.find(
       (r) =>
-        (r.complaintId === complaintId || r.complaintReference === complaintId) &&
+        ((r.complaintId && r.complaintId.toLowerCase() === target) ||
+          (r.complaintReference && r.complaintReference.toLowerCase() === target)) &&
         r.status === REOPENING_STATUS.PENDING_REVIEW
     );
     return found ? { ...found } : null;
@@ -159,18 +167,29 @@ export class JsonReopeningRequestRepository {
     let list = fileData.reopeningRequests || [];
 
     if (filters.complaintId) {
+      const targetCmp = String(filters.complaintId).trim().toLowerCase();
       list = list.filter(
-        (r) => r.complaintId === filters.complaintId || r.complaintReference === filters.complaintId
+        (r) =>
+          (r.complaintId && r.complaintId.toLowerCase() === targetCmp) ||
+          (r.complaintReference && r.complaintReference.toLowerCase() === targetCmp)
       );
     }
-    if (filters.requesterId) {
-      list = list.filter((r) => r.requesterId === filters.requesterId);
+    const requester = filters.requesterId || filters.citizenId;
+    if (requester) {
+      const targetReq = String(requester).trim().toLowerCase();
+      list = list.filter(
+        (r) =>
+          (r.requesterId && r.requesterId.toLowerCase() === targetReq) ||
+          (r.citizenId && r.citizenId.toLowerCase() === targetReq)
+      );
     }
-    if (filters.departmentId) {
-      list = list.filter((r) => r.departmentId === filters.departmentId);
+    if (filters.departmentId && filters.departmentId !== 'ALL') {
+      const targetDept = String(filters.departmentId).trim().toUpperCase();
+      list = list.filter((r) => r.departmentId && r.departmentId.toUpperCase() === targetDept);
     }
-    if (filters.status) {
-      list = list.filter((r) => r.status === filters.status);
+    if (filters.status && filters.status !== 'ALL') {
+      const targetStatus = String(filters.status).trim().toUpperCase();
+      list = list.filter((r) => r.status && r.status.toUpperCase() === targetStatus);
     }
 
     return list.map((r) => ({ ...r }));

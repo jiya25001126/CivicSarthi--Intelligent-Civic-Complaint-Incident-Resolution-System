@@ -5,6 +5,7 @@ import aiIntelligenceService from '../services/aiIntelligence.service.js';
 import { validateResolutionQuality } from '../services/resolutionQuality.validator.js';
 import { COMPLAINT_STATUS, validateStatusTransition } from '../constants/status.constants.js';
 import storageService from '../services/storage.service.js';
+import spamReviewService from '../services/spamReview.service.js';
 
 export const listComplaints = async (req, res, next) => {
   try {
@@ -928,6 +929,23 @@ export const getComplaintAttachment = async (req, res, next) => {
   }
 };
 
+
+/**
+ * Manually flags a complaint for Spam & Abuse investigation.
+ */
+export const flagComplaintForSpam = async (req, res, next) => {
+  try {
+    const result = await spamReviewService.flagComplaintManually(req.params.id, req.body, req.user);
+    res.status(201).json({
+      success: true,
+      message: result.message,
+      data: result.review
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   listComplaints,
   listMyComplaints,
@@ -945,5 +963,6 @@ export default {
   updateComplaintPriority,
   linkDuplicateComplaint,
   uploadComplaintAttachment,
-  getComplaintAttachment
+  getComplaintAttachment,
+  flagComplaintForSpam
 };

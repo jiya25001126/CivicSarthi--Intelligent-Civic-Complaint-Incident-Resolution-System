@@ -2,21 +2,25 @@ import config from '../config/app.config.js';
 import authService from '../services/auth.service.js';
 
 const isProduction = config.env === 'production';
+const sameSitePolicy = process.env.COOKIE_SAME_SITE || (isProduction ? 'none' : 'lax');
 
-export const getCookieOptions = (isSessionCookie = true) => ({
-  httpOnly: Boolean(isSessionCookie),
-  secure: isProduction,
-  sameSite: 'lax',
+export const getCookieOptions = (isSession = true) => ({
+  httpOnly: Boolean(isSession),
+  secure: isProduction || sameSitePolicy === 'none',
+  sameSite: sameSitePolicy,
   path: '/',
   maxAge: 24 * 60 * 60 * 1000 // 24 hours
 });
 
-export const getClearCookieOptions = (isSessionCookie = true) => ({
-  httpOnly: Boolean(isSessionCookie),
-  secure: isProduction,
-  sameSite: 'lax',
+export const getClearCookieOptions = (isSession = true) => ({
+  httpOnly: Boolean(isSession),
+  secure: isProduction || sameSitePolicy === 'none',
+  sameSite: sameSitePolicy,
   path: '/'
 });
+
+const cookieOptions = getCookieOptions(true);
+const csrfCookieOptions = getCookieOptions(false);
 
 export const register = async (req, res, next) => {
   try {
@@ -81,11 +85,22 @@ export const getCurrentUser = (req, res) => {
   });
 };
 
+export const getCsrfToken = (req, res) => {
+  const csrfToken = req.cookies?.[config.auth.csrfCookieName] || authService.generateCsrfToken();
+  res.cookie(config.auth.csrfCookieName, csrfToken, csrfCookieOptions);
+
+  res.json({
+    success: true,
+    csrfToken
+  });
+};
+
 export default {
   register,
   login,
   logout,
   getCurrentUser,
+  getCsrfToken,
   getCookieOptions,
   getClearCookieOptions
 };

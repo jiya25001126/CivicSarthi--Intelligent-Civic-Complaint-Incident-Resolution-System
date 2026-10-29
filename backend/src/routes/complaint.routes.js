@@ -17,7 +17,8 @@ import {
   updateComplaintPriority,
   linkDuplicateComplaint,
   uploadComplaintAttachment,
-  getComplaintAttachment
+  getComplaintAttachment,
+  flagComplaintForSpam
 } from '../controllers/complaint.controller.js';
 import { validate } from '../middleware/validate.middleware.js';
 import {
@@ -29,11 +30,12 @@ import {
 import { COMPLAINT_STATUS, COMPLAINT_PRIORITY } from '../constants/status.constants.js';
 import { APPEAL_REASONS, REOPENING_REASONS } from '../constants/feedback.constants.js';
 import { submitFeedback, getComplaintFeedback } from '../controllers/feedback.controller.js';
-import { createAppeal } from '../controllers/appeal.controller.js';
-import { createReopeningRequest } from '../controllers/reopening.controller.js';
+import { createAppeal, getComplaintAppeals } from '../controllers/appeal.controller.js';
+import { createReopeningRequest, getComplaintReopeningRequests } from '../controllers/reopening.controller.js';
 import { createClarification, getComplaintClarifications } from '../controllers/clarification.controller.js';
 import { requestReminder, checkReminderEligibility, getComplaintReminders } from '../controllers/reminder.controller.js';
 import { getStatusExplanation } from '../controllers/statusTranslator.controller.js';
+import { getHistoricalSuggestions } from '../controllers/historicalResolution.controller.js';
 import { CLARIFICATION_TYPE } from '../constants/clarification.constants.js';
 
 const router = express.Router();
@@ -94,6 +96,20 @@ const uploadAttachmentSchema = {
     data: z.string().min(1, 'Image data is required').optional()
   }).refine((d) => d.base64Data || d.data, {
     message: 'Image data payload is required'
+  })
+};
+
+
+const flagComplaintSchema = {
+  params: z.object({
+    id: z.string().min(1, 'Complaint ID is required')
+  }),
+  body: z.object({
+    reason: z.string().optional(),
+    reasonCode: z.string().optional(),
+    notes: z.string().optional()
+  }).refine((d) => (d.notes && d.notes.trim().length >= 10) || (d.reason && d.reason.trim().length >= 10), {
+    message: 'A flag explanation of at least 10 characters is required'
   })
 };
 
@@ -250,6 +266,7 @@ router.patch('/:id/status', authenticate, requireRole('officer', 'admin'), valid
 router.patch('/:id/priority', authenticate, requireRole('officer', 'admin'), validate(updatePrioritySchema), updateComplaintPriority);
 router.patch('/:id/duplicate', authenticate, requireRole('officer', 'admin'), validate(linkDuplicateSchema), linkDuplicateComplaint);
 router.patch('/:id/department', authenticate, requireRole('admin'), validate(updateDepartmentSchema), updateComplaintDepartment);
+router.post('/:id/flag', authenticate, requireRole('officer', 'admin'), validate(flagComplaintSchema), flagComplaintForSpam);
 router.get('/:id/history', authenticate, validate(getComplaintSchema), getComplaintHistory);
 router.post('/:id/notes', authenticate, requireRole('officer', 'admin'), validate(addNoteSchema), addOfficerNote);
 
@@ -257,7 +274,9 @@ router.post('/:id/notes', authenticate, requireRole('officer', 'admin'), validat
 router.post('/:id/feedback', authenticate, validate(submitFeedbackSchema), submitFeedback);
 router.get('/:id/feedback', authenticate, validate(getComplaintSchema), getComplaintFeedback);
 router.post('/:id/appeals', authenticate, validate(createAppealNestedSchema), createAppeal);
+router.get('/:id/appeals', authenticate, validate(getComplaintSchema), getComplaintAppeals);
 router.post('/:id/reopening-requests', authenticate, validate(createReopeningNestedSchema), createReopeningRequest);
+router.get('/:id/reopening-requests', authenticate, validate(getComplaintSchema), getComplaintReopeningRequests);
 
 // Phase 12: Citizen Clarification & Reminder Endpoints
 router.post('/:id/clarifications', authenticate, requireRole('citizen'), validate(createClarificationNestedSchema), createClarification);
@@ -265,5 +284,8 @@ router.get('/:id/clarifications', authenticate, validate(getComplaintSchema), ge
 router.post('/:id/reminders', authenticate, requireRole('citizen'), validate(getComplaintSchema), requestReminder);
 router.get('/:id/reminders/eligibility', authenticate, validate(getComplaintSchema), checkReminderEligibility);
 router.get('/:id/reminders', authenticate, validate(getComplaintSchema), getComplaintReminders);
+
+// Feature C: Historical Resolution Suggestions
+router.get('/:id/historical-resolutions', authenticate, requireRole('officer', 'admin'), validate(getComplaintSchema), getHistoricalSuggestions);
 
 export default router;

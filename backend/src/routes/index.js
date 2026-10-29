@@ -13,6 +13,8 @@ import reopeningRoutes from './reopening.routes.js';
 import spamReviewRoutes from './spamReview.routes.js';
 import clarificationRoutes from './clarification.routes.js';
 import reminderRoutes from './reminder.routes.js';
+import notificationRoutes from './notification.routes.js';
+import historicalResolutionRoutes from './historicalResolution.routes.js';
 import analyticsRoutes from './analytics.routes.js';
 import { mockCpgramsRouter } from '../../../mock-cpgrams/index.js';
 
@@ -35,6 +37,8 @@ v1Router.use('/spam-reviews', spamReviewRoutes);
 v1Router.use('/citizen', spamReviewRoutes);
 v1Router.use('/clarifications', clarificationRoutes);
 v1Router.use('/reminders', reminderRoutes);
+v1Router.use('/notifications', notificationRoutes);
+v1Router.use('/historical-resolutions', historicalResolutionRoutes);
 v1Router.use('/analytics', analyticsRoutes);
 v1Router.use('/mock-cpgrams', mockCpgramsRouter);
 
@@ -57,6 +61,8 @@ apiRouter.use('/spam-reviews', spamReviewRoutes);
 apiRouter.use('/citizen', spamReviewRoutes);
 apiRouter.use('/clarifications', clarificationRoutes);
 apiRouter.use('/reminders', reminderRoutes);
+apiRouter.use('/notifications', notificationRoutes);
+apiRouter.use('/historical-resolutions', historicalResolutionRoutes);
 apiRouter.use('/analytics', analyticsRoutes);
 apiRouter.use('/mock-cpgrams', mockCpgramsRouter);
 

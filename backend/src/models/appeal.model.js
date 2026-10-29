@@ -55,6 +55,11 @@ const appealSchema = new mongoose.Schema(
       index: true,
       trim: true
     },
+    citizenId: {
+      type: String,
+      index: true,
+      trim: true
+    },
     departmentId: {
       type: String,
       required: [true, 'Department ID is required'],
@@ -72,6 +77,10 @@ const appealSchema = new mongoose.Schema(
       trim: true,
       minlength: [10, 'Explanation must be at least 10 characters'],
       maxlength: [3000, 'Explanation cannot exceed 3000 characters']
+    },
+    citizenExplanation: {
+      type: String,
+      trim: true
     },
     evidence: {
       type: [String],
@@ -113,6 +122,35 @@ const appealSchema = new mongoose.Schema(
     timestamps: true
   }
 );
+
+appealSchema.pre('validate', function (next) {
+  if (!this.requesterId && this.citizenId) {
+    this.requesterId = this.citizenId;
+  }
+  if (!this.citizenId && this.requesterId) {
+    this.citizenId = this.requesterId;
+  }
+  if (!this.complaintReference && this.complaintId) {
+    this.complaintReference = this.complaintId;
+  }
+  if (!this.explanation && this.citizenExplanation) {
+    this.explanation = this.citizenExplanation;
+  }
+  if (!this.citizenExplanation && this.explanation) {
+    this.citizenExplanation = this.explanation;
+  }
+  if (!this.id) {
+    const year = new Date().getFullYear();
+    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    this.id = `APP-${year}-${Date.now().toString().slice(-4)}${rand}`;
+  }
+  if (!this.referenceNumber) {
+    const year = new Date().getFullYear();
+    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    this.referenceNumber = `APL-${year}-${Date.now().toString().slice(-4)}${rand}`;
+  }
+  next();
+});
 
 appealSchema.index({ complaintId: 1, status: 1 });
 appealSchema.index({ departmentId: 1, status: 1 });

@@ -40,6 +40,7 @@ import {
   Legend
 } from 'recharts';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import {
   fetchAnalyticsOverview,
   fetchAnalyticsTrends,
@@ -70,6 +71,7 @@ const PRIORITY_COLORS = {
 
 export default function AnalyticsDashboardPage() {
   const { user, isAdmin, isOfficer } = useAuth();
+  const { t, lang, tDepartment, tCategory, tStatus, tPriority } = useLanguage();
 
   // Filter States
   const [datePreset, setDatePreset] = useState('30d');
@@ -219,22 +221,23 @@ export default function AnalyticsDashboardPage() {
   const statusChartData = useMemo(() => {
     if (!workflow?.statusDistribution) return [];
     return Object.entries(workflow.statusDistribution).map(([status, count]) => ({
-      name: status.replace(/_/g, ' '),
+      name: tStatus(status),
       status,
       count,
       fill: STATUS_COLORS[status] || '#64748b'
     }));
-  }, [workflow]);
+  }, [workflow, lang]);
 
   // Priority chart data
   const priorityChartData = useMemo(() => {
     if (!catGeography?.priorities) return [];
     return Object.entries(catGeography.priorities).map(([priority, count]) => ({
-      name: priority,
+      name: tPriority(priority),
+      priority,
       count,
       fill: PRIORITY_COLORS[priority] || '#64748b'
     }));
-  }, [catGeography]);
+  }, [catGeography, lang]);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
@@ -248,10 +251,10 @@ export default function AnalyticsDashboardPage() {
               </div>
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                  Municipal Grievance Analytics & Decision Support
+                  {t.analytics.title}
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-400">
-                  Real-time redressal volume, statutory SLA compliance, backlog velocity, and cross-department performance.
+                  {t.analytics.subtitle}
                 </p>
               </div>
             </div>
@@ -263,11 +266,11 @@ export default function AnalyticsDashboardPage() {
               type="button"
               onClick={loadAllAnalytics}
               disabled={loading}
-              title="Refresh Analytics Metrics"
+              title={t.analytics.refreshBtn}
               className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition"
             >
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-              <span>Refresh</span>
+              <span>{t.analytics.refreshBtn}</span>
             </button>
 
             <button
@@ -276,7 +279,7 @@ export default function AnalyticsDashboardPage() {
               className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition"
             >
               <HelpCircle size={14} className="text-blue-400" />
-              <span>Formulas Glossary</span>
+              <span>{t.analytics.formulasGlossaryBtn}</span>
             </button>
 
             {/* Export Dropdown */}
@@ -288,14 +291,14 @@ export default function AnalyticsDashboardPage() {
                 className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-2 shadow-sm transition"
               >
                 <Download size={14} />
-                <span>{exporting ? 'Generating CSV...' : 'Export Report'}</span>
+                <span>{exporting ? t.analytics.generatingCsv : t.analytics.exportReportBtn}</span>
                 <ChevronDown size={12} />
               </button>
 
               {showExportMenu && (
                 <div className="absolute right-0 mt-2 w-56 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-30 py-1.5 text-xs text-slate-200">
                   <div className="px-3 py-1 text-[10px] uppercase font-bold tracking-wider text-slate-400 border-b border-slate-700/60">
-                    CSV Report Formats
+                    {t.analytics.csvFormats}
                   </div>
                   <button
                     type="button"
@@ -303,7 +306,7 @@ export default function AnalyticsDashboardPage() {
                     className="w-full text-left px-3 py-2 hover:bg-slate-700 flex items-center gap-2 text-slate-200 font-medium"
                   >
                     <FileSpreadsheet size={13} className="text-emerald-400" />
-                    Full Comprehensive Report
+                    {t.analytics.fullReport}
                   </button>
                   <button
                     type="button"
@@ -311,7 +314,7 @@ export default function AnalyticsDashboardPage() {
                     className="w-full text-left px-3 py-2 hover:bg-slate-700 flex items-center gap-2 text-slate-200"
                   >
                     <BarChart3 size={13} className="text-blue-400" />
-                    Executive KPI Summary
+                    {t.analytics.executiveKpi}
                   </button>
                   <button
                     type="button"
@@ -319,7 +322,7 @@ export default function AnalyticsDashboardPage() {
                     className="w-full text-left px-3 py-2 hover:bg-slate-700 flex items-center gap-2 text-slate-200"
                   >
                     <Building2 size={13} className="text-indigo-400" />
-                    Department Performance Table
+                    {t.analytics.deptPerfTable}
                   </button>
                   <button
                     type="button"
@@ -327,7 +330,7 @@ export default function AnalyticsDashboardPage() {
                     className="w-full text-left px-3 py-2 hover:bg-slate-700 flex items-center gap-2 text-slate-200"
                   >
                     <Layers size={13} className="text-amber-400" />
-                    Categories & Geography
+                    {t.analytics.catGeoReport}
                   </button>
                   <button
                     type="button"
@@ -335,7 +338,7 @@ export default function AnalyticsDashboardPage() {
                     className="w-full text-left px-3 py-2 hover:bg-slate-700 flex items-center gap-2 text-slate-200"
                   >
                     <CheckCircle2 size={13} className="text-pink-400" />
-                    Workflow & Quality Checks
+                    {t.analytics.workflowQualityReport}
                   </button>
                 </div>
               )}
@@ -347,12 +350,12 @@ export default function AnalyticsDashboardPage() {
         <div className="mt-5 pt-4 border-t border-slate-800 grid grid-cols-1 md:grid-cols-12 gap-3 text-xs">
           {/* Preset Date Range Chips */}
           <div className="md:col-span-5 flex flex-wrap items-center gap-1.5">
-            <span className="text-slate-400 text-[11px] font-semibold mr-1">Timeframe:</span>
+            <span className="text-slate-400 text-[11px] font-semibold mr-1">{t.analytics.timeframe}</span>
             {[
-              { id: '7d', label: 'Last 7 Days' },
-              { id: '30d', label: 'Last 30 Days' },
-              { id: '90d', label: 'Last 90 Days' },
-              { id: 'all', label: 'All Time' }
+              { id: '7d', label: t.analytics.preset7d },
+              { id: '30d', label: t.analytics.preset30d },
+              { id: '90d', label: t.analytics.preset90d },
+              { id: 'all', label: t.analytics.presetAllTime }
             ].map((p) => (
               <button
                 key={p.id}
@@ -381,7 +384,7 @@ export default function AnalyticsDashboardPage() {
               className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-slate-200 text-xs w-full focus:outline-none focus:border-blue-500"
               title="Start Date"
             />
-            <span className="text-slate-500 text-[10px]">to</span>
+            <span className="text-slate-500 text-[10px]">{t.analytics.to}</span>
             <input
               type="date"
               value={endDate}
@@ -402,17 +405,17 @@ export default function AnalyticsDashboardPage() {
                 onChange={(e) => setSelectedDepartment(e.target.value)}
                 className="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1 text-slate-200 text-xs focus:outline-none focus:border-blue-500"
               >
-                <option value="ALL">All Departments</option>
+                <option value="ALL">{t.analytics.allDepartments}</option>
                 {departmentsList.map((d) => (
                   <option key={d.id} value={d.id}>
-                    {d.code || d.name}
+                    {tDepartment(d.code || d.name)}
                   </option>
                 ))}
               </select>
             ) : (
               <div className="px-2.5 py-1 rounded bg-slate-800 border border-slate-700 text-slate-300 flex items-center gap-1.5 text-xs">
                 <Building2 size={12} className="text-blue-400" />
-                <span className="truncate">{user?.departmentId || 'Assigned Department'}</span>
+                <span className="truncate">{user?.departmentId ? tDepartment(user.departmentId) : tDepartment('Assigned Department')}</span>
               </div>
             )}
           </div>
@@ -424,11 +427,11 @@ export default function AnalyticsDashboardPage() {
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1 text-slate-200 text-xs focus:outline-none focus:border-blue-500"
             >
-              <option value="ALL">All Categories</option>
+              <option value="ALL">{t.analytics.allCategories}</option>
               {['roads', 'electricity', 'water', 'healthcare', 'pension', 'scholarship', 'ration', 'municipal'].map(
                 (c) => (
                   <option key={c} value={c}>
-                    {c.charAt(0).toUpperCase() + c.slice(1)}
+                    {tCategory(c)}
                   </option>
                 )
               )}
@@ -443,7 +446,7 @@ export default function AnalyticsDashboardPage() {
           <div className="flex items-center justify-between pb-2 border-b border-slate-700">
             <div className="flex items-center gap-2 font-bold text-white text-sm">
               <Info size={16} className="text-blue-400" />
-              <span>Official Metric Definitions & Calculation Formulas</span>
+              <span>{t.analytics.glossaryTitle}</span>
             </div>
             <button
               type="button"
@@ -455,30 +458,21 @@ export default function AnalyticsDashboardPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
             <div className="bg-slate-900/80 p-3 rounded border border-slate-700/60">
-              <div className="font-semibold text-blue-300 mb-1">Resolution Rate (%)</div>
+              <div className="font-semibold text-blue-300 mb-1">{t.analytics.resolutionRate} (%)</div>
               <p className="text-[11px] text-slate-400 mb-1">
-                <strong>Formula:</strong> (Resolved + Closed Complaints) / Total Eligible Complaints * 100
-              </p>
-              <p className="text-[10px] text-slate-500">
-                Denominator: Total complaints registered in the selected reporting window.
+                <strong>Formula:</strong> {t.analytics.resolutionRateFormula}
               </p>
             </div>
             <div className="bg-slate-900/80 p-3 rounded border border-slate-700/60">
-              <div className="font-semibold text-emerald-300 mb-1">SLA Compliance Rate (%)</div>
+              <div className="font-semibold text-emerald-300 mb-1">{t.analytics.slaComplianceRate} (%)</div>
               <p className="text-[11px] text-slate-400 mb-1">
-                <strong>Formula:</strong> (Resolved on or before Deadline) / Total Resolved Complaints * 100
-              </p>
-              <p className="text-[10px] text-slate-500">
-                Denominator: Total complaints that reached resolution within the selected window.
+                <strong>Formula:</strong> {t.analytics.slaComplianceFormula}
               </p>
             </div>
             <div className="bg-slate-900/80 p-3 rounded border border-slate-700/60">
-              <div className="font-semibold text-rose-300 mb-1">Overdue Backlog</div>
+              <div className="font-semibold text-rose-300 mb-1">{t.analytics.overdueCases}</div>
               <p className="text-[11px] text-slate-400 mb-1">
-                <strong>Formula:</strong> Active Unresolved Complaints where Current Date &gt; Target SLA Deadline
-              </p>
-              <p className="text-[10px] text-slate-500">
-                Evaluated against department-specific SLA days (or default 30 days).
+                <strong>Formula:</strong> {t.analytics.reopenRateFormula}
               </p>
             </div>
           </div>
@@ -497,7 +491,7 @@ export default function AnalyticsDashboardPage() {
             onClick={loadAllAnalytics}
             className="px-2.5 py-1 bg-rose-900 hover:bg-rose-800 text-white rounded text-[11px] font-semibold"
           >
-            Retry
+            {t.common.retry}
           </button>
         </div>
       )}
@@ -507,7 +501,7 @@ export default function AnalyticsDashboardPage() {
         {/* Card 1: Total Complaints */}
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">
-            <span>Total Registered</span>
+            <span>{t.analytics.totalRegistered}</span>
             <Layers size={14} className="text-blue-600" />
           </div>
           <div className="text-2xl font-black text-slate-900">
@@ -523,7 +517,7 @@ export default function AnalyticsDashboardPage() {
                 {comparison.percentChange?.totalComplaints > 0 ? '+' : ''}
                 {comparison.percentChange?.totalComplaints}%
               </span>
-              <span>vs prior period</span>
+              <span>{t.analytics.vsPriorPeriod}</span>
             </div>
           )}
         </div>
@@ -531,7 +525,7 @@ export default function AnalyticsDashboardPage() {
         {/* Card 2: Active Backlog */}
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">
-            <span>Active Backlog</span>
+            <span>{t.analytics.activeBacklog}</span>
             <Clock size={14} className="text-amber-500" />
           </div>
           <div className="text-2xl font-black text-amber-700">
@@ -539,29 +533,29 @@ export default function AnalyticsDashboardPage() {
           </div>
           <div className="text-[10px] text-slate-500 mt-1">
             {metrics.totalComplaints > 0
-              ? `${Math.round(((metrics.activeComplaints || 0) / metrics.totalComplaints) * 100)}% of total workload`
-              : '0% open'}
+              ? t.analytics.ofTotalWorkload.replace('{pct}', Math.round(((metrics.activeComplaints || 0) / metrics.totalComplaints) * 100))
+              : (lang === 'hi' ? '0% खुला' : '0% open')}
           </div>
         </div>
 
         {/* Card 3: Resolved & Closed */}
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">
-            <span>Resolved</span>
+            <span>{t.analytics.resolvedCard}</span>
             <CheckCircle2 size={14} className="text-emerald-600" />
           </div>
           <div className="text-2xl font-black text-emerald-700">
             {loading ? '...' : (metrics.resolvedAndClosed ?? 0)}
           </div>
           <div className="text-[10px] text-emerald-800 font-semibold mt-1">
-            {loading ? '...' : `${metrics.resolutionRate ?? 0}% resolution rate`}
+            {loading ? '...' : `${metrics.resolutionRate ?? 0}% ${t.analytics.resolutionRate}`}
           </div>
         </div>
 
         {/* Card 4: SLA Compliance Rate */}
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">
-            <span>SLA Compliance</span>
+            <span>{t.analytics.slaComplianceRate}</span>
             <ShieldCheck size={14} className="text-indigo-600" />
           </div>
           <div className="text-2xl font-black text-indigo-700">
@@ -573,36 +567,36 @@ export default function AnalyticsDashboardPage() {
           </div>
           <div className="text-[10px] text-slate-500 mt-1">
             {metrics.eligibleResolvedForSla > 0
-              ? `${metrics.resolvedWithinSlaCount}/${metrics.eligibleResolvedForSla} resolved within SLA`
-              : 'No resolved cases'}
+              ? `${metrics.resolvedWithinSlaCount}/${metrics.eligibleResolvedForSla} ${lang === 'hi' ? 'मानक SLA के भीतर' : 'resolved within SLA'}`
+              : (lang === 'hi' ? 'कोई निस्तारित मामला नहीं' : 'No resolved cases')}
           </div>
         </div>
 
         {/* Card 5: Overdue Backlog */}
         <div className="bg-white border border-rose-200 rounded-xl p-4 shadow-sm bg-rose-50/20">
           <div className="flex items-center justify-between text-rose-700 text-xs font-semibold uppercase tracking-wider mb-1">
-            <span>Overdue Cases</span>
+            <span>{t.analytics.overdueCases}</span>
             <AlertTriangle size={14} className="text-rose-600" />
           </div>
           <div className="text-2xl font-black text-rose-700">
             {loading ? '...' : (metrics.overdueComplaints ?? 0)}
           </div>
           <div className="text-[10px] text-rose-600 font-medium mt-1">
-            {metrics.overdueComplaints > 0 ? 'Exceeded target deadline' : 'Zero SLA breaches'}
+            {metrics.overdueComplaints > 0 ? t.analytics.exceededDeadline : t.analytics.zeroSlaBreaches}
           </div>
         </div>
 
         {/* Card 6: Urgent / Critical */}
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">
-            <span>High & Critical</span>
+            <span>{t.analytics.highAndCritical}</span>
             <Flame size={14} className="text-orange-600" />
           </div>
           <div className="text-2xl font-black text-orange-700">
             {loading ? '...' : (metrics.highAndCriticalCount ?? 0)}
           </div>
           <div className="text-[10px] text-slate-500 mt-1">
-            {metrics.priorityCounts?.CRITICAL ?? 0} critical priority
+            {t.analytics.criticalPriorityCount.replace('{count}', metrics.priorityCounts?.CRITICAL ?? 0)}
           </div>
         </div>
       </div>
@@ -613,10 +607,10 @@ export default function AnalyticsDashboardPage() {
           <div>
             <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
               <TrendingUp size={16} className="text-blue-600" />
-              <span>Grievance Velocity & Historical Backlog Reconstruction</span>
+              <span>{t.analytics.velocityTitle}</span>
             </h2>
             <p className="text-[11px] text-slate-500">
-              Chronological trends of grievance registrations, formal remediations, and open backlog over time.
+              {t.analytics.velocitySubtitle}
             </p>
           </div>
           <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-xs self-start sm:self-auto">
@@ -631,7 +625,7 @@ export default function AnalyticsDashboardPage() {
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                {iv}
+                {iv === 'day' ? (lang === 'hi' ? 'दैनिक' : 'day') : iv === 'week' ? (lang === 'hi' ? 'साप्ताहिक' : 'week') : (lang === 'hi' ? 'मासिक' : 'month')}
               </button>
             ))}
           </div>
@@ -642,7 +636,7 @@ export default function AnalyticsDashboardPage() {
           {trends.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-slate-400 text-xs">
               <Calendar size={28} className="mb-1 text-slate-300" />
-              <span>No time-series grievances recorded for the selected window.</span>
+              <span>{t.analytics.noTimeSeries}</span>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
@@ -673,7 +667,7 @@ export default function AnalyticsDashboardPage() {
                 <Area
                   type="monotone"
                   dataKey="submitted"
-                  name="Grievances Registered"
+                  name={t.analytics.grievancesRegistered}
                   stroke="#3b82f6"
                   fillOpacity={1}
                   fill="url(#colorSubmitted)"
@@ -681,7 +675,7 @@ export default function AnalyticsDashboardPage() {
                 <Area
                   type="monotone"
                   dataKey="resolved"
-                  name="Remediated & Resolved"
+                  name={t.analytics.remediatedResolved}
                   stroke="#10b981"
                   fillOpacity={1}
                   fill="url(#colorResolved)"
@@ -689,7 +683,7 @@ export default function AnalyticsDashboardPage() {
                 <Area
                   type="monotone"
                   dataKey="openBacklog"
-                  name="Active Backlog"
+                  name={t.analytics.activeBacklog}
                   stroke="#8b5cf6"
                   strokeDasharray="4 4"
                   fill="none"
@@ -708,21 +702,21 @@ export default function AnalyticsDashboardPage() {
             <div>
               <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
                 <Layers size={15} className="text-blue-600" />
-                <span>Grievance Lifecycle Status Distribution</span>
+                <span>{t.analytics.lifecycleDistributionTitle}</span>
               </h2>
               <p className="text-[11px] text-slate-500">
-                Breakdown of complaints across all 8 administrative lifecycle phases.
+                {t.analytics.lifecycleDistributionSubtitle}
               </p>
             </div>
             <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full">
-              {metrics.totalComplaints || 0} Total Cases
+              {t.analytics.totalCasesBadge.replace('{count}', metrics.totalComplaints || 0)}
             </span>
           </div>
 
           <div className="h-64 w-full">
             {statusChartData.length === 0 ? (
               <div className="h-full flex items-center justify-center text-slate-400 text-xs">
-                No status data available
+                {t.common.noRecords}
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
@@ -747,7 +741,7 @@ export default function AnalyticsDashboardPage() {
                       fontSize: '11px'
                     }}
                   />
-                  <Bar dataKey="count" name="Complaints" radius={[4, 4, 0, 0]}>
+                  <Bar dataKey="count" name={lang === 'hi' ? 'शिकायतें' : 'Complaints'} radius={[4, 4, 0, 0]}>
                     {statusChartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
@@ -763,9 +757,9 @@ export default function AnalyticsDashboardPage() {
           <div className="border-b border-slate-100 pb-2.5">
             <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
               <Flame size={15} className="text-orange-600" />
-              <span>Priority Mix</span>
+              <span>{t.analytics.priorityMixTitle}</span>
             </h2>
-            <p className="text-[11px] text-slate-500">Urgency classification profile</p>
+            <p className="text-[11px] text-slate-500">{t.analytics.priorityMixSubtitle}</p>
           </div>
 
           <div className="h-64 w-full">
@@ -819,14 +813,14 @@ export default function AnalyticsDashboardPage() {
           <div>
             <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
               <Building2 size={16} className="text-blue-600" />
-              <span>Departmental Workload & Resolution Performance Matrix</span>
+              <span>{t.analytics.deptMatrixTitle}</span>
             </h2>
             <p className="text-[11px] text-slate-500">
-              Operational triage workload, resolution rate, statutory turnaround SLA compliance, and case bottlenecks.
+              {t.analytics.deptMatrixSubtitle}
             </p>
           </div>
           <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded">
-            {deptPerformance.length} Departments Tracked
+            {t.analytics.deptsTrackedBadge.replace('{count}', deptPerformance.length)}
           </span>
         </div>
 
@@ -834,35 +828,35 @@ export default function AnalyticsDashboardPage() {
           <table className="min-w-full divide-y divide-slate-200 text-left text-xs">
             <thead className="bg-slate-50 text-slate-600 font-semibold uppercase text-[10px] tracking-wider">
               <tr>
-                <th className="py-2.5 px-3">Department Name</th>
-                <th className="py-2.5 px-2">SLA Target</th>
-                <th className="py-2.5 px-2 text-right">Total</th>
-                <th className="py-2.5 px-2 text-right">Active</th>
-                <th className="py-2.5 px-2 text-right">Resolved</th>
-                <th className="py-2.5 px-2 text-right">Overdue</th>
-                <th className="py-2.5 px-2 text-right">Resolution Rate</th>
-                <th className="py-2.5 px-2 text-right">SLA Compliance</th>
-                <th className="py-2.5 px-2 text-right">Avg Duration</th>
-                <th className="py-2.5 px-3 text-right">Loops / Stale</th>
+                <th className="py-2.5 px-3">{t.analytics.thDeptName}</th>
+                <th className="py-2.5 px-2">{t.analytics.thSlaTarget}</th>
+                <th className="py-2.5 px-2 text-right">{t.analytics.thTotal}</th>
+                <th className="py-2.5 px-2 text-right">{t.analytics.thActive}</th>
+                <th className="py-2.5 px-2 text-right">{t.analytics.thResolved}</th>
+                <th className="py-2.5 px-2 text-right">{t.analytics.thOverdue}</th>
+                <th className="py-2.5 px-2 text-right">{t.analytics.thResolutionRate}</th>
+                <th className="py-2.5 px-2 text-right">{t.analytics.thSlaCompliance}</th>
+                <th className="py-2.5 px-2 text-right">{t.analytics.thAvgDuration}</th>
+                <th className="py-2.5 px-3 text-right">{t.analytics.thLoopsStale}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {deptPerformance.length === 0 ? (
                 <tr>
                   <td colSpan="10" className="py-6 text-center text-slate-400">
-                    No departmental performance records for the selected filters.
+                    {t.analytics.noDeptRecords}
                   </td>
                 </tr>
               ) : (
                 deptPerformance.map((dept) => (
                   <tr key={dept.departmentId} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-2.5 px-3 font-semibold text-slate-900">
-                      <div>{dept.departmentName}</div>
+                      <div>{tDepartment(dept.departmentName)}</div>
                       <div className="text-[10px] text-slate-400 font-normal">{dept.code}</div>
                     </td>
                     <td className="py-2.5 px-2 text-slate-600">
                       <span className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-[10px] font-medium">
-                        {dept.targetSlaDays} days
+                        {t.analytics.daysUnit.replace('{days}', dept.targetSlaDays)}
                       </span>
                     </td>
                     <td className="py-2.5 px-2 text-right font-medium">{dept.totalComplaints}</td>
@@ -899,13 +893,13 @@ export default function AnalyticsDashboardPage() {
                     </td>
                     <td className="py-2.5 px-2 text-right text-slate-600">
                       {dept.averageResolutionDurationHours !== null
-                        ? `${dept.averageResolutionDurationHours} hrs`
+                        ? t.analytics.hrsUnit.replace('{hrs}', dept.averageResolutionDurationHours)
                         : '—'}
                     </td>
                     <td className="py-2.5 px-3 text-right text-[11px]">
-                      <span className="text-slate-600">{dept.reassignmentLoopsCount || 0} loops</span>
+                      <span className="text-slate-600">{t.analytics.loopsCount.replace('{count}', dept.reassignmentLoopsCount || 0)}</span>
                       <span className="text-slate-300 mx-1">•</span>
-                      <span className="text-amber-700">{dept.staleCasesCount || 0} stale</span>
+                      <span className="text-amber-700">{t.analytics.staleCount.replace('{count}', dept.staleCasesCount || 0)}</span>
                     </td>
                   </tr>
                 ))
@@ -922,21 +916,21 @@ export default function AnalyticsDashboardPage() {
           <div className="border-b border-slate-100 pb-2.5">
             <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
               <Layers size={15} className="text-blue-600" />
-              <span>Complaint Volume by Sector / Category</span>
+              <span>{t.analytics.catSectorTitle}</span>
             </h2>
-            <p className="text-[11px] text-slate-500">Distribution of civic issues reported across domains</p>
+            <p className="text-[11px] text-slate-500">{t.analytics.catSectorSubtitle}</p>
           </div>
 
           <div className="space-y-2.5">
             {!catGeography?.categories || catGeography.categories.length === 0 ? (
-              <div className="py-6 text-center text-slate-400 text-xs">No category data</div>
+              <div className="py-6 text-center text-slate-400 text-xs">{t.common.noRecords}</div>
             ) : (
               catGeography.categories.map((cat) => (
                 <div key={cat.category} className="space-y-1">
                   <div className="flex items-center justify-between text-xs font-medium text-slate-800">
-                    <span className="capitalize">{cat.category}</span>
+                    <span>{tCategory(cat.category)}</span>
                     <span className="text-slate-500 text-[11px]">
-                      {cat.count} cases ({cat.percentage}%)
+                      {cat.count} {lang === 'hi' ? 'मामले' : 'cases'} ({cat.percentage}%)
                     </span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden flex">
@@ -957,26 +951,26 @@ export default function AnalyticsDashboardPage() {
             <div>
               <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
                 <MapPin size={15} className="text-emerald-600" />
-                <span>Geographic Grievance Distribution</span>
+                <span>{t.analytics.geoDistributionTitle}</span>
               </h2>
               <p className="text-[11px] text-slate-500">
-                Aggregated state and district incident density
+                {t.analytics.geoDistributionSubtitle}
               </p>
             </div>
             <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-semibold">
-              PII Stripped
+              {t.analytics.piiStripped}
             </span>
           </div>
 
           <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
             {!catGeography?.geography || catGeography.geography.length === 0 ? (
-              <div className="py-6 text-center text-slate-400 text-xs">No geographical data</div>
+              <div className="py-6 text-center text-slate-400 text-xs">{t.common.noRecords}</div>
             ) : (
               catGeography.geography.map((st) => (
                 <div key={st.state} className="border border-slate-200 rounded-lg p-3 bg-slate-50/50">
                   <div className="flex items-center justify-between font-bold text-xs text-slate-900 mb-1.5">
                     <span>{st.state}</span>
-                    <span className="text-blue-700 font-semibold">{st.totalComplaints} cases</span>
+                    <span className="text-blue-700 font-semibold">{st.totalComplaints} {lang === 'hi' ? 'मामले' : 'cases'}</span>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {st.districts.map((d) => (
@@ -994,62 +988,62 @@ export default function AnalyticsDashboardPage() {
           </div>
           <div className="text-[10px] text-slate-400 border-t border-slate-100 pt-2 flex items-center gap-1">
             <ShieldCheck size={12} className="text-emerald-600 shrink-0" />
-            <span>Strict privacy: citizen names, street addresses, and GPS coordinates are excluded.</span>
+            <span>{t.analytics.strictPrivacyNote}</span>
           </div>
         </div>
       </div>
 
-      {/* 7. Operational Workflow, Quality & Cross-Phase Integrations */}
+      {/* 7. Operational Workflow, Quality & Cross-Functional Integrations */}
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
         <div className="border-b border-slate-100 pb-3">
           <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
             <CheckCircle2 size={16} className="text-emerald-600" />
-            <span>Grievance Quality, Follow-Ups & Workflow Intelligence</span>
+            <span>{t.analytics.qualityWorkflowTitle}</span>
           </h2>
           <p className="text-[11px] text-slate-500">
-            Synthesized indicators from Citizen Feedback (Phase 10), Spam Screening (Phase 11), Clarifications & Reminders (Phase 12), and Inter-Agency Subtasks (Phase 7).
+            {t.analytics.qualityWorkflowSubtitle}
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-          {/* Card A: Clarifications & Reminders (Phase 12) */}
+          {/* Card A: Clarifications & Reminders */}
           <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/50 space-y-2">
             <div className="flex items-center gap-1.5 font-bold text-slate-900 text-xs">
               <MessageSquareQuote size={14} className="text-blue-600" />
-              <span>Clarifications & Reminders</span>
+              <span>{t.analytics.clarificationsRemindersTitle}</span>
             </div>
             <div className="space-y-1 text-slate-600 text-[11px]">
               <div className="flex justify-between">
-                <span>Citizen Clarification Queries:</span>
+                <span>{t.analytics.citizenClarificationQueries}</span>
                 <strong className="text-slate-900">{workflow?.clarifications?.totalRequests || 0}</strong>
               </div>
               <div className="flex justify-between">
-                <span>Open Awaiting Officer Reply:</span>
+                <span>{t.analytics.openAwaitingReply}</span>
                 <strong className="text-amber-700">{workflow?.clarifications?.openRequests || 0}</strong>
               </div>
               <div className="flex justify-between">
-                <span>Responded & Closed:</span>
+                <span>{t.analytics.respondedClosed}</span>
                 <strong className="text-emerald-700">
                   {(workflow?.clarifications?.respondedRequests || 0) +
                     (workflow?.clarifications?.closedRequests || 0)}
                 </strong>
               </div>
               <div className="flex justify-between pt-1 border-t border-slate-200">
-                <span>Citizen Follow-Up Reminders:</span>
+                <span>{t.analytics.citizenReminders}</span>
                 <strong className="text-blue-700">{workflow?.reminders?.totalRemindersLogged || 0}</strong>
               </div>
             </div>
           </div>
 
-          {/* Card B: Citizen Ratings & Dispute Appeals (Phase 10) */}
+          {/* Card B: Citizen Ratings & Dispute Appeals */}
           <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/50 space-y-2">
             <div className="flex items-center gap-1.5 font-bold text-slate-900 text-xs">
               <Star size={14} className="text-amber-500 fill-amber-500" />
-              <span>Satisfaction & Dispute Appeals</span>
+              <span>{t.analytics.satisfactionAppealsTitle}</span>
             </div>
             <div className="space-y-1 text-slate-600 text-[11px]">
               <div className="flex justify-between items-center">
-                <span>Average Citizen Rating:</span>
+                <span>{t.analytics.avgCitizenRating}</span>
                 <span className="font-bold text-amber-700 flex items-center gap-0.5">
                   {workflow?.satisfactionFeedback?.averageRating !== null
                     ? `${workflow?.satisfactionFeedback?.averageRating} / 5`
@@ -1057,78 +1051,78 @@ export default function AnalyticsDashboardPage() {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Feedback Submissions:</span>
+                <span>{t.analytics.feedbackSubmissions}</span>
                 <strong className="text-slate-900">{workflow?.satisfactionFeedback?.totalResponses || 0}</strong>
               </div>
               <div className="flex justify-between">
-                <span>Formal Dispute Appeals:</span>
+                <span>{t.analytics.formalAppeals}</span>
                 <strong className="text-slate-900">{workflow?.appeals?.totalAppeals || 0}</strong>
               </div>
               <div className="flex justify-between pt-1 border-t border-slate-200">
-                <span>Appeals Accepted / Overturned:</span>
+                <span>{t.analytics.appealsAccepted}</span>
                 <strong className="text-emerald-700">{workflow?.appeals?.acceptedAppeals || 0}</strong>
               </div>
             </div>
           </div>
 
-          {/* Card C: Spam Review Desk (Phase 11) */}
+          {/* Card C: Spam Review Desk */}
           <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/50 space-y-2">
             <div className="flex items-center gap-1.5 font-bold text-slate-900 text-xs">
               <ShieldAlert size={14} className="text-indigo-600" />
-              <span>Spam Screening & Review</span>
+              <span>{t.analytics.spamReviewTitle}</span>
             </div>
             <div className="space-y-1 text-slate-600 text-[11px]">
               <div className="flex justify-between">
-                <span>Automated Screening Flags:</span>
+                <span>{t.analytics.screeningFlags}</span>
                 <strong className="text-slate-900">
                   {workflow?.spamReviewDesk?.totalScreeningFlags || 0}
                 </strong>
               </div>
               <div className="flex justify-between">
-                <span>Cleared Legitimate by Officer:</span>
+                <span>{t.analytics.clearedLegitimate}</span>
                 <strong className="text-emerald-700">
                   {workflow?.spamReviewDesk?.humanReviewOutcomes?.clearedLegitimate || 0}
                 </strong>
               </div>
               <div className="flex justify-between">
-                <span>Human-Confirmed Abuse:</span>
+                <span>{t.analytics.confirmedAbuse}</span>
                 <strong className="text-rose-700">
                   {workflow?.spamReviewDesk?.humanReviewOutcomes?.confirmedAbuse || 0}
                 </strong>
               </div>
               <div className="text-[10px] text-slate-400 italic pt-1 border-t border-slate-200">
-                Flags &ne; Confirmed Abuse
+                {t.analytics.flagsNotAbuse}
               </div>
             </div>
           </div>
 
-          {/* Card D: Workflow Bottlenecks & Multi-Agency Subtasks (Phase 7 & 8) */}
+          {/* Card D: Workflow Bottlenecks & Multi-Agency Subtasks */}
           <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/50 space-y-2">
             <div className="flex items-center gap-1.5 font-bold text-slate-900 text-xs">
               <RotateCcw size={14} className="text-purple-600" />
-              <span>Triage Anomalies & Subtasks</span>
+              <span>{t.analytics.triageAnomaliesTitle}</span>
             </div>
             <div className="space-y-1 text-slate-600 text-[11px]">
               <div className="flex justify-between">
-                <span>Reassignment Loops (&ge;2):</span>
+                <span>{t.analytics.reassignmentLoopsCount}</span>
                 <strong className="text-slate-900">
                   {workflow?.anomalies?.reassignmentLoops?.count || 0}
                 </strong>
               </div>
               <div className="flex justify-between">
-                <span>Stale Cases (&gt;7 days):</span>
+                <span>{t.analytics.staleCasesCount}</span>
                 <strong className="text-amber-700">
                   {workflow?.anomalies?.staleCases?.count || 0}
                 </strong>
               </div>
               <div className="flex justify-between pt-1 border-t border-slate-200">
-                <span>Parent Incidents Logged:</span>
+                <span>{t.analytics.parentIncidentsCount}</span>
                 <strong className="text-blue-700">
                   {workflow?.interAgencyWorkload?.parentIncidentsCount || 0}
                 </strong>
               </div>
               <div className="flex justify-between">
-                <span>Subtask Completion Rate:</span>
+                <span>{t.analytics.subtaskCompletionRate}</span>
                 <strong className="text-emerald-700">
                   {workflow?.interAgencyWorkload?.subtaskCompletionRate !== null
                     ? `${workflow?.interAgencyWorkload?.subtaskCompletionRate}%`

@@ -2,7 +2,7 @@
   "metadata": {
     "synthetic": true,
     "version": "1.1.0",
-    "description": "Synthetic timeline and status history audit trail for complaints"
+    "description": "Timeline and status history audit trail for CivicSarthi complaints"
   },
   "history": [
     {
@@ -409,6 +409,474 @@
       "status": "ASSIGNED",
       "actorType": "OFFICER",
       "remarks": "Assigned to Ward Sanitation Superintendent"
+    },
+    {
+      "id": "HIST-046",
+      "complaintId": "CPG-2026-00119",
+      "referenceNumber": "CS-2026-0019",
+      "timestamp": "2026-10-12T06:30:00.000Z",
+      "status": "SUBMITTED",
+      "actorType": "CITIZEN",
+      "remarks": "Emergency water contamination report lodged"
+    },
+    {
+      "id": "HIST-047",
+      "complaintId": "CPG-2026-00120",
+      "referenceNumber": "CS-2026-0020",
+      "timestamp": "2026-10-11T08:15:00.000Z",
+      "status": "SUBMITTED",
+      "actorType": "CITIZEN",
+      "remarks": "Pipeline rupture reported"
+    },
+    {
+      "id": "HIST-048",
+      "complaintId": "CPG-2026-00120",
+      "referenceNumber": "CS-2026-0020",
+      "timestamp": "2026-10-11T09:30:00.000Z",
+      "status": "ASSIGNED",
+      "actorType": "OFFICER",
+      "remarks": "Assigned to Jal Board Emergency Response Unit"
+    },
+    {
+      "id": "HIST-049",
+      "complaintId": "CPG-2026-00120",
+      "referenceNumber": "CS-2026-0020",
+      "timestamp": "2026-10-12T14:00:00.000Z",
+      "status": "IN_PROGRESS",
+      "actorType": "OFFICER",
+      "remarks": "Excavation completed, pipeline clamp replacement underway"
+    },
+    {
+      "id": "HIST-050",
+      "complaintId": "CPG-2026-00121",
+      "referenceNumber": "CS-2026-0021",
+      "timestamp": "2026-10-09T10:00:00.000Z",
+      "status": "SUBMITTED",
+      "actorType": "CITIZEN",
+      "remarks": "Low pressure complaint registered"
+    },
+    {
+      "id": "HIST-051",
+      "complaintId": "CPG-2026-00121",
+      "referenceNumber": "CS-2026-0021",
+      "timestamp": "2026-10-10T11:00:00.000Z",
+      "status": "UNDER_REVIEW",
+      "actorType": "OFFICER",
+      "remarks": "Assessing zonal booster pump scheduling"
+    },
+    {
+      "id": "HIST-052",
+      "complaintId": "CPG-2026-00121",
+      "referenceNumber": "CS-2026-0021",
+      "timestamp": "2026-10-11T16:30:00.000Z",
+      "status": "AWAITING_INFORMATION",
+      "actorType": "OFFICER",
+      "remarks": "Requested consumer connection numbers and elevation details from society secretary"
+    },
+    {
+      "id": "HIST-053",
+      "complaintId": "CPG-2026-00122",
+      "referenceNumber": "CS-2026-0022",
+      "timestamp": "2026-09-28T09:00:00.000Z",
+      "status": "SUBMITTED",
+      "actorType": "CITIZEN",
+      "remarks": "Meter inaccuracy dispute submitted"
+    },
+    {
+      "id": "HIST-054",
+      "complaintId": "CPG-2026-00122",
+      "referenceNumber": "CS-2026-0022",
+      "timestamp": "2026-10-02T12:00:00.000Z",
+      "status": "IN_PROGRESS",
+      "actorType": "OFFICER",
+      "remarks": "Meter testing bench inspection initiated"
+    },
+    {
+      "id": "HIST-055",
+      "complaintId": "CPG-2026-00122",
+      "referenceNumber": "CS-2026-0022",
+      "timestamp": "2026-10-08T17:00:00.000Z",
+      "status": "RESOLVED",
+      "actorType": "OFFICER",
+      "remarks": "Calibrated ultrasonic meter installed; revised billing credit voucher issued"
+    },
+    {
+      "id": "HIST-056",
+      "complaintId": "CPG-2026-00123",
+      "referenceNumber": "CS-2026-0023",
+      "timestamp": "2026-10-13T07:00:00.000Z",
+      "status": "SUBMITTED",
+      "actorType": "CITIZEN",
+      "remarks": "Critical road cave-in reported"
+    },
+    {
+      "id": "HIST-057",
+      "complaintId": "CPG-2026-00123",
+      "referenceNumber": "CS-2026-0023",
+      "timestamp": "2026-10-13T08:15:00.000Z",
+      "status": "ASSIGNED",
+      "actorType": "OFFICER",
+      "remarks": "Emergency road maintenance squad alerted"
+    },
+    {
+      "id": "HIST-058",
+      "complaintId": "CPG-2026-00123",
+      "referenceNumber": "CS-2026-0023",
+      "timestamp": "2026-10-13T11:30:00.000Z",
+      "status": "IN_PROGRESS",
+      "actorType": "OFFICER",
+      "remarks": "Trench barricaded with retro-reflective cones; wet mix macadam backfill in progress"
+    },
+    {
+      "id": "HIST-059",
+      "complaintId": "CPG-2026-00124",
+      "referenceNumber": "CS-2026-0024",
+      "timestamp": "2026-10-10T14:20:00.000Z",
+      "status": "SUBMITTED",
+      "actorType": "CITIZEN",
+      "remarks": "Accident hazard reported"
+    },
+    {
+      "id": "HIST-060",
+      "complaintId": "CPG-2026-00124",
+      "referenceNumber": "CS-2026-0024",
+      "timestamp": "2026-10-11T10:00:00.000Z",
+      "status": "UNDER_REVIEW",
+      "actorType": "OFFICER",
+      "remarks": "Site inspection scheduled by Assistant Executive Engineer"
+    },
+    {
+      "id": "HIST-061",
+      "complaintId": "CPG-2026-00125",
+      "referenceNumber": "CS-2026-0025",
+      "timestamp": "2026-10-08T11:45:00.000Z",
+      "status": "SUBMITTED",
+      "actorType": "CITIZEN",
+      "remarks": "Infrastructure grievance lodged"
+    },
+    {
+      "id": "HIST-062",
+      "complaintId": "CPG-2026-00125",
+      "referenceNumber": "CS-2026-0025",
+      "timestamp": "2026-10-09T14:00:00.000Z",
+      "status": "ASSIGNED",
+      "actorType": "OFFICER",
+      "remarks": "Assigned to Bridges & Flyovers Division"
+    },
+    {
+      "id": "HIST-063",
+      "complaintId": "CPG-2026-00126",
+      "referenceNumber": "CS-2026-0026",
+      "timestamp": "2026-09-20T08:30:00.000Z",
+      "status": "SUBMITTED",
+      "actorType": "CITIZEN",
+      "remarks": "Grievance submitted"
+    },
+    {
+      "id": "HIST-064",
+      "complaintId": "CPG-2026-00126",
+      "referenceNumber": "CS-2026-0026",
+      "timestamp": "2026-09-22T10:00:00.000Z",
+      "status": "IN_PROGRESS",
+      "actorType": "OFFICER",
+      "remarks": "Mastic asphalt patch work deployed"
+    },
+    {
+      "id": "HIST-065",
+      "complaintId": "CPG-2026-00126",
+      "referenceNumber": "CS-2026-0026",
+      "timestamp": "2026-10-05T18:00:00.000Z",
+      "status": "RESOLVED",
+      "actorType": "OFFICER",
+      "remarks": "Mastic resurfacing inspected and certified by Executive Engineer"
+    },
+    {
+      "id": "HIST-066",
+      "complaintId": "CPG-2026-00127",
+      "referenceNumber": "CS-2026-0027",
+      "timestamp": "2026-10-13T09:10:00.000Z",
+      "status": "SUBMITTED",
+      "actorType": "CITIZEN",
+      "remarks": "Critical life-safety hazard reported"
+    },
+    {
+      "id": "HIST-067",
+      "complaintId": "CPG-2026-00127",
+      "referenceNumber": "CS-2026-0027",
+      "timestamp": "2026-10-13T10:15:00.000Z",
+      "status": "ASSIGNED",
+      "actorType": "OFFICER",
+      "remarks": "Substation operator alerted; feeder tripped and maintenance gang dispatched"
+    },
+    {
+      "id": "HIST-068",
+      "complaintId": "CPG-2026-00128",
+      "referenceNumber": "CS-2026-0028",
+      "timestamp": "2026-10-12T15:30:00.000Z",
+      "status": "SUBMITTED",
+      "actorType": "CITIZEN",
+      "remarks": "Grievance submitted by local gram panchayat member"
+    },
+    {
+      "id": "HIST-069",
+      "complaintId": "CPG-2026-00129",
+      "referenceNumber": "CS-2026-0029",
+      "timestamp": "2026-10-04T12:00:00.000Z",
+      "status": "SUBMITTED",
+      "actorType": "CITIZEN",
+      "remarks": "Meter fire and power outage logged"
+    },
+    {
+      "id": "HIST-070",
+      "complaintId": "CPG-2026-00129",
+      "referenceNumber": "CS-2026-0029",
+      "timestamp": "2026-10-04T14:00:00.000Z",
+      "status": "IN_PROGRESS",
+      "actorType": "OFFICER",
+      "remarks": "Technician dispatched for temporary bypass"
+    },
+    {
+      "id": "HIST-071",
+      "complaintId": "CPG-2026-00129",
+      "referenceNumber": "CS-2026-0029",
+      "timestamp": "2026-10-06T15:30:00.000Z",
+      "status": "RESOLVED",
+      "actorType": "OFFICER",
+      "remarks": "New calibrated smart meter installed and tested"
+    },
+    {
+      "id": "HIST-072",
+      "complaintId": "CPG-2026-00130",
+      "referenceNumber": "CS-2026-0030",
+      "timestamp": "2026-10-13T06:00:00.000Z",
+      "status": "SUBMITTED",
+      "actorType": "CITIZEN",
+      "remarks": "Sanitation failure reported by traders association"
+    },
+    {
+      "id": "HIST-073",
+      "complaintId": "CPG-2026-00131",
+      "referenceNumber": "CS-2026-0031",
+      "timestamp": "2026-10-09T14:00:00.000Z",
+      "status": "SUBMITTED",
+      "actorType": "CITIZEN",
+      "remarks": "Drain blockage reported"
+    },
+    {
+      "id": "HIST-074",
+      "complaintId": "CPG-2026-00131",
+      "referenceNumber": "CS-2026-0031",
+      "timestamp": "2026-10-10T10:00:00.000Z",
+      "status": "ASSIGNED",
+      "actorType": "OFFICER",
+      "remarks": "Assigned to Ward Drainage Department"
+    },
+    {
+      "id": "HIST-075",
+      "complaintId": "CPG-2026-00131",
+      "referenceNumber": "CS-2026-0031",
+      "timestamp": "2026-10-11T11:00:00.000Z",
+      "status": "IN_PROGRESS",
+      "actorType": "OFFICER",
+      "remarks": "Suction-cum-jetting machine deployed for silt clearance"
+    },
+    {
+      "id": "HIST-076",
+      "complaintId": "CPG-2026-00132",
+      "referenceNumber": "CS-2026-0032",
+      "timestamp": "2026-09-25T17:00:00.000Z",
+      "status": "SUBMITTED",
+      "actorType": "CITIZEN",
+      "remarks": "Dark street safety complaint lodged"
+    },
+    {
+      "id": "HIST-077",
+      "complaintId": "CPG-2026-00132",
+      "referenceNumber": "CS-2026-0032",
+      "timestamp": "2026-10-01T10:00:00.000Z",
+      "status": "IN_PROGRESS",
+      "actorType": "OFFICER",
+      "remarks": "Fixture procurement and cable testing"
+    },
+    {
+      "id": "HIST-078",
+      "complaintId": "CPG-2026-00132",
+      "referenceNumber": "CS-2026-0032",
+      "timestamp": "2026-10-07T19:30:00.000Z",
+      "status": "RESOLVED",
+      "actorType": "OFFICER",
+      "remarks": "6 new 70W LED fixtures commissioned and lux levels verified"
+    },
+    {
+      "id": "HIST-079",
+      "complaintId": "CPG-2026-00133",
+      "referenceNumber": "CS-2026-0033",
+      "timestamp": "2026-10-11T12:00:00.000Z",
+      "status": "SUBMITTED",
+      "actorType": "CITIZEN",
+      "remarks": "Traffic congestion complaint registered"
+    },
+    {
+      "id": "HIST-080",
+      "complaintId": "CPG-2026-00133",
+      "referenceNumber": "CS-2026-0033",
+      "timestamp": "2026-10-12T09:30:00.000Z",
+      "status": "UNDER_REVIEW",
+      "actorType": "OFFICER",
+      "remarks": "Traffic division deploying towing crane and enforcement team"
+    },
+    {
+      "id": "HIST-081",
+      "complaintId": "CPG-2026-00134",
+      "referenceNumber": "CS-2026-0034",
+      "timestamp": "2026-09-18T10:30:00.000Z",
+      "status": "SUBMITTED",
+      "actorType": "CITIZEN",
+      "remarks": "Pedestrian safety complaint lodged"
+    },
+    {
+      "id": "HIST-082",
+      "complaintId": "CPG-2026-00134",
+      "referenceNumber": "CS-2026-0034",
+      "timestamp": "2026-09-24T11:00:00.000Z",
+      "status": "IN_PROGRESS",
+      "actorType": "OFFICER",
+      "remarks": "Joint inspection by Traffic ACP and PMC Road Dept"
+    },
+    {
+      "id": "HIST-083",
+      "complaintId": "CPG-2026-00134",
+      "referenceNumber": "CS-2026-0034",
+      "timestamp": "2026-10-04T16:00:00.000Z",
+      "status": "RESOLVED",
+      "actorType": "OFFICER",
+      "remarks": "Signals integrated with adaptive traffic management system"
+    },
+    {
+      "id": "HIST-084",
+      "complaintId": "CPG-2026-00135",
+      "referenceNumber": "CS-2026-0035",
+      "timestamp": "2026-10-10T11:00:00.000Z",
+      "status": "SUBMITTED",
+      "actorType": "CITIZEN",
+      "remarks": "Ration denial grievance submitted"
+    },
+    {
+      "id": "HIST-085",
+      "complaintId": "CPG-2026-00135",
+      "referenceNumber": "CS-2026-0035",
+      "timestamp": "2026-10-12T13:00:00.000Z",
+      "status": "IN_PROGRESS",
+      "actorType": "OFFICER",
+      "remarks": "Supply inspector issued show-cause notice and dispatched replacement IRIS scanner"
+    },
+    {
+      "id": "HIST-086",
+      "complaintId": "CPG-2026-00136",
+      "referenceNumber": "CS-2026-0036",
+      "timestamp": "2026-09-22T14:30:00.000Z",
+      "status": "SUBMITTED",
+      "actorType": "CITIZEN",
+      "remarks": "Quota discrepancy complaint logged"
+    },
+    {
+      "id": "HIST-087",
+      "complaintId": "CPG-2026-00136",
+      "referenceNumber": "CS-2026-0036",
+      "timestamp": "2026-09-26T10:00:00.000Z",
+      "status": "IN_PROGRESS",
+      "actorType": "OFFICER",
+      "remarks": "Food Distribution Officer audited shop ledger"
+    },
+    {
+      "id": "HIST-088",
+      "complaintId": "CPG-2026-00136",
+      "referenceNumber": "CS-2026-0036",
+      "timestamp": "2026-10-02T16:00:00.000Z",
+      "status": "RESOLVED",
+      "actorType": "OFFICER",
+      "remarks": "10 kg balance stock handed over; biometric receipt confirmed"
+    },
+    {
+      "id": "HIST-089",
+      "complaintId": "CPG-2026-00137",
+      "referenceNumber": "CS-2026-0037",
+      "timestamp": "2026-10-13T05:00:00.000Z",
+      "status": "SUBMITTED",
+      "actorType": "CITIZEN",
+      "remarks": "Critical drug shortage emergency reported"
+    },
+    {
+      "id": "HIST-090",
+      "complaintId": "CPG-2026-00137",
+      "referenceNumber": "CS-2026-0037",
+      "timestamp": "2026-10-13T08:30:00.000Z",
+      "status": "IN_PROGRESS",
+      "actorType": "OFFICER",
+      "remarks": "Civil Surgeon requisitioned 100 vials under local emergency purchase powers"
+    },
+    {
+      "id": "HIST-091",
+      "complaintId": "CPG-2026-00138",
+      "referenceNumber": "CS-2026-0038",
+      "timestamp": "2026-09-01T10:00:00.000Z",
+      "status": "SUBMITTED",
+      "actorType": "CITIZEN",
+      "remarks": "Delayed revenue service grievance submitted"
+    },
+    {
+      "id": "HIST-092",
+      "complaintId": "CPG-2026-00139",
+      "referenceNumber": "CS-2026-0039",
+      "timestamp": "2026-10-06T14:00:00.000Z",
+      "status": "SUBMITTED",
+      "actorType": "CITIZEN",
+      "remarks": "Scholarship disbursement grievance registered"
+    },
+    {
+      "id": "HIST-093",
+      "complaintId": "CPG-2026-00139",
+      "referenceNumber": "CS-2026-0039",
+      "timestamp": "2026-10-08T11:00:00.000Z",
+      "status": "UNDER_REVIEW",
+      "actorType": "OFFICER",
+      "remarks": "Nodal officer cross-checking PFMS payment batch batch ID"
+    },
+    {
+      "id": "HIST-094",
+      "complaintId": "CPG-2026-00140",
+      "referenceNumber": "CS-2026-0040",
+      "timestamp": "2026-08-25T11:00:00.000Z",
+      "status": "SUBMITTED",
+      "actorType": "CITIZEN",
+      "remarks": "Flood assistance payment grievance lodged"
+    },
+    {
+      "id": "HIST-095",
+      "complaintId": "CPG-2026-00140",
+      "referenceNumber": "CS-2026-0040",
+      "timestamp": "2026-09-15T12:00:00.000Z",
+      "status": "IN_PROGRESS",
+      "actorType": "OFFICER",
+      "remarks": "Treasury mandate updated with active Aadhaar mapped bank account"
+    },
+    {
+      "id": "HIST-096",
+      "complaintId": "CPG-2026-00140",
+      "referenceNumber": "CS-2026-0040",
+      "timestamp": "2026-10-01T15:00:00.000Z",
+      "status": "RESOLVED",
+      "actorType": "OFFICER",
+      "remarks": "INR 50,000 ex-gratia successfully credited via PFMS transaction ref TR-2026-7819"
+    },
+    {
+      "id": "HIST-097",
+      "complaintId": "CPG-2026-00140",
+      "referenceNumber": "CS-2026-0040",
+      "timestamp": "2026-10-02T10:00:00.000Z",
+      "status": "CLOSED",
+      "actorType": "OFFICER",
+      "remarks": "Ex-gratia relief case formally closed after citizen acknowledgment."
     }
   ]
 }

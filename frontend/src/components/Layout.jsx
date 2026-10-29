@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { NavLink, Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import {
   Shield,
   User,
@@ -25,86 +26,12 @@ export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, isAuthenticated, isCitizen, isOfficer, isAdmin } = useAuth();
-
-  const [lang, setLang] = useState(() => {
-    return localStorage.getItem('civicsarthi_lang') || 'en';
-  });
-
-  const toggleLanguage = () => {
-    const nextLang = lang === 'en' ? 'hi' : 'en';
-    setLang(nextLang);
-    localStorage.setItem('civicsarthi_lang', nextLang);
-  };
+  const { lang, toggleLanguage, t } = useLanguage();
 
   const handleLogout = async () => {
     await logout();
     navigate('/login');
   };
-
-  const t = {
-    en: {
-      skipToContent: 'Skip to main content',
-      systemNotice: 'CivicSarthi — Role-governed civic complaint resolution & decision support system.',
-      logoTagline: 'From Complaint to Resolution.',
-      logoSub: 'CivicSarthi — Intelligent Civic Complaint & Incident Resolution System',
-      badge: 'Civic Resolution System',
-      citizenOverview: 'Citizen Overview',
-      submitGrievance: 'Submit Grievance',
-      myComplaints: 'My Complaints',
-      trackStatus: 'Track Status',
-      officerCockpit: 'Officer Cockpit',
-      complaintTriage: 'Complaint Triage',
-      analyticsReports: 'Analytics & Reports',
-      spamReviewDesk: 'Spam Review Desk',
-      appealsDesk: 'Appeals Desk',
-      reopeningDesk: 'Reopening Desk',
-      departments: 'Departments',
-      parentIncident: 'Parent Incident',
-      neglectRadar: 'Neglect Radar',
-      statusTranslator: 'Status Translator',
-      overview: 'Overview',
-      trackGrievance: 'Track Grievance',
-      signIn: 'Sign In',
-      registerCitizen: 'Register Citizen',
-      logout: 'Logout',
-      mainNav: 'Main Navigation',
-      specializedNav: 'Specialized Operational Systems',
-      switchLang: 'Switch language to Hindi / हिन्दी में बदलें',
-      footerDisclaimer: 'CivicSarthi is an independent civic resolution platform and is not affiliated with or endorsed by DARPG/CPGRAMS.',
-      footerDemo: 'Demonstration environment • Synthetic grievance management data • Does not submit directly to official government portals without authorization.'
-    },
-    hi: {
-      skipToContent: 'मुख्य सामग्री पर जाएं',
-      systemNotice: 'सिविकसारथी — भूमिका-आधारित नागरिक शिकायत निवारण एवं निर्णय समर्थन प्रणाली।',
-      logoTagline: 'शिकायत से समाधान तक।',
-      logoSub: 'सिविकसारथी — बुद्धिमान नागरिक शिकायत एवं घटना निवारण प्रणाली',
-      badge: 'नागरिक निवारण प्रणाली',
-      citizenOverview: 'नागरिक अवलोकन',
-      submitGrievance: 'शिकायत दर्ज करें',
-      myComplaints: 'मेरी शिकायतें',
-      trackStatus: 'स्थिति ट्रैक करें',
-      officerCockpit: 'अधिकारी कॉकपिट',
-      complaintTriage: 'शिकायत छंटनी',
-      analyticsReports: 'एनालिटिक्स एवं रिपोर्ट',
-      spamReviewDesk: 'स्पैम समीक्षा डेस्क',
-      appealsDesk: 'अपील डेस्क',
-      reopeningDesk: 'पुनः खोलने का डेस्क',
-      departments: 'विभाग',
-      parentIncident: 'मूल घटना',
-      neglectRadar: 'उपेक्षा रडार',
-      statusTranslator: 'स्थिति अनुवादक',
-      overview: 'अवलोकन',
-      trackGrievance: 'शिकायत ट्रैक करें',
-      signIn: 'साइन इन',
-      registerCitizen: 'नागरिक पंजीकरण',
-      logout: 'लॉगआउट',
-      mainNav: 'मुख्य नेविगेशन',
-      specializedNav: 'विशेष परिचालन प्रणालियां',
-      switchLang: 'अंग्रेजी में बदलें / Switch language to English',
-      footerDisclaimer: 'सिविकसारथी एक स्वतंत्र नागरिक समाधान मंच है और यह DARPG/CPGRAMS से संबद्ध या समर्थित नहीं है।',
-      footerDemo: 'प्रदर्शन वातावरण • सिंथेटिक शिकायत प्रबंधन डेटा • प्राधिकरण के बिना आधिकारिक सरकारी पोर्टलों पर सीधे जमा नहीं करता है।'
-    }
-  }[lang];
 
   const citizenNav = [
     { name: t.citizenOverview, path: '/citizen', icon: LayoutDashboard },
@@ -125,7 +52,7 @@ export default function Layout() {
 
   const flagshipNav = [
     { name: t.parentIncident, path: '/incident', icon: ShieldAlert },
-    { name: t.neglectRadar, path: '/neglect-radar', icon: AlertTriangle },
+    { name: t.neglectRadarNav || t.neglectRadar?.navLabel || (lang === 'hi' ? 'उपेक्षा रडार' : 'Neglect Radar'), path: '/neglect-radar', icon: AlertTriangle },
     { name: t.statusTranslator, path: '/status-translator', icon: Languages }
   ];
 
@@ -197,7 +124,9 @@ export default function Layout() {
                     <span>{user.name}</span>
                   </div>
                   <div className="text-[10px] text-slate-400">
-                    <span className="capitalize font-medium text-slate-300">{user.role}</span>
+                    <span className="capitalize font-medium text-slate-300">
+                      {lang === 'hi' ? (user.role === 'admin' ? 'प्रशासक' : user.role === 'officer' ? 'अधिकारी' : 'नागरिक') : user.role}
+                    </span>
                     {user.departmentId && ` • ${user.departmentId}`}
                   </div>
                 </div>

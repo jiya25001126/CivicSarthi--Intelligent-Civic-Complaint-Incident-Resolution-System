@@ -7,6 +7,7 @@ import { userRepository } from '../repositories/user.repository.js';
 import { departmentRepository } from '../repositories/department.repository.js';
 import { auditLogRepository } from '../repositories/auditLog.repository.js';
 import { seedDemoUsers, DEFAULT_DEMO_USERS, DEMO_PASSWORD_DEFAULT } from './demoSeed.service.js';
+import { notificationService } from './notification/notification.service.js';
 
 export const registerSchema = z.object({
   email: z.string().trim().email('Valid email address is required').toLowerCase(),
@@ -15,7 +16,8 @@ export const registerSchema = z.object({
     .min(8, 'Password must be at least 8 characters long')
     .regex(/[A-Za-z]/, 'Password must contain at least one letter')
     .regex(/[0-9]/, 'Password must contain at least one number'),
-  name: z.string().trim().min(2, 'Name must be at least 2 characters long').max(100)
+  name: z.string().trim().min(2, 'Name must be at least 2 characters long').max(100),
+  phone: z.string().trim().optional().nullable()
 });
 
 export const loginSchema = z.object({
@@ -42,8 +44,8 @@ export class AuthService {
    * Public registration endpoint: STRICTLY CREATES ONLY CITIZEN ACCOUNTS.
    * Any client-supplied role is unconditionally ignored to prevent privilege escalation.
    */
-  async register({ email, password, name }) {
-    const validated = registerSchema.parse({ email, password, name });
+  async register({ email, password, name, phone }) {
+    const validated = registerSchema.parse({ email, password, name, phone });
 
     const existing = await userRepository.findByEmail(validated.email);
     if (existing) {
@@ -59,6 +61,7 @@ export class AuthService {
       email: validated.email,
       passwordHash,
       name: validated.name,
+      phone: validated.phone || null,
       role: 'citizen', // Enforce citizen role unconditionally
       departmentId: null,
       isActive: true

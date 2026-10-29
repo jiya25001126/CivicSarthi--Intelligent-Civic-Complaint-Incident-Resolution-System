@@ -195,10 +195,57 @@ export function isSafeEvidenceReference(item) {
 }
 
 /**
+ * Hindi resolution outcome labels.
+ */
+export const HINDI_RESOLUTION_OUTCOMES = Object.freeze({
+  REPAIR_COMPLETED: 'मरम्मत पूर्ण हुई',
+  SERVICE_RESTORED: 'सेवा बहाल की गई',
+  BENEFIT_DISBURSED: 'हितलाभ / राशि वितरित',
+  ADMINISTRATIVE_ORDER_ISSUED: 'प्रशासनिक आदेश जारी',
+  INSPECTION_CONFIRMED_CLEARED: 'निरीक्षण में स्थल दुरुस्त पाया गया',
+  NO_DEFECT_FOUND: 'जांच में कोई दोष नहीं पाया गया',
+  REFERRED_EXTERNAL: 'सक्षम बाह्य प्राधिकारी को प्रेषित'
+});
+
+export const HINDI_VERIFICATION_METHODS = Object.freeze({
+  PHYSICAL_INSPECTION: 'भौतिक स्थल निरीक्षण',
+  CITIZEN_CONFIRMATION: 'नागरिक से प्रत्यक्ष पुष्टि',
+  SUPERVISORY_AUDIT: 'पर्यवेक्षी अधिकारी ऑडिट',
+  TELEPHONIC_VERIFICATION: 'दूरभाष पर सत्यापन',
+  SYSTEM_TELEMETRY: 'सिस्टम टेलीमेट्री / सेंसर डेटा',
+  DOCUMENT_VERIFICATION: 'दस्तावेज एवं कार्य आदेश सत्यापन'
+});
+
+export const HINDI_EXCEPTION_REASONS = Object.freeze({
+  CITIZEN_UNRESPONSIVE: 'नागरिक ने संपर्क का उत्तर नहीं दिया',
+  DUPLICATE_REFERRED: 'समान / मूल मामले में समाधानित',
+  OUT_OF_JURISDICTION_REFERRED: 'अधिकार क्षेत्र से बाहर; सक्षम निकाय को प्रेषित',
+  CIVIL_DISPUTE_SUB_JUDICE: 'न्यायालयीन विचाराधीन / निजी दीवानी विवाद',
+  FALSE_REPORT_VERIFIED: 'सत्यापन में रिपोर्ट असत्य पाई गई',
+  POLICY_MATTER_NO_INDIVIDUAL_RELIEF: 'नीतिगत मामला; व्यक्तिगत राहत अनुपलब्ध',
+  FORCE_MAJEURE_UNFEASIBLE: 'प्राकृतिक आपदा / व्यावहारिक रूप से असाध्य'
+});
+
+function getActiveLanguage(paramLang) {
+  if (paramLang === 'hi' || paramLang === 'en') return paramLang;
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const saved = window.localStorage.getItem('civicsarthi_lang');
+      if (saved === 'hi') return 'hi';
+    }
+  } catch {}
+  return 'en';
+}
+
+/**
  * Formats an outcome type code to a user-friendly label.
  */
-export function formatOutcomeType(code) {
-  if (!code) return 'Outcome Documented';
+export function formatOutcomeType(code, lang) {
+  const currentLang = getActiveLanguage(lang);
+  if (!code) return currentLang === 'hi' ? 'समाधान परिणाम प्रलेखित' : 'Outcome Documented';
+  if (currentLang === 'hi' && HINDI_RESOLUTION_OUTCOMES[code]) {
+    return HINDI_RESOLUTION_OUTCOMES[code];
+  }
   const found = RESOLUTION_OUTCOME_OPTIONS.find((o) => o.value === code);
   if (found) return found.label;
   return String(code).replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
@@ -207,8 +254,12 @@ export function formatOutcomeType(code) {
 /**
  * Formats a verification method code to a user-friendly label.
  */
-export function formatVerificationMethod(code) {
-  if (!code) return 'Verified';
+export function formatVerificationMethod(code, lang) {
+  const currentLang = getActiveLanguage(lang);
+  if (!code) return currentLang === 'hi' ? 'सत्यापित' : 'Verified';
+  if (currentLang === 'hi' && HINDI_VERIFICATION_METHODS[code]) {
+    return HINDI_VERIFICATION_METHODS[code];
+  }
   const found = VERIFICATION_METHOD_OPTIONS.find((m) => m.value === code);
   if (found) return found.label;
   return String(code).replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
@@ -217,8 +268,12 @@ export function formatVerificationMethod(code) {
 /**
  * Formats an exception reason code to a user-friendly label.
  */
-export function formatExceptionReason(code) {
-  if (!code) return 'Administrative Exception';
+export function formatExceptionReason(code, lang) {
+  const currentLang = getActiveLanguage(lang);
+  if (!code) return currentLang === 'hi' ? 'प्रशासनिक अपवाद' : 'Administrative Exception';
+  if (currentLang === 'hi' && HINDI_EXCEPTION_REASONS[code]) {
+    return HINDI_EXCEPTION_REASONS[code];
+  }
   const found = RESOLUTION_EXCEPTION_REASONS[code];
   if (found) return found.label;
   return String(code).replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());

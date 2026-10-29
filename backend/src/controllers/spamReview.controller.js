@@ -72,3 +72,18 @@ export const getCitizenReputationDetail = async (req, res, next) => {
     next(err);
   }
 };
+
+export const flagComplaint = async (req, res, next) => {
+  try {
+    const complaintId = req.params.id || req.body.complaintId;
+    const result = await spamReviewService.flagComplaintManually(complaintId, req.body, req.user);
+    res.status(201).json({
+      success: true,
+      message: result.message,
+      data: result.review
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import {
   fetchReopeningRequests,
   recordReopeningDecision
@@ -29,6 +30,7 @@ const REOPENING_STATUS_BADGES = {
 
 export default function ReopeningManagementPage() {
   const { user, isOfficer, isAdmin } = useAuth();
+  const { t, lang, formatDate } = useLanguage();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -97,6 +99,12 @@ export default function ReopeningManagementPage() {
   const approvedCount = requests.filter(r => r.status === 'APPROVED').length;
   const rejectedCount = requests.filter(r => r.status === 'REJECTED').length;
 
+  const getStatusBadgeLabel = (status) => {
+    if (status === 'APPROVED') return t.reopening.approvedReopened || 'Approved (Reopened)';
+    if (status === 'REJECTED') return t.reopening.rejected || 'Rejected';
+    return t.reopening.pendingAdjudication || 'Pending Review';
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -104,14 +112,14 @@ export default function ReopeningManagementPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-              Controlled Grievance Reopening Desk
+              {t.reopening.deskTitle || 'Controlled Grievance Reopening Desk'}
             </h1>
             <span className="px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 text-xs font-semibold">
-              Phase 10 Desk
+              {t.reopening.supervisoryBadge || 'Supervisory Review Desk'}
             </span>
           </div>
           <p className="text-sm text-slate-600 mt-1">
-            Supervisory desk for citizen reopening petitions. Approving a request resets the complaint status to REOPENED and enforces full Phase 9 re-verification.
+            {t.reopening.deskDesc || 'Supervisory desk for citizen reopening petitions. Approving a request resets the complaint status to REOPENED and enforces full resolution quality re-verification.'}
           </p>
         </div>
         <div className="flex items-center gap-2.5">
@@ -121,7 +129,7 @@ export default function ReopeningManagementPage() {
             className="flex items-center gap-1.5 px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold transition disabled:opacity-50"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-            <span>Refresh Queue</span>
+            <span>{t.reopening.refreshBtn || 'Refresh Queue'}</span>
           </button>
         </div>
       </div>
@@ -129,24 +137,32 @@ export default function ReopeningManagementPage() {
       {/* Stats Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-          <span className="text-xs font-semibold text-slate-500 uppercase block mb-1">Total Petitions</span>
+          <span className="text-xs font-semibold text-slate-500 uppercase block mb-1">
+            {t.reopening.totalPetitions || 'Total Petitions'}
+          </span>
           <div className="text-2xl font-black text-slate-900">{requests.length}</div>
-          <p className="text-[11px] text-slate-500 mt-0.5">Assigned to department scope</p>
+          <p className="text-[11px] text-slate-500 mt-0.5">{t.reopening.assignedScope || 'Assigned to department scope'}</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-amber-200 bg-amber-50/30 shadow-sm">
-          <span className="text-xs font-semibold text-amber-700 uppercase block mb-1">Pending Adjudication</span>
+          <span className="text-xs font-semibold text-amber-700 uppercase block mb-1">
+            {t.reopening.pendingAdjudication || 'Pending Adjudication'}
+          </span>
           <div className="text-2xl font-black text-amber-900">{pendingCount}</div>
-          <p className="text-[11px] text-amber-700 mt-0.5">Awaiting supervisor review</p>
+          <p className="text-[11px] text-amber-700 mt-0.5">{t.reopening.awaitingReview || 'Awaiting supervisor review'}</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-rose-200 bg-rose-50/30 shadow-sm">
-          <span className="text-xs font-semibold text-rose-700 uppercase block mb-1">Approved & Reopened</span>
+          <span className="text-xs font-semibold text-rose-700 uppercase block mb-1">
+            {t.reopening.approvedReopened || 'Approved & Reopened'}
+          </span>
           <div className="text-2xl font-black text-rose-900">{approvedCount}</div>
-          <p className="text-[11px] text-rose-700 mt-0.5">Sent back for remediation</p>
+          <p className="text-[11px] text-rose-700 mt-0.5">{t.reopening.sentRemediation || 'Sent back for remediation'}</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-200 bg-slate-50/30 shadow-sm">
-          <span className="text-xs font-semibold text-slate-500 uppercase block mb-1">Rejected</span>
+          <span className="text-xs font-semibold text-slate-500 uppercase block mb-1">
+            {t.reopening.rejected || 'Rejected'}
+          </span>
           <div className="text-2xl font-black text-slate-700">{rejectedCount}</div>
-          <p className="text-[11px] text-slate-500 mt-0.5">Resolution maintained</p>
+          <p className="text-[11px] text-slate-500 mt-0.5">{t.reopening.resolutionMaintained || 'Resolution maintained'}</p>
         </div>
       </div>
 
@@ -156,7 +172,7 @@ export default function ReopeningManagementPage() {
           <Search size={15} className="absolute left-3 top-2.5 text-slate-400" />
           <input
             type="text"
-            placeholder="Search by request ID, complaint reference, or reason..."
+            placeholder={t.reopening.searchPlaceholder || 'Search by request ID, complaint reference, or reason...'}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 pr-4 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
@@ -169,10 +185,10 @@ export default function ReopeningManagementPage() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium text-slate-700"
           >
-            <option value="ALL">All Statuses</option>
-            <option value="PENDING_REVIEW">Pending Review</option>
-            <option value="APPROVED">Approved (Reopened)</option>
-            <option value="REJECTED">Rejected</option>
+            <option value="ALL">{t.reopening.allStatuses || 'All Statuses'}</option>
+            <option value="PENDING_REVIEW">{t.reopening.pendingAdjudication || 'Pending Review'}</option>
+            <option value="APPROVED">{t.reopening.approvedReopened || 'Approved (Reopened)'}</option>
+            <option value="REJECTED">{t.reopening.rejected || 'Rejected'}</option>
           </select>
         </div>
       </div>
@@ -182,7 +198,7 @@ export default function ReopeningManagementPage() {
         {loading ? (
           <div className="p-12 text-center text-slate-500 space-y-3">
             <RefreshCw size={24} className="animate-spin mx-auto text-blue-600" />
-            <p className="text-xs font-semibold">Loading reopening petitions...</p>
+            <p className="text-xs font-semibold">{t.reopening.loadingPetitions || 'Loading reopening petitions...'}</p>
           </div>
         ) : error ? (
           <div className="p-8 text-center text-rose-600 space-y-2">
@@ -192,21 +208,25 @@ export default function ReopeningManagementPage() {
         ) : filteredRequests.length === 0 ? (
           <div className="p-12 text-center text-slate-500 space-y-2">
             <RotateCcw size={32} className="mx-auto text-slate-300" />
-            <h3 className="font-bold text-slate-700 text-sm">No Reopening Petitions Found</h3>
-            <p className="text-xs text-slate-400">There are no reopening requests matching your filters within your department scope.</p>
+            <h3 className="font-bold text-slate-700 text-sm">
+              {t.reopening.noPetitionsFound || 'No Reopening Petitions Found'}
+            </h3>
+            <p className="text-xs text-slate-400">
+              {t.reopening.noPetitionsDesc || 'There are no reopening requests matching your filters within your department scope.'}
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold">
-                  <th className="p-3.5 pl-6">Petition ID</th>
-                  <th className="p-3.5">Grievance Case</th>
-                  <th className="p-3.5">Reason Category</th>
-                  <th className="p-3.5">Citizen Explanation</th>
-                  <th className="p-3.5">Status</th>
-                  <th className="p-3.5">Submission Date</th>
-                  <th className="p-3.5 pr-6 text-right">Actions</th>
+                  <th className="p-3.5 pl-6">{t.reopening.thPetitionId || 'Petition ID'}</th>
+                  <th className="p-3.5">{t.reopening.thGrievanceCase || 'Grievance Case'}</th>
+                  <th className="p-3.5">{t.reopening.thReasonCategory || 'Reason Category'}</th>
+                  <th className="p-3.5">{t.reopening.thCitizenExplanation || 'Citizen Explanation'}</th>
+                  <th className="p-3.5">{t.reopening.thStatus || 'Status'}</th>
+                  <th className="p-3.5">{t.reopening.thSubmissionDate || 'Submission Date'}</th>
+                  <th className="p-3.5 pr-6 text-right">{t.reopening.thActions || 'Actions'}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -227,7 +247,9 @@ export default function ReopeningManagementPage() {
                           <span>{req.complaintReference || req.complaintId}</span>
                           <ExternalLink size={11} className="text-slate-400" />
                         </Link>
-                        <span className="text-[10px] text-slate-400 block">Milestone #{req.resolutionMilestone || 1}</span>
+                        <span className="text-[10px] text-slate-400 block">
+                          {t.reopening.cycleNo ? t.reopening.cycleNo.replace('{num}', req.resolutionMilestone || 1) : `Cycle #${req.resolutionMilestone || 1}`}
+                        </span>
                       </td>
                       <td className="p-3.5">
                         <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">
@@ -239,15 +261,11 @@ export default function ReopeningManagementPage() {
                       </td>
                       <td className="p-3.5">
                         <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold border ${badge.bg} ${badge.text} ${badge.border}`}>
-                          {badge.label}
+                          {getStatusBadgeLabel(req.status)}
                         </span>
                       </td>
                       <td className="p-3.5 text-slate-500 whitespace-nowrap">
-                        {new Date(req.createdAt).toLocaleDateString('en-IN', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric'
-                        })}
+                        {formatDate(req.createdAt)}
                       </td>
                       <td className="p-3.5 pr-6 text-right whitespace-nowrap">
                         {isPending ? (
@@ -261,11 +279,11 @@ export default function ReopeningManagementPage() {
                             className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-semibold text-[11px] shadow-sm transition flex items-center gap-1 ml-auto"
                           >
                             <RotateCcw size={12} />
-                            <span>Adjudicate</span>
+                            <span>{t.reopening.adjudicateBtn || 'Adjudicate'}</span>
                           </button>
                         ) : (
                           <span className="text-[11px] text-slate-400 italic">
-                            Decided ({req.status})
+                            {t.reopening.decidedStatus ? t.reopening.decidedStatus.replace('{status}', req.status) : `Decided (${req.status})`}
                           </span>
                         )}
                       </td>
@@ -286,7 +304,7 @@ export default function ReopeningManagementPage() {
               <div className="flex items-center gap-2">
                 <RotateCcw size={18} className="text-rose-600" />
                 <h3 className="font-bold text-base text-slate-900">
-                  Adjudicate Grievance Reopening Petition
+                  {t.reopening.decisionModalTitle || 'Adjudicate Grievance Reopening Petition'}
                 </h3>
               </div>
               <span className="font-mono text-xs text-slate-500 font-bold">
@@ -296,15 +314,15 @@ export default function ReopeningManagementPage() {
 
             <div className="p-3 bg-slate-50 rounded-xl text-xs space-y-1.5 border border-slate-200">
               <div className="flex justify-between">
-                <span className="text-slate-500">Related Complaint:</span>
+                <span className="text-slate-500">{t.reopening.relatedComplaint || 'Related Complaint:'}</span>
                 <span className="font-mono font-bold text-slate-800">{selectedRequest.complaintReference || selectedRequest.complaintId}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Reason Category:</span>
+                <span className="text-slate-500">{t.reopening.thReasonCategory || 'Reason Category:'}</span>
                 <span className="font-bold text-slate-800">{selectedRequest.reasonCategory}</span>
               </div>
               <div>
-                <span className="text-slate-500 block mb-0.5">Citizen Explanation:</span>
+                <span className="text-slate-500 block mb-0.5">{t.reopening.thCitizenExplanation || 'Citizen Explanation:'}</span>
                 <p className="p-2 bg-white rounded border border-slate-200 text-slate-700 italic">
                   "{selectedRequest.citizenExplanation}"
                 </p>
@@ -314,7 +332,7 @@ export default function ReopeningManagementPage() {
             <form onSubmit={handleRecordDecision} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Reopening Verdict *
+                  {t.reopening.verdictLabel || 'Reopening Verdict *'}
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
@@ -326,7 +344,7 @@ export default function ReopeningManagementPage() {
                         : 'border-slate-300 text-slate-700 hover:bg-slate-50'
                     }`}
                   >
-                    ✓ APPROVE (Reopen Case)
+                    {t.reopening.decisionApprove || '✓ APPROVE (Reopen Case)'}
                   </button>
                   <button
                     type="button"
@@ -337,7 +355,7 @@ export default function ReopeningManagementPage() {
                         : 'border-slate-300 text-slate-700 hover:bg-slate-50'
                     }`}
                   >
-                    ✗ REJECT (Keep Resolved)
+                    {t.reopening.decisionReject || '✗ REJECT (Keep Resolved)'}
                   </button>
                 </div>
               </div>
@@ -346,30 +364,30 @@ export default function ReopeningManagementPage() {
                 <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 space-y-1">
                   <div className="flex items-center gap-1.5 font-bold">
                     <AlertTriangle size={14} className="text-rose-600 shrink-0" />
-                    <span>Consequential Operational Action:</span>
+                    <span>{t.reopening.consequentialTitle || 'Consequential Operational Action:'}</span>
                   </div>
                   <ul className="list-disc pl-4 space-y-0.5 text-[11px] text-rose-800">
-                    <li>Complaint status will transition from RESOLVED/CLOSED to <strong>REOPENED</strong>.</li>
-                    <li>Reopening count increments and Neglect Radar signal E triggers.</li>
-                    <li>The case <strong>cannot be re-resolved</strong> without satisfying all Phase 9 Resolution Quality standards.</li>
+                    <li>{t.reopening.consequentialItem1 || 'Complaint status will transition from RESOLVED/CLOSED to REOPENED.'}</li>
+                    <li>{t.reopening.consequentialItem2 || 'Reopening count increments and Neglect Radar signal E triggers.'}</li>
+                    <li>{t.reopening.consequentialItem3 || 'The case cannot be re-resolved without satisfying all required resolution quality checks.'}</li>
                   </ul>
                 </div>
               ) : (
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700">
-                  <span>Rejecting this petition will leave the complaint in its current resolved state. A reasoned explanation is required.</span>
+                  <span>{t.reopening.rejectNotice || 'Rejecting this petition will leave the complaint in its current resolved state. A reasoned explanation is required.'}</span>
                 </div>
               )}
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Adjudication Decision Reason *
+                  {t.reopening.justificationLabel || 'Adjudication Decision Reason *'}
                 </label>
                 <textarea
                   required
                   rows={3}
                   value={decisionReason}
                   onChange={(e) => setDecisionReason(e.target.value)}
-                  placeholder="Record factual justification for approving or rejecting this reopening petition..."
+                  placeholder={t.reopening.decisionReasonPlaceholder || 'Record factual justification for approving or rejecting this reopening petition...'}
                   className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
                 />
               </div>
@@ -387,7 +405,7 @@ export default function ReopeningManagementPage() {
                   disabled={submittingDecision}
                   className="px-4 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50"
                 >
-                  Cancel
+                  {t.common.cancel || 'Cancel'}
                 </button>
                 <button
                   type="submit"
@@ -396,7 +414,9 @@ export default function ReopeningManagementPage() {
                     decisionType === 'APPROVED' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-slate-800 hover:bg-slate-900'
                   }`}
                 >
-                  {submittingDecision ? 'Processing...' : `Confirm ${decisionType}`}
+                  {submittingDecision
+                    ? (t.reopening.processing || 'Processing...')
+                    : (t.reopening.confirmDecision ? t.reopening.confirmDecision.replace('{decision}', decisionType) : `Confirm ${decisionType}`)}
                 </button>
               </div>
             </form>

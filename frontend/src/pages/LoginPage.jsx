@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { Shield, Lock, Mail, AlertCircle, ArrowRight, UserCheck } from 'lucide-react';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
+  const { t, lang } = useLanguage();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,7 +22,11 @@ export default function LoginPage() {
     setErrorMessage('');
 
     if (!email || !password) {
-      setErrorMessage('Please enter both email address and password.');
+      setErrorMessage(
+        lang === 'hi'
+          ? 'कृपया ईमेल पता और पासवर्ड दोनों दर्ज करें।'
+          : 'Please enter both email address and password.'
+      );
       return;
     }
 
@@ -35,7 +41,18 @@ export default function LoginPage() {
         navigate('/officer', { replace: true });
       }
     } catch (err) {
-      setErrorMessage(err.message || 'Login failed. Please verify your credentials.');
+      const rawMsg = err.message || '';
+      let localized = rawMsg;
+      if (lang === 'hi') {
+        if (/invalid|credential|unauthorized|failed/i.test(rawMsg)) {
+          localized = 'लॉगिन विफल। कृपया अपने क्रेडेंशियल्स की पुष्टि करें।';
+        } else if (/network|connect/i.test(rawMsg)) {
+          localized = 'नेटवर्क त्रुटि। कृपया पुनः प्रयास करें।';
+        } else {
+          localized = `लॉगिन विफल: ${rawMsg}`;
+        }
+      }
+      setErrorMessage(localized || (lang === 'hi' ? 'लॉगिन विफल। कृपया क्रेडेंशियल्स सत्यापित करें।' : 'Login failed. Please verify your credentials.'));
     } finally {
       setSubmitting(false);
     }
@@ -49,9 +66,9 @@ export default function LoginPage() {
           <div className="w-12 h-12 rounded-lg bg-blue-700 flex items-center justify-center font-bold text-white text-2xl mx-auto mb-3 shadow">
             CS
           </div>
-          <h1 className="text-xl font-bold tracking-tight">Sign In to CivicSarthi</h1>
+          <h1 className="text-xl font-bold tracking-tight">{t('auth.signInTitle')}</h1>
           <p className="text-xs text-blue-200 mt-1">
-            Access your grievance dashboard or nodal officer cockpit
+            {t('auth.signInSubtitle')}
           </p>
         </div>
 
@@ -65,7 +82,7 @@ export default function LoginPage() {
             >
               <AlertCircle size={16} className="text-rose-600 shrink-0 mt-0.5" aria-hidden="true" />
               <div>
-                <p className="font-semibold">Authentication Notice</p>
+                <p className="font-semibold">{lang === 'hi' ? 'प्रमाणीकरण सूचना' : 'Authentication Notice'}</p>
                 <p className="mt-0.5">{errorMessage}</p>
               </div>
             </div>
@@ -74,7 +91,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4" noValidate={false}>
             <div>
               <label htmlFor="login-email" className="block text-xs font-semibold text-slate-700 mb-1">
-                Email Address <span className="text-rose-600" aria-hidden="true">*</span>
+                {t('auth.emailLabel')} <span className="text-rose-600" aria-hidden="true">*</span>
               </label>
               <div className="relative">
                 <Mail size={16} className="absolute left-3 top-2.5 text-slate-400" aria-hidden="true" />
@@ -86,7 +103,7 @@ export default function LoginPage() {
                   aria-invalid={Boolean(errorMessage)}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="citizen@example.com or officer@dept.internal"
+                  placeholder={t('auth.emailPlaceholder')}
                   className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                   autoComplete="email"
                 />
@@ -95,7 +112,7 @@ export default function LoginPage() {
 
             <div>
               <label htmlFor="login-password" className="block text-xs font-semibold text-slate-700 mb-1">
-                Password <span className="text-rose-600" aria-hidden="true">*</span>
+                {t('auth.passwordLabel')} <span className="text-rose-600" aria-hidden="true">*</span>
               </label>
               <div className="relative">
                 <Lock size={16} className="absolute left-3 top-2.5 text-slate-400" aria-hidden="true" />
@@ -107,7 +124,7 @@ export default function LoginPage() {
                   aria-invalid={Boolean(errorMessage)}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter account password"
+                  placeholder={t('auth.passwordPlaceholder')}
                   className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                   autoComplete="current-password"
                 />
@@ -125,10 +142,10 @@ export default function LoginPage() {
               }`}
             >
               {submitting ? (
-                <>Verifying Identity...</>
+                <>{t('auth.signingIn')}</>
               ) : (
                 <>
-                  Sign In <ArrowRight size={14} aria-hidden="true" />
+                  {t('signIn')} <ArrowRight size={14} aria-hidden="true" />
                 </>
               )}
             </button>
@@ -139,12 +156,12 @@ export default function LoginPage() {
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                 <UserCheck size={13} className="text-blue-600" aria-hidden="true" />
-                Quick Demo Credentials
+                {t('auth.quickDemoTitle')}
               </span>
-              <span className="text-[10px] text-slate-400 font-medium">1-Click Fill</span>
+              <span className="text-[10px] text-slate-400 font-medium">{t('auth.oneClickFill')}</span>
             </div>
             <p className="text-[11px] text-slate-500 mb-2.5">
-              Select a persona below to populate pre-configured synthetic demonstration credentials:
+              {t('auth.demoPersonaPrompt')}
             </p>
             <div className="grid grid-cols-2 gap-1.5">
               <button
@@ -156,7 +173,7 @@ export default function LoginPage() {
                 }}
                 className="p-2 text-left rounded-lg bg-slate-50 hover:bg-blue-50 hover:border-blue-300 border border-slate-200 transition text-[11px]"
               >
-                <span className="font-semibold text-slate-800 block text-[11px]">👤 Demo Citizen</span>
+                <span className="font-semibold text-slate-800 block text-[11px]">👤 {t('auth.demoCitizen')}</span>
                 <span className="text-[10px] text-slate-500 block truncate">citizen.demo@civicsarthi.internal</span>
               </button>
               <button
@@ -168,7 +185,7 @@ export default function LoginPage() {
                 }}
                 className="p-2 text-left rounded-lg bg-slate-50 hover:bg-blue-50 hover:border-blue-300 border border-slate-200 transition text-[11px]"
               >
-                <span className="font-semibold text-slate-800 block text-[11px]">🚧 Roads Officer</span>
+                <span className="font-semibold text-slate-800 block text-[11px]">🚧 {t('auth.roadsOfficer')}</span>
                 <span className="text-[10px] text-slate-500 block truncate">DEPT_ROADS</span>
               </button>
               <button
@@ -180,7 +197,7 @@ export default function LoginPage() {
                 }}
                 className="p-2 text-left rounded-lg bg-slate-50 hover:bg-blue-50 hover:border-blue-300 border border-slate-200 transition text-[11px]"
               >
-                <span className="font-semibold text-slate-800 block text-[11px]">💧 Water Officer</span>
+                <span className="font-semibold text-slate-800 block text-[11px]">💧 {t('auth.waterOfficer')}</span>
                 <span className="text-[10px] text-slate-500 block truncate">DEPT_WATER</span>
               </button>
               <button
@@ -192,8 +209,8 @@ export default function LoginPage() {
                 }}
                 className="p-2 text-left rounded-lg bg-slate-50 hover:bg-blue-50 hover:border-blue-300 border border-slate-200 transition text-[11px]"
               >
-                <span className="font-semibold text-slate-800 block text-[11px]">🛡️ System Admin</span>
-                <span className="text-[10px] text-slate-500 block truncate">Full Platform Scope</span>
+                <span className="font-semibold text-slate-800 block text-[11px]">🛡️ {t('auth.systemAdmin')}</span>
+                <span className="text-[10px] text-slate-500 block truncate">{t('auth.fullPlatformScope')}</span>
               </button>
             </div>
           </div>
@@ -201,9 +218,9 @@ export default function LoginPage() {
           {/* Registration Prompt for Citizens */}
           <div className="mt-4 pt-4 border-t border-slate-100 text-center">
             <p className="text-xs text-slate-600">
-              Need to file a public complaint?{' '}
+              {t('auth.needToRegister')}{' '}
               <Link to="/register" className="font-semibold text-blue-600 hover:text-blue-800 underline">
-                Register citizen account
+                {t('auth.registerCitizenAccount')}
               </Link>
             </p>
           </div>
@@ -212,10 +229,10 @@ export default function LoginPage() {
           <div className="mt-4 p-3 rounded bg-slate-50 border border-slate-200 text-[11px] text-slate-500 space-y-1">
             <p className="font-semibold text-slate-700 flex items-center gap-1.5">
               <Shield size={12} className="text-blue-600" />
-              Role & Access Governance
+              {t('auth.roleAccessGovernance')}
             </p>
             <p>
-              Citizens may self-register. Department nodal officers and system administrators are provisioned securely through backend administrative procedures.
+              {t('auth.roleAccessText')}
             </p>
           </div>
         </div>

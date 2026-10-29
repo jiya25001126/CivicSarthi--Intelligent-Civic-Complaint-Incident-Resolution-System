@@ -26,12 +26,32 @@ const api = axios.create({
   }
 });
 
-// Request interceptor to attach CSRF token header for state-modifying calls
+// Request interceptor to attach Authorization and CSRF token headers
 api.interceptors.request.use((reqConfig) => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('civicsarthi_token');
+    if (token) {
+      if (typeof reqConfig.headers.set === 'function') {
+        reqConfig.headers.set('Authorization', `Bearer ${token}`);
+      } else {
+        reqConfig.headers['Authorization'] = `Bearer ${token}`;
+      }
+    }
+  }
+
   if (['post', 'put', 'patch', 'delete'].includes(reqConfig.method?.toLowerCase())) {
-    const csrfToken = getCookie('civicsarthi_csrf');
+    let csrfToken = getCookie('civicsarthi_csrf');
+    if (!csrfToken && typeof window !== 'undefined') {
+      try {
+        csrfToken = localStorage.getItem('civicsarthi_csrf');
+      } catch {}
+    }
     if (csrfToken) {
-      reqConfig.headers['x-csrf-token'] = csrfToken;
+      if (typeof reqConfig.headers.set === 'function') {
+        reqConfig.headers.set('x-csrf-token', csrfToken);
+      } else {
+        reqConfig.headers['x-csrf-token'] = csrfToken;
+      }
     }
   }
   return reqConfig;
@@ -63,23 +83,73 @@ api.interceptors.response.use(
 // Authentication & Session Endpoints
 // ==========================================
 
+export async function fetchCsrfToken() {
+  try {
+    const res = await api.get('/auth/csrf');
+    const csrf = res.data?.csrfToken || res.data?.data?.csrfToken;
+    if (csrf && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('civicsarthi_csrf', csrf);
+      } catch {}
+    }
+    return csrf;
+  } catch (err) {
+    console.warn('Failed to fetch CSRF token:', err.message);
+    return null;
+  }
+}
+
 export async function login({ email, password }) {
   const res = await api.post('/auth/login', { email, password });
+  if (typeof window !== 'undefined') {
+    try {
+      if (res.data?.data?.token) {
+        localStorage.setItem('civicsarthi_token', res.data.data.token);
+      }
+      const csrf = res.data?.data?.csrfToken || res.data?.csrfToken;
+      if (csrf) {
+        localStorage.setItem('civicsarthi_csrf', csrf);
+      }
+    } catch {}
+  }
   return res.data;
 }
 
 export async function register({ email, password, name }) {
   const res = await api.post('/auth/register', { email, password, name });
+  if (typeof window !== 'undefined') {
+    try {
+      if (res.data?.data?.token) {
+        localStorage.setItem('civicsarthi_token', res.data.data.token);
+      }
+      const csrf = res.data?.data?.csrfToken || res.data?.csrfToken;
+      if (csrf) {
+        localStorage.setItem('civicsarthi_csrf', csrf);
+      }
+    } catch {}
+  }
   return res.data;
 }
 
 export async function logout() {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.removeItem('civicsarthi_token');
+      localStorage.removeItem('civicsarthi_csrf');
+    } catch {}
+  }
   const res = await api.post('/auth/logout');
   return res.data;
 }
 
 export async function fetchCurrentUser() {
   const res = await api.get('/auth/me');
+  const csrf = res.data?.csrfToken || res.data?.data?.csrfToken;
+  if (csrf && typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('civicsarthi_csrf', csrf);
+    } catch {}
+  }
   return res.data;
 }
 
@@ -144,6 +214,18 @@ export async function createComplaint(payload, idempotencyKey = null) {
   if (idempotencyKey) {
     headers['Idempotency-Key'] = idempotencyKey;
   }
+  let csrf = getCookie('civicsarthi_csrf');
+  if (!csrf && typeof window !== 'undefined') {
+    try {
+      csrf = localStorage.getItem('civicsarthi_csrf');
+    } catch {}
+  }
+  if (!csrf) {
+    csrf = await fetchCsrfToken();
+  }
+  if (csrf) {
+    headers['x-csrf-token'] = csrf;
+  }
   const res = await api.post('/complaints', payload, { headers });
   return res.data;
 }
@@ -184,6 +266,25 @@ export async function uploadAttachment(payload) {
     headers['x-csrf-token'] = csrf;
   }
   const res = await api.post('/complaints/upload', payload, { headers });
+  return res.data;
+}
+
+
+export async function flagComplaintForReview(complaintId, payload) {
+  let csrf = getCookie('civicsarthi_csrf');
+  if (!csrf && typeof window !== 'undefined') {
+    try {
+      csrf = localStorage.getItem('civicsarthi_csrf');
+    } catch {}
+  }
+  if (!csrf) {
+    csrf = await fetchCsrfToken();
+  }
+  const headers = {};
+  if (csrf) {
+    headers['x-csrf-token'] = csrf;
+  }
+  const res = await api.post(`/complaints/${encodeURIComponent(complaintId)}/flag`, payload, { headers });
   return res.data;
 }
 
@@ -378,6 +479,11 @@ export async function submitComplaintAppeal(complaintId, payload) {
   return res.data;
 }
 
+export async function fetchComplaintAppeals(complaintId) {
+  const res = await api.get(`/complaints/${encodeURIComponent(complaintId)}/appeals`);
+  return res.data;
+}
+
 export async function fetchMyAppeals() {
   const res = await api.get('/appeals/my');
   return res.data;
@@ -561,6 +667,30 @@ export async function exportAnalyticsReport(params = {}) {
     responseType: 'blob'
   });
   return res;
+}
+
+// ==========================================
+// Features A & C: Notifications & Historical Resolution Suggestions
+// ==========================================
+
+export async function fetchHistoricalResolutionSuggestions(complaintId, params = {}) {
+  const res = await api.get(`/complaints/${encodeURIComponent(complaintId)}/historical-resolutions`, { params });
+  return res.data;
+}
+
+export async function fetchNotificationLogs(params = {}) {
+  const res = await api.get('/notifications/logs', { params });
+  return res.data;
+}
+
+export async function fetchNotificationPreferences() {
+  const res = await api.get('/notifications/preferences');
+  return res.data;
+}
+
+export async function updateNotificationPreferences(data) {
+  const res = await api.put('/notifications/preferences', data);
+  return res.data;
 }
 
 export { API_BASE_URL };

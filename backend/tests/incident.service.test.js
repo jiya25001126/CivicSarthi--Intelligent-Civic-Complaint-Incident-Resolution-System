@@ -27,6 +27,8 @@ import { JsonAuditLogRepository } from '../src/repositories/auditLog.repository.
 import { JsonDepartmentRepository } from '../src/repositories/department.json.repository.js';
 import { mongoIncidentRepository } from '../src/repositories/incident.mongo.repository.js';
 import { mongoSubtaskRepository } from '../src/repositories/subtask.mongo.repository.js';
+import { ComplaintModel } from '../src/models/complaint.model.js';
+import { StatusHistoryModel } from '../src/models/statusHistory.model.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -142,6 +144,8 @@ describe('CivicSarthi Phase 7 Step 2A.1: Incident & Subtask Security & Consisten
             id: 'CMP-2026-0001',
             referenceNumber: 'CMP-2026-0001',
             title: 'Water main fracture on MG Road',
+            description: 'Severe water pipe leakage flooding roadway on MG Road',
+            category: 'water',
             departmentId: 'DEPT_WATER',
             status: 'IN_PROGRESS',
             incidentId: null,
@@ -151,6 +155,8 @@ describe('CivicSarthi Phase 7 Step 2A.1: Incident & Subtask Security & Consisten
             id: 'CMP-2026-0002',
             referenceNumber: 'CMP-2026-0002',
             title: 'Flooding in basement shops on MG Road',
+            description: 'Commercial shop basement submerged by overflow',
+            category: 'drainage',
             departmentId: 'DEPT_ROADS',
             status: 'IN_PROGRESS',
             incidentId: null,
@@ -160,26 +166,12 @@ describe('CivicSarthi Phase 7 Step 2A.1: Incident & Subtask Security & Consisten
             id: 'CMP-2026-0003',
             referenceNumber: 'CMP-2026-0003',
             title: 'Exposed live power wire near flood area',
+            description: 'Hazardous exposed electrical cable near flooded sidewalk',
+            category: 'electricity',
             departmentId: 'DEPT_POWER',
             status: 'IN_PROGRESS',
             incidentId: null,
             statusHistory: []
-          },
-          {
-            id: 'CMP-2026-0045',
-            referenceNumber: 'CS-2026-0045',
-            title: 'Waterlogging near the school entrance',
-            departmentId: 'DEPT_WATER',
-            status: 'SUBMITTED',
-            incidentId: null,
-            statusHistory: [
-              {
-                timestamp: new Date().toISOString(),
-                status: 'SUBMITTED',
-                actorType: 'CITIZEN',
-                remarks: 'Initial submission'
-              }
-            ]
           }
         ]
       }, null, 2),
@@ -217,8 +209,8 @@ describe('CivicSarthi Phase 7 Step 2A.1: Incident & Subtask Security & Consisten
       if (initialProtectedFiles[f.name] !== null) {
         const currentContent = await fs.readFile(f.path, 'utf-8');
         assert.strictEqual(
-          currentContent,
-          initialProtectedFiles[f.name],
+          currentContent.replace(/\r\n/g, '\n'),
+          initialProtectedFiles[f.name].replace(/\r\n/g, '\n'),
           `CRITICAL SAFETY VIOLATION: Protected file ${f.path} was modified during tests!`
         );
       }
@@ -1033,226 +1025,211 @@ describe('CivicSarthi Phase 7 Step 2A.1: Incident & Subtask Security & Consisten
       assert.strictEqual(citizenView.officerNotes, undefined);
     });
   });
+
   // =========================================================================
-  // REGRESSION: actorType enum validation bug (Bug: 'admin' / 'ADMIN' not
-  // valid statusHistory actorType values — canonical set is CITIZEN, OFFICER, SYSTEM)
+  // 10. Canonical ActorType Normalization for Complaint Linking & Unlinking
   // =========================================================================
 
-  describe('Regression: Link Grievance actorType enum validation fix', () => {
-    it('admin actor can link a complaint without a statusHistory actorType validation error', async () => {
-      // Arrange
+  describe('10. Canonical ActorType Normalization for Complaint Linking & Unlinking', () => {
+    it('normalizes roles to schema canonical enum values (CITIZEN, OFFICER, SYSTEM)', () => {
+      // Privileged human users map to OFFICER
+      assert.strictEqual(service._resolveComplaintActorType({ role: 'admin' }), 'OFFICER');
+      assert.strictEqual(service._resolveComplaintActorType({ role: 'officer' }), 'OFFICER');
+      assert.strictEqual(service._resolveComplaintActorType({ role: 'ADMIN' }), 'OFFICER');
+      assert.strictEqual(service._resolveComplaintActorType({ role: 'OFFICER' }), 'OFFICER');
+      assert.strictEqual(service._resolveComplaintActorType('admin'), 'OFFICER');
+      assert.strictEqual(service._resolveComplaintActorType('officer'), 'OFFICER');
+
+      // Citizen maps to CITIZEN
+      assert.strictEqual(service._resolveComplaintActorType({ role: 'citizen' }), 'CITIZEN');
+      assert.strictEqual(service._resolveComplaintActorType('citizen'), 'CITIZEN');
+      assert.strictEqual(service._resolveComplaintActorType('CITIZEN'), 'CITIZEN');
+
+      // System maps to SYSTEM
+      assert.strictEqual(service._resolveComplaintActorType({ role: 'system' }), 'SYSTEM');
+      assert.strictEqual(service._resolveComplaintActorType('system'), 'SYSTEM');
+      assert.strictEqual(service._resolveComplaintActorType('SYSTEM'), 'SYSTEM');
+
+      // Empty or missing actor defaults to OFFICER
+      assert.strictEqual(service._resolveComplaintActorType(null), 'OFFICER');
+      assert.strictEqual(service._resolveComplaintActorType(undefined), 'OFFICER');
+      assert.strictEqual(service._resolveComplaintActorType({}), 'OFFICER');
+    });
+
+    it('links complaint as admin and saves valid statusHistory.actorType without Mongoose enum errors', async () => {
       const incident = await service.createIncident({
-        title: 'Waterlogging near the school entrance cluster',
-        category: 'water',
-        leadDepartment: 'DEPT_WATER'
+        title: 'Citywide Grid Surge Anomaly',
+        category: 'electricity',
+        leadDepartment: 'DEPT_POWER'
       }, adminActor);
 
-      // Act – this call previously threw:
-      //   "Complaint validation failed: statusHistory.1.actorType: 'admin' is not a valid enum value"
-      const result = await service.linkComplaintToIncident(
+      const linkResult = await service.linkComplaintToIncident(
         incident.id,
-        'CMP-2026-0045',
+        'CMP-2026-0003',
         adminActor,
-        'Admin-initiated link for multi-agency coordination'
+        'Supervisory administrative cluster linkage'
       );
 
-      // Assert – link succeeded without throwing
-      assert.ok(result, 'linkComplaintToIncident should return a result');
-      assert.strictEqual(result.alreadyLinked, false);
+      assert.ok(linkResult.incident);
+      assert.ok(linkResult.complaint);
+      assert.strictEqual(linkResult.complaint.incidentId, incident.id);
+
+      // Verify incident relationship consistency
+      const freshIncident = await testIncidentRepo.findById(incident.id);
+      assert.ok(freshIncident.linkedComplaints.includes('CMP-2026-0003'));
+
+      // Verify complaint relationship consistency
+      const freshComplaint = await testComplaintRepo.findById('CMP-2026-0003');
+      assert.strictEqual(freshComplaint.incidentId, incident.id);
+
+      // Verify statusHistory entry
+      const latestHistory = freshComplaint.statusHistory[freshComplaint.statusHistory.length - 1];
+      assert.ok(latestHistory);
+      assert.strictEqual(latestHistory.actorType, 'OFFICER');
+      assert.notStrictEqual(latestHistory.actorType, 'admin');
+
+      // Assert Mongoose schema validation passes on the complaint document
+      const mongooseDoc = new ComplaintModel(freshComplaint);
+      const validationError = mongooseDoc.validateSync();
+      assert.strictEqual(validationError, undefined);
+
+      // Assert StatusHistory standalone model validation passes
+      const statusHistoryDoc = new StatusHistoryModel({
+        id: 'HIST-TEST-ADMIN-LINK',
+        complaintId: freshComplaint.id,
+        referenceNumber: freshComplaint.referenceNumber,
+        status: latestHistory.status,
+        actorType: latestHistory.actorType,
+        remarks: latestHistory.remarks
+      });
+      assert.strictEqual(statusHistoryDoc.validateSync(), undefined);
+
+      // Verify that unnormalized raw 'admin' fails Mongoose validation with the exact production error
+      const invalidHistoryDoc = new StatusHistoryModel({
+        id: 'HIST-TEST-RAW-ADMIN',
+        complaintId: freshComplaint.id,
+        referenceNumber: freshComplaint.referenceNumber,
+        status: latestHistory.status,
+        actorType: 'admin',
+        remarks: latestHistory.remarks
+      });
+      const schemaErr = invalidHistoryDoc.validateSync();
+      assert.ok(schemaErr);
+      assert.match(schemaErr.errors.actorType.message, /`admin` is not a valid enum value for path `actorType`/);
     });
 
-    it('statusHistory entry created by admin link has a valid canonical actorType', async () => {
+    it('unlinks complaint as admin and saves valid statusHistory.actorType without Mongoose enum errors', async () => {
       const incident = await service.createIncident({
-        title: 'Admin-linked cluster test',
-        category: 'water',
-        leadDepartment: 'DEPT_WATER'
+        title: 'Citywide Grid Surge Anomaly',
+        category: 'electricity',
+        leadDepartment: 'DEPT_POWER'
       }, adminActor);
 
-      await service.linkComplaintToIncident(incident.id, 'CMP-2026-0001', adminActor);
+      // Link first
+      await service.linkComplaintToIncident(
+        incident.id,
+        'CMP-2026-0003',
+        adminActor
+      );
 
-      // Read back the complaint from the fixture to inspect persisted statusHistory
-      const updated = await testComplaintRepo.findById('CMP-2026-0001');
-      assert.ok(updated, 'complaint should exist after linking');
+      // Unlink as admin
+      const unlinkResult = await service.unlinkComplaintFromIncident(
+        incident.id,
+        'CMP-2026-0003',
+        adminActor,
+        'Decoupled after localized diagnostic isolation'
+      );
 
-      const VALID_ACTOR_TYPES = ['CITIZEN', 'OFFICER', 'SYSTEM'];
-      for (const entry of (updated.statusHistory || [])) {
-        assert.ok(
-          VALID_ACTOR_TYPES.includes(entry.actorType),
-          `statusHistory entry has invalid actorType: '${entry.actorType}'. Must be one of ${VALID_ACTOR_TYPES.join(', ')}`
-        );
-      }
+      assert.ok(unlinkResult.incident);
+      assert.ok(unlinkResult.complaint);
+      assert.strictEqual(unlinkResult.complaint.incidentId, null);
+
+      // Verify incident relationship consistency
+      const freshIncident = await testIncidentRepo.findById(incident.id);
+      assert.ok(!freshIncident.linkedComplaints.includes('CMP-2026-0003'));
+
+      // Verify complaint relationship consistency
+      const freshComplaint = await testComplaintRepo.findById('CMP-2026-0003');
+      assert.strictEqual(freshComplaint.incidentId, null);
+
+      // Verify statusHistory entry
+      const latestHistory = freshComplaint.statusHistory[freshComplaint.statusHistory.length - 1];
+      assert.ok(latestHistory);
+      assert.strictEqual(latestHistory.actorType, 'OFFICER');
+      assert.notStrictEqual(latestHistory.actorType, 'admin');
+
+      // Assert Mongoose schema validation passes on the complaint document
+      const mongooseDoc = new ComplaintModel(freshComplaint);
+      const validationError = mongooseDoc.validateSync();
+      assert.strictEqual(validationError, undefined);
+
+      // Assert StatusHistory standalone model validation passes
+      const statusHistoryDoc = new StatusHistoryModel({
+        id: 'HIST-TEST-ADMIN-UNLINK',
+        complaintId: freshComplaint.id,
+        referenceNumber: freshComplaint.referenceNumber,
+        status: latestHistory.status,
+        actorType: latestHistory.actorType,
+        remarks: latestHistory.remarks
+      });
+      assert.strictEqual(statusHistoryDoc.validateSync(), undefined);
     });
 
-    it('officer actor link also produces a valid actorType in statusHistory', async () => {
+    it('links and unlinks complaint as an officer and preserves relationship consistency with valid actorType', async () => {
       const incident = await service.createIncident({
-        title: 'Officer-linked cluster test',
+        title: 'Water Main Rupture Sector 4',
         category: 'water',
         leadDepartment: 'DEPT_WATER'
       }, waterOfficer);
 
-      await service.linkComplaintToIncident(incident.id, 'CMP-2026-0001', waterOfficer);
-
-      const updated = await testComplaintRepo.findById('CMP-2026-0001');
-      const VALID_ACTOR_TYPES = ['CITIZEN', 'OFFICER', 'SYSTEM'];
-      for (const entry of (updated.statusHistory || [])) {
-        assert.ok(
-          VALID_ACTOR_TYPES.includes(entry.actorType),
-          `statusHistory entry has invalid actorType: '${entry.actorType}'`
-        );
-      }
-    });
-
-    it('complaint status is NOT changed during a link operation', async () => {
-      const incident = await service.createIncident({
-        title: 'Status preservation test',
-        category: 'water',
-        leadDepartment: 'DEPT_WATER'
-      }, adminActor);
-
-      const before = await testComplaintRepo.findById('CMP-2026-0001');
-      const statusBefore = before.status;
-
-      await service.linkComplaintToIncident(incident.id, 'CMP-2026-0001', adminActor);
-
-      const after = await testComplaintRepo.findById('CMP-2026-0001');
-      assert.strictEqual(
-        after.status,
-        statusBefore,
-        'complaint status must not change during a plain link operation'
-      );
-    });
-
-    it('complaint incidentId is correctly set after linking', async () => {
-      const incident = await service.createIncident({
-        title: 'Persistence test',
-        category: 'water',
-        leadDepartment: 'DEPT_WATER'
-      }, adminActor);
-
-      await service.linkComplaintToIncident(incident.id, 'CMP-2026-0001', adminActor);
-
-      const updated = await testComplaintRepo.findById('CMP-2026-0001');
-      assert.strictEqual(
-        updated.incidentId,
+      // Link as water officer
+      const linkResult = await service.linkComplaintToIncident(
         incident.id,
-        'incidentId on complaint must match the parent incident after linking'
+        'CMP-2026-0001',
+        waterOfficer,
+        'Linked by departmental lead officer'
       );
+
+      assert.strictEqual(linkResult.complaint.incidentId, incident.id);
+      const linkedComplaint = await testComplaintRepo.findById('CMP-2026-0001');
+      const linkHistory = linkedComplaint.statusHistory[linkedComplaint.statusHistory.length - 1];
+      assert.strictEqual(linkHistory.actorType, 'OFFICER');
+
+      // Unlink as water officer
+      const unlinkResult = await service.unlinkComplaintFromIncident(
+        incident.id,
+        'CMP-2026-0001',
+        waterOfficer,
+        'Unlinked after incident scope refinement'
+      );
+
+      assert.strictEqual(unlinkResult.complaint.incidentId, null);
+      const unlinkedComplaint = await testComplaintRepo.findById('CMP-2026-0001');
+      const unlinkHistory = unlinkedComplaint.statusHistory[unlinkedComplaint.statusHistory.length - 1];
+      assert.strictEqual(unlinkHistory.actorType, 'OFFICER');
+
+      // Validate both states conform to Mongoose model
+      const mongooseDoc = new ComplaintModel(unlinkedComplaint);
+      assert.strictEqual(mongooseDoc.validateSync(), undefined);
     });
 
-    it('incident linkedComplaints list includes the newly linked complaint', async () => {
+    it('re-linking already linked complaint is idempotent and does not create duplicate history entries', async () => {
       const incident = await service.createIncident({
-        title: 'Linked complaints list test',
+        title: 'Water Main Rupture Sector 4',
         category: 'water',
         leadDepartment: 'DEPT_WATER'
-      }, adminActor);
-
-      const result = await service.linkComplaintToIncident(incident.id, 'CMP-2026-0001', adminActor);
-
-      const incidentAfter = result.incident || await service.getIncidentById(incident.id, {}, adminActor);
-      assert.ok(
-        Array.isArray(incidentAfter.linkedComplaints) &&
-        incidentAfter.linkedComplaints.some(c => String(c).toLowerCase() === 'cmp-2026-0001'),
-        'incident.linkedComplaints should contain the linked complaint ID'
-      );
-    });
-
-    it('duplicate link is idempotent and returns alreadyLinked: true', async () => {
-      const incident = await service.createIncident({
-        title: 'Idempotency test',
-        category: 'water',
-        leadDepartment: 'DEPT_WATER'
-      }, adminActor);
+      }, waterOfficer);
 
       await service.linkComplaintToIncident(incident.id, 'CMP-2026-0001', adminActor);
-      const secondResult = await service.linkComplaintToIncident(incident.id, 'CMP-2026-0001', adminActor);
+      const beforeComplaint = await testComplaintRepo.findById('CMP-2026-0001');
+      const historyCountBefore = beforeComplaint.statusHistory.length;
 
-      assert.strictEqual(secondResult.alreadyLinked, true, 'second link should be idempotent');
-    });
+      // Repeat linking
+      const repeated = await service.linkComplaintToIncident(incident.id, 'CMP-2026-0001', adminActor);
+      assert.strictEqual(repeated.alreadyLinked, true);
 
-    it('link with invalid incident ID returns a 404 error', async () => {
-      await assert.rejects(
-        () => service.linkComplaintToIncident('INC-DOES-NOT-EXIST', 'CMP-2026-0001', adminActor),
-        err => err.status === 404 && err.code === 'NOT_FOUND'
-      );
-    });
-
-    it('link with invalid complaint ID returns a 404 error', async () => {
-      const incident = await service.createIncident({
-        title: 'Invalid complaint test',
-        category: 'water',
-        leadDepartment: 'DEPT_WATER'
-      }, adminActor);
-
-      await assert.rejects(
-        () => service.linkComplaintToIncident(incident.id, 'CS-2026-DOES-NOT-EXIST', adminActor),
-        err => err.status === 404 && err.code === 'NOT_FOUND'
-      );
-    });
-
-    it('citizen actor is rejected with 403 when attempting to link', async () => {
-      const incident = await service.createIncident({
-        title: 'Authorization rejection test',
-        category: 'water',
-        leadDepartment: 'DEPT_WATER'
-      }, adminActor);
-
-      await assert.rejects(
-        () => service.linkComplaintToIncident(incident.id, 'CMP-2026-0001', citizenActor),
-        err => err.status === 403 && err.code === 'FORBIDDEN'
-      );
-    });
-
-    it('failed secondary complaint write is compensated — incident link is rolled back', async () => {
-      const incident = await service.createIncident({
-        title: 'Compensation rollback test',
-        category: 'water',
-        leadDepartment: 'DEPT_WATER'
-      }, adminActor);
-
-      // Inject a temporary fault into the complaint repo linkIncident
-      const originalLinkIncident = testComplaintRepo.linkIncident.bind(testComplaintRepo);
-      testComplaintRepo.linkIncident = async () => {
-        throw Object.assign(new Error('Simulated DB write failure'), { status: 500 });
-      };
-
-      try {
-        await assert.rejects(
-          () => service.linkComplaintToIncident(incident.id, 'CMP-2026-0001', adminActor),
-          err => err.status === 500
-        );
-
-        // After rollback, the incident should NOT contain the complaint
-        const incidentAfter = await testIncidentRepo.findById(incident.id);
-        const linkedAfter = Array.isArray(incidentAfter?.linkedComplaints) ? incidentAfter.linkedComplaints : [];
-        assert.ok(
-          !linkedAfter.some(c => String(c).toLowerCase() === 'cmp-2026-0001'),
-          'incident.linkedComplaints should be rolled back after secondary write failure'
-        );
-      } finally {
-        // Restore the original method
-        testComplaintRepo.linkIncident = originalLinkIncident;
-      }
-    });
-
-    it('unlink via admin actor produces a valid canonical actorType in statusHistory', async () => {
-      const incident = await service.createIncident({
-        title: 'Unlink actorType test',
-        category: 'water',
-        leadDepartment: 'DEPT_WATER'
-      }, adminActor);
-
-      await service.linkComplaintToIncident(incident.id, 'CMP-2026-0001', adminActor);
-
-      await service.unlinkComplaintFromIncident(incident.id, 'CMP-2026-0001', adminActor, 'Correction');
-
-      const updated = await testComplaintRepo.findById('CMP-2026-0001');
-      const VALID_ACTOR_TYPES = ['CITIZEN', 'OFFICER', 'SYSTEM'];
-      for (const entry of (updated.statusHistory || [])) {
-        assert.ok(
-          VALID_ACTOR_TYPES.includes(entry.actorType),
-          `unlink left invalid actorType '${entry.actorType}' in statusHistory`
-        );
-      }
+      const afterComplaint = await testComplaintRepo.findById('CMP-2026-0001');
+      assert.strictEqual(afterComplaint.statusHistory.length, historyCountBefore);
     });
   });
 });

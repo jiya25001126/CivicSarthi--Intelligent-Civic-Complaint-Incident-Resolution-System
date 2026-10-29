@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchComplaintStats } from '../api/client';
+import { useLanguage } from '../context/LanguageContext';
 import {
   FilePlus,
   Search,
@@ -20,6 +21,7 @@ import {
 export default function LandingPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { t, lang } = useLanguage();
 
   useEffect(() => {
     async function loadStats() {
@@ -42,18 +44,18 @@ export default function LandingPage() {
         <div className="max-w-3xl space-y-6">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-semibold border border-blue-400/30">
             <span className="w-2 h-2 rounded-full bg-blue-400"></span>
-            Intelligent Civic Incident Redressal System
+            {t('landing.systemPill')}
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
-            CivicSarthi
+            {t('landing.heroTitle')}
             <span className="block text-blue-400 text-2xl sm:text-3xl font-semibold mt-1">
-              From Complaint to Resolution.
+              {t('landing.heroTagline')}
             </span>
           </h1>
 
           <p className="text-base sm:text-lg text-slate-300 leading-relaxed font-normal">
-            CivicSarthi — Intelligent Civic Complaint & Incident Resolution System. Designed to augment existing public grievance portals with intelligent decision-support, cross-department coordination, and transparent citizen communication.
+            {t('landing.heroDescription')}
           </p>
 
           {/* Call to Actions */}
@@ -62,7 +64,7 @@ export default function LandingPage() {
               to="/citizen"
               className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm shadow-md transition"
             >
-              <span>Citizen Portal</span>
+              <span>{t('landing.citizenPortalBtn')}</span>
               <ArrowRight size={16} />
             </Link>
 
@@ -71,7 +73,7 @@ export default function LandingPage() {
               className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm shadow-md transition"
             >
               <FilePlus size={16} />
-              <span>Submit Complaint</span>
+              <span>{t('landing.submitComplaintBtn')}</span>
             </Link>
 
             <Link
@@ -79,7 +81,7 @@ export default function LandingPage() {
               className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium text-sm border border-slate-600 transition"
             >
               <Search size={16} />
-              <span>Track Complaint</span>
+              <span>{t('landing.trackComplaintBtn')}</span>
             </Link>
 
             <Link
@@ -87,7 +89,7 @@ export default function LandingPage() {
               className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-blue-300 font-medium text-sm border border-slate-700 transition"
             >
               <ShieldCheck size={16} />
-              <span>Officer Dashboard</span>
+              <span>{t('landing.officerDashboardBtn')}</span>
             </Link>
           </div>
         </div>
@@ -96,8 +98,8 @@ export default function LandingPage() {
         <div className="mt-8 p-4 bg-slate-800/80 border border-slate-700 rounded-xl text-slate-300 text-xs flex items-start gap-3">
           <Info size={18} className="shrink-0 text-blue-400 mt-0.5" />
           <div>
-            <span className="font-bold text-slate-200">System Transparency Notice:</span>{' '}
-            CivicSarthi is an independent civic incident resolution platform. It is not affiliated with or endorsed by DARPG/CPGRAMS. Demonstration records are synthetic and do not submit directly to official government portals without authorization.
+            <span className="font-bold text-slate-200">{t('landing.transparencyTitle')}</span>{' '}
+            {t('landing.transparencyText')}
           </div>
         </div>
       </div>
@@ -106,44 +108,44 @@ export default function LandingPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase">Total Tracked</span>
+            <span className="text-xs font-semibold uppercase">{t('landing.totalTracked')}</span>
             <Activity size={18} className="text-blue-600" />
           </div>
           <div className="text-2xl font-black text-slate-900">
             {loading ? '...' : (stats?.total ?? 18)}
           </div>
-          <p className="text-[11px] text-slate-500 mt-1">Synthetic grievance cases</p>
+          <p className="text-[11px] text-slate-500 mt-1">{t('landing.totalTrackedSub')}</p>
         </div>
 
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase">In Progress / Assigned</span>
+            <span className="text-xs font-semibold uppercase">{t('landing.inProgressAssigned')}</span>
             <Clock size={18} className="text-amber-600" />
           </div>
           <div className="text-2xl font-black text-amber-600">
             {loading ? '...' : (stats?.inProgress ?? 8)}
           </div>
-          <p className="text-[11px] text-slate-500 mt-1">Under active officer triage</p>
+          <p className="text-[11px] text-slate-500 mt-1">{t('landing.inProgressSub')}</p>
         </div>
 
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase">Resolved</span>
+            <span className="text-xs font-semibold uppercase">{t('landing.resolved')}</span>
             <CheckCircle2 size={18} className="text-emerald-600" />
           </div>
           <div className="text-2xl font-black text-emerald-600">
             {loading ? '...' : (stats?.resolved ?? 3)}
           </div>
-          <p className="text-[11px] text-slate-500 mt-1">Completed resolution cycles</p>
+          <p className="text-[11px] text-slate-500 mt-1">{t('landing.resolvedSub')}</p>
         </div>
 
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase">Departments Active</span>
+            <span className="text-xs font-semibold uppercase">{t('landing.deptsActive')}</span>
             <Building2 size={18} className="text-indigo-600" />
           </div>
           <div className="text-2xl font-black text-indigo-600">11</div>
-          <p className="text-[11px] text-slate-500 mt-1">Configured demo departments</p>
+          <p className="text-[11px] text-slate-500 mt-1">{t('landing.deptsActiveSub')}</p>
         </div>
       </div>
 
@@ -151,10 +153,10 @@ export default function LandingPage() {
       <div>
         <div className="text-center max-w-2xl mx-auto mb-8">
           <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
-            How CivicSarthi Augments Existing Systems
+            {t('landing.howAugmentsTitle')}
           </h2>
           <p className="text-sm text-slate-600 mt-1">
-            Bridging the gap between bureaucratic workflows and citizen reassurance without requiring a rip-and-replace of national infrastructure.
+            {t('landing.howAugmentsSub')}
           </p>
         </div>
 
@@ -163,12 +165,12 @@ export default function LandingPage() {
             <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
               <Layers size={20} />
             </div>
-            <h3 className="font-bold text-base text-slate-900">Multi-Agency Incident Clustering</h3>
+            <h3 className="font-bold text-base text-slate-900">{t('landing.pillar1Title')}</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              When disaster strikes (e.g. urban flooding), multiple citizens submit complaints touching roads, water, power, and healthcare. CivicSarthi groups related complaints under synchronized composite incident roots.
+              {t('landing.pillar1Desc')}
             </p>
             <Link to="/incident" className="inline-flex items-center gap-1 text-xs text-blue-600 font-semibold hover:underline">
-              <span>View Incident Concept</span>
+              <span>{t('landing.pillar1Link')}</span>
               <ArrowRight size={12} />
             </Link>
           </div>
@@ -177,12 +179,12 @@ export default function LandingPage() {
             <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
               <AlertTriangle size={20} />
             </div>
-            <h3 className="font-bold text-base text-slate-900">Neglect Radar & Loop Detection</h3>
+            <h3 className="font-bold text-base text-slate-900">{t('landing.pillar2Title')}</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Detects departmental ping-pong loops where grievances bounce between offices (&ge; 2 reassignments) or remain untouched for over 7 days, alerting senior supervisory officers proactively.
+              {t('landing.pillar2Desc')}
             </p>
             <Link to="/neglect-radar" className="inline-flex items-center gap-1 text-xs text-amber-700 font-semibold hover:underline">
-              <span>View Neglect Radar</span>
+              <span>{t('landing.pillar2Link')}</span>
               <ArrowRight size={12} />
             </Link>
           </div>
@@ -191,12 +193,12 @@ export default function LandingPage() {
             <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <Languages size={20} />
             </div>
-            <h3 className="font-bold text-base text-slate-900">Citizen Plain Language Translation</h3>
+            <h3 className="font-bold text-base text-slate-900">{t('landing.pillar3Title')}</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Translates opaque bureaucratic notices like "FORWARDED_TO_SUBORDINATE_OFFICE" into clear, empathetic plain-language updates in local regional languages with realistic next steps.
+              {t('landing.pillar3Desc')}
             </p>
             <Link to="/status-translator" className="inline-flex items-center gap-1 text-xs text-emerald-700 font-semibold hover:underline">
-              <span>View Status Translator</span>
+              <span>{t('landing.pillar3Link')}</span>
               <ArrowRight size={12} />
             </Link>
           </div>

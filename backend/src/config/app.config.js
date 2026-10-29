@@ -87,7 +87,8 @@ export const config = {
     spamReviews: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'spam_reviews.json'),
     citizenReputations: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'citizen_reputations.json'),
     clarifications: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'clarifications.json'),
-    reminders: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'reminders.json')
+    reminders: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'reminders.json'),
+    notifications: path.resolve(process.env.DATA_DIR || path.resolve(__dirname, '../../../data'), 'notifications.json')
   },
   reminders: {
     cooldownHours: Number(process.env.REMINDER_COOLDOWN_HOURS || 24)

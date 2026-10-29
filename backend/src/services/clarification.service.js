@@ -7,6 +7,7 @@
 import { clarificationRepository } from '../repositories/clarification.repository.js';
 import { complaintRepository } from '../repositories/complaint.repository.js';
 import { auditLogRepository } from '../repositories/auditLog.repository.js';
+import { notificationService as defaultNotificationService } from './notification/notification.service.js';
 import {
   CLARIFICATION_STATUS,
   CLARIFICATION_TYPE,
@@ -17,11 +18,13 @@ export class ClarificationService {
   constructor(
     clarificationRepo = clarificationRepository,
     complaintRepo = complaintRepository,
-    auditRepo = auditLogRepository
+    auditRepo = auditLogRepository,
+    notifService = defaultNotificationService
   ) {
     this.clarificationRepo = clarificationRepo;
     this.complaintRepo = complaintRepo;
     this.auditRepo = auditRepo;
+    this.notificationService = notifService;
   }
 
   /**
@@ -297,6 +300,7 @@ export class ClarificationService {
       console.warn('Audit log creation failed for clarification response:', auditErr.message);
     }
 
+    try { if (this.notificationService && typeof this.notificationService.notifyCitizen === 'function') { this.complaintRepo.findById(item.complaintId).then((comp) => { if (comp) { this.notificationService.notifyCitizen({ citizenId: item.citizenId, recipientPhone: comp.citizenPhone || comp.contactPhone, eventType: 'CLARIFICATION_RESPONDED', complaint: comp, templateParams: { referenceNumber: item.complaintReference || item.complaintId }, stateIdentifier: 'clarification_resp_' + item.id }).catch(() => {}); } }).catch(() => {}); } } catch {}
     return this.sanitizeClarification(updated);
   }
 
@@ -356,6 +360,7 @@ export class ClarificationService {
       console.warn('Audit log creation failed for clarification close:', auditErr.message);
     }
 
+    try { if (this.notificationService && typeof this.notificationService.notifyCitizen === 'function') { this.complaintRepo.findById(item.complaintId).then((comp) => { if (comp) { this.notificationService.notifyCitizen({ citizenId: item.citizenId, recipientPhone: comp.citizenPhone || comp.contactPhone, eventType: 'CLARIFICATION_RESPONDED', complaint: comp, templateParams: { referenceNumber: item.complaintReference || item.complaintId }, stateIdentifier: 'clarification_resp_' + item.id }).catch(() => {}); } }).catch(() => {}); } } catch {}
     return this.sanitizeClarification(updated);
   }
 

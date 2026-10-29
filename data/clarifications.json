@@ -3,5 +3,45 @@
     "version": "1.0.0",
     "description": "CivicSarthi Citizen-Initiated Clarification Threads"
   },
-  "clarifications": []
+  "clarifications": [
+    {
+      "id": "CLR-2026-0001",
+      "complaintId": "CPG-2026-00101",
+      "referenceNumber": "CS-2026-0001",
+      "citizenId": "USR-DEMO-CITIZEN-001",
+      "citizenName": "Aarav Sharma",
+      "departmentId": "DEPT_PENSION",
+      "threadType": "CLARIFICATION",
+      "status": "RESPONDED",
+      "content": "Can the zonal accounts desk confirm if the superannuation verification booklet was forwarded to CPAO?",
+      "responses": [
+        {
+          "id": "CLR-RESP-001",
+          "responderId": "OFF_001",
+          "responderName": "P. Sengupta (Accounts Officer)",
+          "responderRole": "officer",
+          "responderDepartmentId": "DEPT_PENSION",
+          "responseText": "Booklet verification acknowledged on Oct 10. Annexure II forwarded to Central Pension Accounting Office; PPO dispatch expected within 7 business days.",
+          "isOfficial": true,
+          "createdAt": "2026-10-11T10:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-10-10T14:15:00.000Z",
+      "updatedAt": "2026-10-11T10:30:00.000Z"
+    },
+    {
+      "id": "CLR-2026-0002",
+      "complaintId": "CPG-2026-00121",
+      "referenceNumber": "CS-2026-0021",
+      "citizenId": "USR-DEMO-CITIZEN-001",
+      "citizenName": "Aarav Sharma",
+      "departmentId": "DEPT_WATER",
+      "threadType": "LANDMARK_UPDATE",
+      "status": "OPEN",
+      "content": "Water pressure drop is particularly acute at Building C and D, opposite Datta Mandir.",
+      "responses": [],
+      "createdAt": "2026-10-12T08:20:00.000Z",
+      "updatedAt": "2026-10-12T08:20:00.000Z"
+    }
+  ]
 }

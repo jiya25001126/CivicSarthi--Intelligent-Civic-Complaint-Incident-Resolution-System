@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { createComplaint, fetchDepartments, analyzeGrievancePreview, uploadAttachment } from '../api/client';
 import VoiceInput, { mergeTranscript } from '../components/VoiceInput';
+import { useLanguage } from '../context/LanguageContext';
 import {
   FilePlus,
   Send,
@@ -18,8 +19,9 @@ import {
   Copy,
   Info,
   UploadCloud,
-  Trash2,
-  Image
+  X,
+  Image as ImageIcon,
+  Trash2
 } from 'lucide-react';
 
 const INDIAN_STATES = [
@@ -44,6 +46,7 @@ const CATEGORIES = [
 
 export default function SubmitComplaintPage() {
   const navigate = useNavigate();
+  const { t, lang, tStatus, tPriority, tCategory, tDepartment } = useLanguage();
   const [departments, setDepartments] = useState([]);
   const [loadingDepts, setLoadingDepts] = useState(true);
 
@@ -54,7 +57,7 @@ export default function SubmitComplaintPage() {
   const [state, setState] = useState('Maharashtra');
   const [district, setDistrict] = useState('Pune');
   const [locality, setLocality] = useState('');
-  const [preferredLanguage, setPreferredLanguage] = useState('en');
+  const [preferredLanguage, setPreferredLanguage] = useState(lang || 'en');
   const [departmentId, setDepartmentId] = useState('');
   const [evidenceName, setEvidenceName] = useState('');
 
@@ -152,14 +155,14 @@ export default function SubmitComplaintPage() {
     // Validate size (5MB max)
     const MAX_SIZE = 5 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
-      setFileError('File size exceeds 5MB limit. Please select a photo under 5MB.');
+      setFileError(lang === 'hi' ? 'फ़ाइल का आकार 5MB की सीमा से अधिक है। कृपया 5MB से कम आकार की फ़ोटो चुनें।' : 'File size exceeds 5MB limit. Please select a photo under 5MB.');
       return;
     }
 
     // Validate MIME type
     const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
     if (!ALLOWED_TYPES.includes(file.type.toLowerCase())) {
-      setFileError('Invalid file format. Allowed formats: JPEG, PNG, WebP.');
+      setFileError(lang === 'hi' ? 'अमान्य फ़ाइल प्रारूप। अनुमत प्रारूप: JPEG, PNG, WebP।' : 'Invalid file format. Allowed formats: JPEG, PNG, WebP.');
       return;
     }
 
@@ -201,27 +204,27 @@ export default function SubmitComplaintPage() {
     const trimmedEvidence = evidenceName.trim();
 
     if (!trimmedTitle || trimmedTitle.length < 3) {
-      setError('Complaint title must be at least 3 characters long.');
+      setError(lang === 'hi' ? 'शिकायत का शीर्षक कम से कम 3 अक्षर लंबा होना चाहिए।' : 'Complaint title must be at least 3 characters long.');
       return;
     }
     if (trimmedTitle.length > 200) {
-      setError('Complaint title cannot exceed 200 characters.');
+      setError(lang === 'hi' ? 'शिकायत का शीर्षक 200 अक्षरों से अधिक नहीं हो सकता।' : 'Complaint title cannot exceed 200 characters.');
       return;
     }
     if (!trimmedDesc || trimmedDesc.length < 10) {
-      setError('Please provide a detailed grievance description (minimum 10 characters).');
+      setError(lang === 'hi' ? 'कृपया विस्तृत शिकायत विवरण प्रदान करें (न्यूनतम 10 अक्षर)।' : 'Please provide a detailed grievance description (minimum 10 characters).');
       return;
     }
     if (trimmedDesc.length > 3000) {
-      setError('Description cannot exceed 3000 characters.');
+      setError(lang === 'hi' ? 'विवरण 3000 अक्षरों से अधिक नहीं हो सकता।' : 'Description cannot exceed 3000 characters.');
       return;
     }
     if (!state.trim() || !trimmedDistrict) {
-      setError('Please provide both State and District.');
+      setError(lang === 'hi' ? 'कृपया राज्य और जिला दोनों प्रदान करें।' : 'Please provide both State and District.');
       return;
     }
     if (trimmedEvidence && !/^[\w\-.\s]{1,255}$/.test(trimmedEvidence)) {
-      setError('Evidence attachment reference contains invalid characters. Do not use directory slashes (../ or \\).');
+      setError(lang === 'hi' ? 'साक्ष्य संदर्भ में अमान्य वर्ण हैं। निर्देशिका स्लैश (../ या \\) का उपयोग न करें।' : 'Evidence attachment reference contains invalid characters. Do not use directory slashes (../ or \\).');
       return;
     }
 
@@ -293,26 +296,26 @@ export default function SubmitComplaintPage() {
 
         <div className="space-y-2">
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-            Grievance Successfully Registered
+            {t('submitComplaint.successTitle')}
           </h2>
           <p className="text-sm text-slate-600">
-            Your complaint has been safely recorded in CivicSarthi and assigned an official tracking reference.
+            {t('submitComplaint.successSubtitle')}
           </p>
         </div>
 
         <div className="p-5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
           <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold block">
-            Official Grievance Reference
+            {t('submitComplaint.successRefTitle')}
           </span>
           <div className="text-3xl font-mono font-extrabold text-blue-700 tracking-wider">
             {successResult.referenceNumber || successResult.id}
           </div>
           <div className="flex items-center justify-center gap-2 pt-1">
             <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-xs font-semibold">
-              Status: SUBMITTED
+              {t('common.status')}: {tStatus('SUBMITTED')}
             </span>
             <span className="px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700 text-xs font-medium">
-              Priority: MEDIUM
+              {t('common.priority')}: {tPriority('MEDIUM')}
             </span>
           </div>
           {successResult.statusDescription && (
@@ -325,10 +328,10 @@ export default function SubmitComplaintPage() {
         <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-left text-xs text-amber-900 space-y-1.5">
           <span className="font-bold flex items-center gap-1.5 text-amber-950">
             <HelpCircle size={15} />
-            What happens next?
+            {t('submitComplaint.whatHappensNext')}
           </span>
           <p className="text-slate-700 leading-relaxed">
-            Your grievance is now pending triage by the nodal grievance coordinator. You can track live updates using your tracking reference at any time without logging in, or manage your full filing history from your Citizen Dashboard.
+            {t('submitComplaint.nextStepsText')}
           </p>
         </div>
 
@@ -337,20 +340,20 @@ export default function SubmitComplaintPage() {
             to={`/citizen/track/${encodeURIComponent(successResult.referenceNumber || successResult.id)}`}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow transition"
           >
-            <span>Track Progress</span>
+            <span>{t('submitComplaint.trackNowBtn')}</span>
             <ArrowRight size={14} />
           </Link>
           <Link
             to={`/citizen/complaints/${encodeURIComponent(successResult.id)}`}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition"
           >
-            <span>View Full Grievance</span>
+            <span>{t('submitComplaint.viewFullGrievance')}</span>
           </Link>
           <Link
             to="/citizen/complaints"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition"
           >
-            <span>My Complaints</span>
+            <span>{t('myComplaints')}</span>
           </Link>
         </div>
       </div>
@@ -364,17 +367,17 @@ export default function SubmitComplaintPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
             <FilePlus size={24} className="text-blue-600" />
-            Lodge a Civic Grievance
+            {t('submitComplaint.title')}
           </h1>
           <p className="text-sm text-slate-600 mt-1">
-            Provide the details below to register your public grievance for departmental redressal.
+            {t('submitComplaint.subtitle')}
           </p>
         </div>
         <Link
           to="/citizen"
           className="text-xs text-slate-500 hover:text-slate-800 font-medium"
         >
-          Cancel & Return
+          {t('submitComplaint.cancelReturn')}
         </Link>
       </div>
 
@@ -395,19 +398,19 @@ export default function SubmitComplaintPage() {
         {/* Title */}
         <div className="space-y-1.5">
           <label htmlFor="complaint-title" className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
-            Complaint Subject / Title <span className="text-rose-600">*</span>
+            {t('submitComplaint.formTitle')} <span className="text-rose-600">*</span>
           </label>
           <input
             id="complaint-title"
             type="text"
             required
-            placeholder="e.g. Broken water pipeline causing flooding in Sector 4"
+            placeholder={t('submitComplaint.formTitlePlaceholder')}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             disabled={submitting}
             className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:opacity-60"
           />
-          <p className="text-[11px] text-slate-400">Brief 3-200 character summary of the issue.</p>
+          <p className="text-[11px] text-slate-400">{t('submitComplaint.titleHelper')}</p>
         </div>
 
         {/* AI Assistant Category & Duplicate Intelligence Strip */}
@@ -416,15 +419,15 @@ export default function SubmitComplaintPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-bold text-blue-900 uppercase tracking-wide">
                 <Sparkles size={16} className="text-blue-600 animate-pulse" />
-                <span>AI Grievance Assistant (Assistive Suggestion)</span>
+                <span>{t('submitComplaint.aiBannerTitle')}</span>
               </div>
               {analyzingAi ? (
                 <span className="text-[11px] text-blue-600 font-medium animate-pulse">
-                  Analyzing grievance narrative...
+                  {t('submitComplaint.analyzingAi')}
                 </span>
               ) : aiSuggestion?.classification?.confidence ? (
                 <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-200 text-blue-900 font-semibold">
-                  Confidence: {Math.round(aiSuggestion.classification.confidence * 100)}%
+                  {t('submitComplaint.aiConfidence', { score: Math.round(aiSuggestion.classification.confidence * 100) })}
                 </span>
               ) : null}
             </div>
@@ -433,15 +436,14 @@ export default function SubmitComplaintPage() {
               <div className="space-y-2 text-xs text-slate-700">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <span className="text-slate-500">Recommended Category: </span>
+                    <span className="text-slate-500">{t('submitComplaint.recommendedCategory')} </span>
                     <span className="font-bold text-slate-900 capitalize">
-                      {CATEGORIES.find((c) => c.value === aiSuggestion.classification.category)?.label ||
-                        aiSuggestion.classification.category}
+                      {tCategory(aiSuggestion.classification.category)}
                     </span>
                     <span className="mx-2 text-slate-300">|</span>
-                    <span className="text-slate-500">Department: </span>
+                    <span className="text-slate-500">{t('common.department')}: </span>
                     <span className="font-bold text-slate-900">
-                      {aiSuggestion.classification.departmentName}
+                      {tDepartment(aiSuggestion.classification.departmentName)}
                     </span>
                   </div>
 
@@ -457,15 +459,15 @@ export default function SubmitComplaintPage() {
                     <Sparkles size={12} />
                     <span>
                       {aiApplied || category === aiSuggestion.classification.category
-                        ? 'Recommendation Applied'
-                        : 'Apply AI Suggestion'}
+                        ? t('submitComplaint.aiApplied')
+                        : t('submitComplaint.applyRecommendation')}
                     </span>
                   </button>
                 </div>
 
                 {aiSuggestion.classification.explanation && (
                   <p className="text-[11px] text-slate-600 italic">
-                    Reason: {aiSuggestion.classification.explanation}
+                    {t('submitComplaint.reason')} {aiSuggestion.classification.explanation}
                   </p>
                 )}
               </div>
@@ -477,11 +479,10 @@ export default function SubmitComplaintPage() {
                 <Info size={14} className="shrink-0 text-amber-600 mt-0.5" />
                 <div className="space-y-1">
                   <span className="font-bold block">
-                    Similar complaints found in this jurisdiction ({aiSuggestion.potentialDuplicates.length} candidate match):
+                    {t('submitComplaint.similarAdvisory', { count: aiSuggestion.potentialDuplicates.length })}
                   </span>
                   <p className="text-slate-700 leading-relaxed">
-                    Other citizens have reported similar incidents nearby (e.g. "{aiSuggestion.potentialDuplicates[0].title}").
-                    You can still lodge this complaint. Officers will correlate them during triage.
+                    {t('submitComplaint.similarAdvisoryText')}
                   </p>
                 </div>
               </div>
@@ -493,7 +494,7 @@ export default function SubmitComplaintPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label htmlFor="complaint-category" className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
-              Civic Category <span className="text-rose-600">*</span>
+              {t('submitComplaint.categoryLabel')} <span className="text-rose-600">*</span>
             </label>
             <select
               id="complaint-category"
@@ -504,7 +505,7 @@ export default function SubmitComplaintPage() {
             >
               {CATEGORIES.map((cat) => (
                 <option key={cat.value} value={cat.value}>
-                  {cat.label}
+                  {tCategory(cat.value)}
                 </option>
               ))}
             </select>
@@ -512,7 +513,7 @@ export default function SubmitComplaintPage() {
 
           <div className="space-y-1.5">
             <label htmlFor="complaint-department" className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
-              Department Assignment
+              {t('submitComplaint.departmentLabel')}
             </label>
             <select
               id="complaint-department"
@@ -523,12 +524,12 @@ export default function SubmitComplaintPage() {
             >
               {departments.map((d) => (
                 <option key={d.id} value={d.id}>
-                  {d.name}
+                  {tDepartment(d.name || d.id)}
                 </option>
               ))}
             </select>
             <p className="text-[11px] text-slate-400">
-              Assigned automatically; nodal officers can route appropriately during triage.
+              {t('submitComplaint.deptAutoSelectNote')}
             </p>
           </div>
         </div>
@@ -537,9 +538,11 @@ export default function SubmitComplaintPage() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label htmlFor="complaint-description" className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
-              Detailed Grievance Narrative <span className="text-rose-600">*</span>
+              {t('submitComplaint.descriptionLabel')} <span className="text-rose-600">*</span>
             </label>
-            <span className="text-[11px] text-slate-400 font-medium">Speak or Type</span>
+            <span className="text-[11px] text-slate-400 font-medium">
+              {lang === 'hi' ? 'बोलें या लिखें' : 'Speak or Type'}
+            </span>
           </div>
 
           {/* Multilingual Voice Input Assistant */}
@@ -551,23 +554,23 @@ export default function SubmitComplaintPage() {
             id="complaint-description"
             required
             rows={5}
-            placeholder="Describe the problem, exact street, locality, landmark, duration of the issue, and impact on residents..."
+            placeholder={t('submitComplaint.descriptionPlaceholder')}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             disabled={submitting}
             className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 leading-relaxed disabled:opacity-60"
           ></textarea>
-          <p className="text-[11px] text-slate-400">Minimum 10 characters, maximum 3000 characters.</p>
+          <p className="text-[11px] text-slate-400">{t('submitComplaint.descHelper')}</p>
         </div>
 
         {/* Location Details */}
         <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
           <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
-            Incident Location Information
+            {t('submitComplaint.locationHeading')}
           </span>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label htmlFor="complaint-state" className="block text-[11px] font-semibold text-slate-600 mb-1">State *</label>
+              <label htmlFor="complaint-state" className="block text-[11px] font-semibold text-slate-600 mb-1">{t('submitComplaint.stateLabel')} *</label>
               <select
                 id="complaint-state"
                 value={state}
@@ -582,7 +585,7 @@ export default function SubmitComplaintPage() {
             </div>
 
             <div>
-              <label htmlFor="complaint-district" className="block text-[11px] font-semibold text-slate-600 mb-1">District *</label>
+              <label htmlFor="complaint-district" className="block text-[11px] font-semibold text-slate-600 mb-1">{t('submitComplaint.districtLabel')} *</label>
               <input
                 id="complaint-district"
                 type="text"
@@ -596,11 +599,11 @@ export default function SubmitComplaintPage() {
             </div>
 
             <div>
-              <label htmlFor="complaint-locality" className="block text-[11px] font-semibold text-slate-600 mb-1">Locality / Landmark</label>
+              <label htmlFor="complaint-locality" className="block text-[11px] font-semibold text-slate-600 mb-1">{t('submitComplaint.localityLabel')}</label>
               <input
                 id="complaint-locality"
                 type="text"
-                placeholder="e.g. Ward 4, Near Water Tank"
+                placeholder={t('submitComplaint.localityPlaceholder')}
                 value={locality}
                 onChange={(e) => setLocality(e.target.value)}
                 disabled={submitting}
@@ -615,9 +618,9 @@ export default function SubmitComplaintPage() {
           <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
             <div className="flex items-center justify-between">
               <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
-                Supporting Photo / Evidence (Optional)
+                {t('submitComplaint.attachmentHeading') || 'Supporting Photo / Evidence (Optional)'}
               </label>
-              <span className="text-[11px] text-slate-500">Max 5MB (JPEG, PNG, WebP)</span>
+              <span className="text-[11px] text-slate-500">{t('submitComplaint.attachmentDesc') || 'Max 5MB (JPEG, PNG, WebP)'}</span>
             </div>
 
             {/* File Upload / Preview Area */}
@@ -636,7 +639,7 @@ export default function SubmitComplaintPage() {
                       {selectedFile.name}
                     </span>
                     <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-semibold">
-                      Ready to Upload
+                      {t('submitComplaint.ready') || 'Ready to Upload'}
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-500 mt-0.5">
@@ -648,7 +651,7 @@ export default function SubmitComplaintPage() {
                   onClick={handleRemoveFile}
                   disabled={submitting}
                   className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition"
-                  title="Remove photo"
+                  title={t('submitComplaint.removePhoto') || 'Remove photo'}
                 >
                   <Trash2 size={16} />
                 </button>
@@ -663,10 +666,10 @@ export default function SubmitComplaintPage() {
                     <UploadCloud size={20} />
                   </div>
                   <span className="text-xs font-semibold text-slate-700 group-hover:text-blue-700">
-                    Click to attach photo or drag and drop
+                    {t('submitComplaint.dragDropPrompt') || 'Click to attach photo or drag and drop'}
                   </span>
                   <span className="text-[11px] text-slate-400 mt-1">
-                    JPG, PNG, or WebP up to 5MB
+                    {t('submitComplaint.attachmentDesc') || 'JPG, PNG, or WebP up to 5MB'}
                   </span>
                   <input
                     id="complaint-photo-input"
@@ -693,7 +696,7 @@ export default function SubmitComplaintPage() {
               <input
                 id="complaint-evidence"
                 type="text"
-                placeholder="Or specify file citation (e.g. photo_leak.jpg)"
+                placeholder={t('submitComplaint.evidenceIdPlaceholder') || 'Or specify file citation (e.g. photo_leak.jpg)'}
                 value={evidenceName}
                 onChange={(e) => setEvidenceName(e.target.value)}
                 disabled={submitting || Boolean(selectedFile)}
@@ -704,7 +707,7 @@ export default function SubmitComplaintPage() {
 
           <div className="space-y-1.5">
             <label htmlFor="complaint-language" className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
-              Preferred Language
+              {t('submitComplaint.preferredLangLabel')}
             </label>
             <select
               id="complaint-language"
@@ -713,12 +716,12 @@ export default function SubmitComplaintPage() {
               disabled={submitting}
               className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:opacity-60"
             >
-              <option value="en">English</option>
-              <option value="hi">Hindi (हिन्दी)</option>
-              <option value="mr">Marathi (मराठी)</option>
-              <option value="ta">Tamil (தமிழ்)</option>
-              <option value="te">Telugu (తెలుగు)</option>
-              <option value="kn">Kannada (ಕನ್ನಡ)</option>
+              <option value="en">{t('submitComplaint.langEn')}</option>
+              <option value="hi">{t('submitComplaint.langHi')}</option>
+              <option value="mr">मराठी (Marathi)</option>
+              <option value="ta">தமிழ் (Tamil)</option>
+              <option value="te">తెలుగు (Telugu)</option>
+              <option value="kn">ಕನ್ನಡ (Kannada)</option>
             </select>
           </div>
         </div>
@@ -726,7 +729,7 @@ export default function SubmitComplaintPage() {
         {/* Submit Button & Guard */}
         <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="text-[11px] text-slate-500">
-            Initial Status is recorded as <span className="font-semibold text-slate-800">SUBMITTED</span>.
+            {t('submitComplaint.initialStatusNote')}
           </div>
           <button
             type="submit"
@@ -734,7 +737,7 @@ export default function SubmitComplaintPage() {
             className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-md transition disabled:opacity-50"
           >
             <Send size={14} className={submitting ? 'animate-spin' : ''} />
-            <span>{submitting ? 'Registering Grievance with CivicSarthi...' : 'Submit Grievance'}</span>
+            <span>{submitting ? t('submitComplaint.submittingBtn') : t('submitComplaint.submitBtn')}</span>
           </button>
         </div>
       </form>

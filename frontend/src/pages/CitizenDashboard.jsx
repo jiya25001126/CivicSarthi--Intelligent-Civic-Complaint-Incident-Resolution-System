@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchMyComplaints } from '../api/client';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
+import { useLanguage } from '../context/LanguageContext';
 import {
   FilePlus,
   Search,
@@ -14,7 +15,12 @@ import {
   AlertTriangle,
   ArrowRight,
   TrendingUp,
-  Inbox
+  Inbox,
+  MapPin,
+  Sparkles,
+  Filter,
+  X,
+  Flame
 } from 'lucide-react';
 import { formatOutcomeType } from '../constants/resolutionQuality.constants';
 
@@ -22,6 +28,9 @@ export default function CitizenDashboard() {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filterTab, setFilterTab] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  const { t, lang, tCategory, formatDate } = useLanguage();
 
   const loadData = async () => {
     try {
@@ -31,7 +40,7 @@ export default function CitizenDashboard() {
       const list = Array.isArray(res.data) ? res.data : (res.data?.items || []);
       setComplaints(list);
     } catch (err) {
-      setError(err.message || 'Failed to load citizen grievance records');
+      setError(err.message || (lang === 'hi' ? 'नागरिक शिकायत रिकॉर्ड लोड करने में विफल' : 'Failed to load citizen grievance records'));
     } finally {
       setLoading(false);
     }
@@ -52,17 +61,50 @@ export default function CitizenDashboard() {
   const resolvedCount = complaints.filter(
     (c) => c.status === 'RESOLVED' || c.status === 'CLOSED'
   ).length;
+  const criticalCount = complaints.filter(
+    (c) => c.priority === 'CRITICAL' || c.priority === 'HIGH'
+  ).length;
 
-  const recentComplaints = complaints.slice(0, 6);
+  const hasSynthetic = complaints.some((c) => c.synthetic === true);
+
+  // Apply interactive filter tabs and search query
+  const filteredComplaints = complaints.filter((c) => {
+    if (filterTab === 'TRIAGE' && c.status !== 'SUBMITTED' && c.status !== 'UNDER_REVIEW') return false;
+    if (filterTab === 'ACTIVE' && c.status !== 'ASSIGNED' && c.status !== 'IN_PROGRESS' && c.status !== 'AWAITING_INFORMATION') return false;
+    if (filterTab === 'RESOLVED' && c.status !== 'RESOLVED' && c.status !== 'CLOSED') return false;
+    if (filterTab === 'CRITICAL' && c.priority !== 'CRITICAL' && c.priority !== 'HIGH') return false;
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const ref = (c.referenceNumber || c.id || '').toLowerCase();
+      const title = (c.title || c.text || '').toLowerCase();
+      const desc = (c.description || '').toLowerCase();
+      const cat = (c.category || '').toLowerCase();
+      const dept = (c.departmentId || c.department || '').toLowerCase();
+      const loc = (c.location?.landmark || c.location?.ward || c.locality || '').toLowerCase();
+      if (!ref.includes(q) && !title.includes(q) && !desc.includes(q) && !cat.includes(q) && !dept.includes(q) && !loc.includes(q)) {
+        return false;
+      }
+    }
+    return true;
+  });
 
   return (
     <div className="space-y-6">
       {/* Top Banner & Quick Actions */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Citizen Grievance Portal</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{t('citizenDashboard.title')}</h1>
+            {hasSynthetic && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-200">
+                <Sparkles size={11} className="text-blue-500" />
+                {t('citizenDashboard.demoBadge')}
+              </span>
+            )}
+          </div>
           <p className="text-sm text-slate-600 mt-1">
-            Track filed grievances, review department actions, and monitor resolution timelines.
+            {t('citizenDashboard.subtitle')}
           </p>
         </div>
         <div className="flex items-center gap-2.5">
@@ -71,72 +113,128 @@ export default function CitizenDashboard() {
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition"
           >
             <FilePlus size={15} />
-            <span>Submit Grievance</span>
+            <span>{t('citizenDashboard.submitGrievanceBtn')}</span>
           </Link>
           <Link
             to="/citizen/track"
             className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition"
           >
             <Search size={15} />
-            <span>Track by Reference</span>
+            <span>{t('citizenDashboard.trackByReferenceBtn')}</span>
           </Link>
           <button
             onClick={loadData}
             disabled={loading}
             className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition disabled:opacity-50"
-            title="Refresh Data"
-            aria-label="Refresh grievance data"
+            title={t('citizenDashboard.refreshData')}
+            aria-label={t('citizenDashboard.refreshData')}
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </button>
         </div>
       </div>
 
-      {/* Stats Cards — strictly derived from authenticated citizen data */}
+      {/* Synthetic Demo Notification Banner (Only when synthetic records are present) */}
+      {hasSynthetic && (
+        <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-sky-50 border border-blue-200/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-700 shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+              <Sparkles size={16} />
+            </div>
+            <div>
+              <span className="font-bold text-slate-900 block text-xs">
+                {t('citizenDashboard.demoBannerTitle')}
+              </span>
+              <span className="text-slate-600 text-[11px]">
+                {t('citizenDashboard.demoBannerDesc')}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="px-2.5 py-1 rounded-lg bg-white/80 border border-blue-200 text-blue-800 font-semibold text-[11px]">
+              {t('citizenDashboard.recordsActive', { count: complaints.length })}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Stats Cards — interactive filter cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <button
+          type="button"
+          onClick={() => setFilterTab('ALL')}
+          className={`p-5 rounded-2xl border text-left transition ${
+            filterTab === 'ALL'
+              ? 'bg-blue-50/60 border-blue-500 ring-2 ring-blue-500/20 shadow-sm'
+              : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
+          }`}
+        >
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase">Total Filed</span>
+            <span className="text-xs font-semibold uppercase">{t('citizenDashboard.totalFiled')}</span>
             <FileText size={18} className="text-blue-600" />
           </div>
           <div className="text-2xl font-black text-slate-900">
             {loading ? '—' : totalCount}
           </div>
-          <p className="text-[11px] text-slate-500 mt-1">Grievances registered by you</p>
-        </div>
+          <p className="text-[11px] text-slate-500 mt-1">{t('citizenDashboard.totalFiledSub')}</p>
+        </button>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <button
+          type="button"
+          onClick={() => setFilterTab('TRIAGE')}
+          className={`p-5 rounded-2xl border text-left transition ${
+            filterTab === 'TRIAGE'
+              ? 'bg-amber-50/60 border-amber-500 ring-2 ring-amber-500/20 shadow-sm'
+              : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
+          }`}
+        >
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase">Pending Triage</span>
+            <span className="text-xs font-semibold uppercase">{t('citizenDashboard.pendingTriage')}</span>
             <Clock size={18} className="text-amber-600" />
           </div>
           <div className="text-2xl font-black text-amber-600">
             {loading ? '—' : triageCount}
           </div>
-          <p className="text-[11px] text-slate-500 mt-1">Submitted & initial review</p>
-        </div>
+          <p className="text-[11px] text-slate-500 mt-1">{t('citizenDashboard.pendingTriageSub')}</p>
+        </button>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <button
+          type="button"
+          onClick={() => setFilterTab('ACTIVE')}
+          className={`p-5 rounded-2xl border text-left transition ${
+            filterTab === 'ACTIVE'
+              ? 'bg-blue-50/60 border-blue-500 ring-2 ring-blue-500/20 shadow-sm'
+              : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
+          }`}
+        >
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase">Active Remediation</span>
+            <span className="text-xs font-semibold uppercase">{t('citizenDashboard.activeRemediation')}</span>
             <TrendingUp size={18} className="text-blue-600" />
           </div>
           <div className="text-2xl font-black text-blue-600">
             {loading ? '—' : activeCount}
           </div>
-          <p className="text-[11px] text-slate-500 mt-1">Assigned or in progress</p>
-        </div>
+          <p className="text-[11px] text-slate-500 mt-1">{t('citizenDashboard.activeRemediationSub')}</p>
+        </button>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <button
+          type="button"
+          onClick={() => setFilterTab('RESOLVED')}
+          className={`p-5 rounded-2xl border text-left transition ${
+            filterTab === 'RESOLVED'
+              ? 'bg-emerald-50/60 border-emerald-500 ring-2 ring-emerald-500/20 shadow-sm'
+              : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
+          }`}
+        >
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase">Resolved & Closed</span>
+            <span className="text-xs font-semibold uppercase">{t('citizenDashboard.resolvedAndClosed')}</span>
             <CheckCircle2 size={18} className="text-emerald-600" />
           </div>
           <div className="text-2xl font-black text-emerald-600">
             {loading ? '—' : resolvedCount}
           </div>
-          <p className="text-[11px] text-slate-500 mt-1">Completed by department</p>
-        </div>
+          <p className="text-[11px] text-slate-500 mt-1">{t('citizenDashboard.resolvedAndClosedSub')}</p>
+        </button>
       </div>
 
       {/* Error state */}
@@ -145,42 +243,110 @@ export default function CitizenDashboard() {
           <div className="flex items-center gap-3">
             <AlertCircle size={20} className="shrink-0" />
             <div className="text-sm">
-              <span className="font-semibold">Failed to fetch data:</span> {error}
+              <span className="font-semibold">{t('common.error')}:</span> {error}
             </div>
           </div>
           <button
             onClick={loadData}
             className="px-3 py-1 bg-rose-600 text-white rounded-lg text-xs font-semibold hover:bg-rose-700 transition"
           >
-            Retry
+            {t('common.retry')}
           </button>
         </div>
       )}
 
-      {/* Recent Complaints Section */}
+      {/* Complaints Section with Interactive Filter Tabs and Instant Search */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-sm text-slate-800">My Recent Grievances</span>
-            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">
-              {complaints.length} total
-            </span>
-          </div>
-          {complaints.length > 0 && (
-            <Link
-              to="/citizen/complaints"
-              className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-semibold"
+        {/* Controls Bar */}
+        <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
+          {/* Quick Filter Tabs */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setFilterTab('ALL')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                filterTab === 'ALL'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
             >
-              <span>View All</span>
-              <ArrowRight size={13} />
-            </Link>
-          )}
+              {t('citizenDashboard.tabAll', { count: totalCount })}
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterTab('TRIAGE')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                filterTab === 'TRIAGE'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              {t('citizenDashboard.tabTriage', { count: triageCount })}
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterTab('ACTIVE')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                filterTab === 'ACTIVE'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              {t('citizenDashboard.tabActive', { count: activeCount })}
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterTab('RESOLVED')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                filterTab === 'RESOLVED'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              {t('citizenDashboard.tabResolved', { count: resolvedCount })}
+            </button>
+            {criticalCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setFilterTab('CRITICAL')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  filterTab === 'CRITICAL'
+                    ? 'bg-rose-600 text-white shadow-xs'
+                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                {t('citizenDashboard.tabCritical', { count: criticalCount })}
+              </button>
+            )}
+          </div>
+
+          {/* Instant Search Bar */}
+          <div className="relative min-w-[220px]">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t('citizenDashboard.searchPlaceholder')}
+              className="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 placeholder:text-slate-400"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                title={t('common.clear')}
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
         </div>
 
         {loading ? (
           <div className="p-12 text-center text-sm text-slate-500 flex flex-col items-center gap-3">
             <RefreshCw size={24} className="animate-spin text-blue-600" />
-            <span>Loading grievances from CivicSarthi backend...</span>
+            <span>{t('citizenDashboard.loadingGrievances')}</span>
           </div>
         ) : complaints.length === 0 ? (
           /* Empty state for citizen without complaints */
@@ -189,9 +355,9 @@ export default function CitizenDashboard() {
               <Inbox size={32} />
             </div>
             <div className="max-w-md space-y-1">
-              <h3 className="text-base font-bold text-slate-800">No Grievances Lodged Yet</h3>
+              <h3 className="text-base font-bold text-slate-800">{t('citizenDashboard.noGrievancesTitle')}</h3>
               <p className="text-xs text-slate-500">
-                You have not registered any civic complaints under this account. File your first grievance to begin tracking departmental action.
+                {t('citizenDashboard.noGrievancesDesc')}
               </p>
             </div>
             <div className="flex items-center gap-3 pt-2">
@@ -200,61 +366,99 @@ export default function CitizenDashboard() {
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition"
               >
                 <FilePlus size={15} />
-                <span>Lodge First Grievance</span>
+                <span>{t('citizenDashboard.lodgeFirstBtn')}</span>
               </Link>
               <Link
                 to="/citizen/track"
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition"
               >
                 <Search size={15} />
-                <span>Track Public Reference</span>
+                <span>{t('citizenDashboard.trackPublicBtn')}</span>
               </Link>
             </div>
+          </div>
+        ) : filteredComplaints.length === 0 ? (
+          /* Empty state when filtering or searching */
+          <div className="p-10 text-center flex flex-col items-center justify-center space-y-2">
+            <Filter size={24} className="text-slate-400" />
+            <h4 className="text-sm font-bold text-slate-700">{t('citizenDashboard.noFilterMatchTitle')}</h4>
+            <p className="text-xs text-slate-500 max-w-sm">
+              {t('citizenDashboard.noFilterMatchDesc')}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setFilterTab('ALL');
+                setSearchQuery('');
+              }}
+              className="mt-2 px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition"
+            >
+              {t('citizenDashboard.resetFiltersBtn')}
+            </button>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-600">
               <thead className="bg-slate-50 text-slate-700 uppercase tracking-wider text-[11px] border-b border-slate-200">
                 <tr>
-                  <th className="px-4 py-3">Reference No</th>
-                  <th className="px-4 py-3">Category</th>
-                  <th className="px-6 py-3">Subject</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Filed Date</th>
-                  <th className="px-4 py-3">Last Updated</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+                  <th className="px-4 py-3">{t('citizenDashboard.thReference')}</th>
+                  <th className="px-4 py-3">{t('citizenDashboard.thCategory')}</th>
+                  <th className="px-6 py-3">{t('citizenDashboard.thSubject')}</th>
+                  <th className="px-3 py-3">{t('citizenDashboard.thPriority')}</th>
+                  <th className="px-4 py-3">{t('citizenDashboard.thStatusOutcome')}</th>
+                  <th className="px-4 py-3">{t('citizenDashboard.thFiledDate')}</th>
+                  <th className="px-4 py-3">{t('citizenDashboard.thLastUpdated')}</th>
+                  <th className="px-4 py-3 text-right">{t('citizenDashboard.thActions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {recentComplaints.map((item) => (
+                {filteredComplaints.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="px-4 py-3.5 font-bold font-mono text-slate-900 whitespace-nowrap">
-                      {item.referenceNumber || item.id}
+                      <div className="flex items-center gap-1.5">
+                        <span>{item.referenceNumber || item.id}</span>
+                        {item.synthetic && (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                            {t('common.demo')}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap">
                       <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 font-medium capitalize">
-                        {item.category}
+                        {tCategory(item.category)}
                       </span>
                     </td>
                     <td className="px-6 py-3.5 max-w-sm">
                       <p className="font-semibold text-slate-900 line-clamp-1">
                         {item.title || item.text}
                       </p>
-                      <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
-                        {item.description || item.text}
-                      </p>
+                      <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500">
+                        {(item.location?.landmark || item.location?.ward || item.locality) && (
+                          <span className="inline-flex items-center gap-0.5 text-slate-600 font-medium">
+                            <MapPin size={11} className="text-slate-400" />
+                            {item.location?.landmark || item.location?.ward || item.locality}
+                          </span>
+                        )}
+                        <span className="line-clamp-1 text-slate-400">
+                          {item.description || item.text}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-3.5 whitespace-nowrap">
+                      <PriorityBadge priority={item.priority} />
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap">
                       <div>
                         <StatusBadge status={item.status} />
                         {item.resolutionDetails?.outcomeType && (
                           <span className="block mt-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 w-fit">
-                            {formatOutcomeType(item.resolutionDetails.outcomeType)}
+                            {formatOutcomeType(item.resolutionDetails.outcomeType, lang)}
                           </span>
                         )}
                         {item.resolutionDetails?.isException && !item.resolutionDetails?.outcomeType && (
                           <span className="block mt-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200 w-fit">
-                            Exception Granted
+                            {t('citizenDashboard.exceptionGranted')}
                           </span>
                         )}
                         {item.statusDescription && !item.resolutionDetails?.outcomeType && (
@@ -265,31 +469,23 @@ export default function CitizenDashboard() {
                       </div>
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap text-slate-500">
-                      {new Date(item.createdAt).toLocaleDateString('en-IN', {
-                        day: '2-digit',
-                        month: 'short',
-                        year: 'numeric'
-                      })}
+                      {formatDate(item.createdAt)}
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap text-slate-500">
-                      {new Date(item.updatedAt || item.lastUpdated || item.createdAt).toLocaleDateString('en-IN', {
-                        day: '2-digit',
-                        month: 'short',
-                        year: 'numeric'
-                      })}
+                      {formatDate(item.updatedAt || item.lastUpdated || item.createdAt)}
                     </td>
                     <td className="px-4 py-3.5 text-right whitespace-nowrap space-x-2">
                       <Link
                         to={`/citizen/track/${encodeURIComponent(item.referenceNumber || item.id)}`}
                         className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-900 font-semibold"
                       >
-                        <span>Track</span>
+                        <span>{t('citizenDashboard.trackBtn')}</span>
                       </Link>
                       <Link
                         to={`/citizen/complaints/${encodeURIComponent(item.id)}`}
                         className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-semibold"
                       >
-                        <span>Details</span>
+                        <span>{t('citizenDashboard.detailsBtn')}</span>
                         <ExternalLink size={12} />
                       </Link>
                     </td>

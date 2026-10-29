@@ -59,16 +59,17 @@ export const DEMO_ACCOUNTS = [
   }
 ];
 
-export async function runDemoSeed() {
+export async function runDemoSeed(options = {}) {
+  const targetDir = options.dataDir || process.env.DATA_DIR || DATA_DIR;
   console.log('===============================================================');
   console.log('CivicSarthi Demonstration Fixture & Synthetic Account Seeder');
   console.log('===============================================================');
-  console.log(`Target Data Directory: ${DATA_DIR}`);
+  console.log(`Target Data Directory: ${targetDir}`);
 
-  await fs.mkdir(DATA_DIR, { recursive: true });
+  await fs.mkdir(targetDir, { recursive: true });
 
   // 1. Seed Demo Accounts in users.json (PRESERVING existing users)
-  const usersPath = path.join(DATA_DIR, 'users.json');
+  const usersPath = path.join(targetDir, 'users.json');
   let existingUsers = [];
   try {
     const raw = await fs.readFile(usersPath, 'utf-8');
@@ -121,15 +122,24 @@ export async function runDemoSeed() {
   console.log(`[Demo Seed] Provisioned ${DEMO_ACCOUNTS.length} demo accounts (Total users: ${mergedUsers.length})`);
 
   // 2. Attribute Demo Complaints to Demo Citizen in complaints.json
-  const complaintsPath = path.join(DATA_DIR, 'complaints.json');
+  const complaintsPath = path.join(targetDir, 'complaints.json');
   try {
     const rawComp = await fs.readFile(complaintsPath, 'utf-8');
     const compData = JSON.parse(rawComp);
     if (Array.isArray(compData.complaints)) {
       let modified = false;
+      const demoCitizenRefs = new Set([
+        'CS-2026-0001',
+        'CS-2026-0002',
+        'CS-2026-0003',
+        'CS-2026-0008',
+        'CS-2026-0009',
+        'CS-2026-0011',
+        'CS-2026-0020',
+        'CS-2026-0021'
+      ]);
       compData.complaints = compData.complaints.map(c => {
-        // Attribute CS-2026-0001 (pension) and CS-2026-0003 (water) to Demo Citizen
-        if ((c.referenceNumber === 'CS-2026-0001' || c.referenceNumber === 'CS-2026-0003') && (!c.citizenId || c.citizenId === 'SYNTHETIC_CPGRAMS_DEMO')) {
+        if (demoCitizenRefs.has(c.referenceNumber) && (!c.citizenId || c.citizenId === 'SYNTHETIC_CPGRAMS_DEMO' || c.citizenId === 'USR-DEMO-CITIZEN-001')) {
           modified = true;
           return {
             ...c,
@@ -142,15 +152,15 @@ export async function runDemoSeed() {
       });
       if (modified) {
         await fs.writeFile(complaintsPath, JSON.stringify(compData, null, 2), 'utf-8');
-        console.log('[Demo Seed] Linked CS-2026-0001 and CS-2026-0003 to Demo Citizen account');
+        console.log(`[Demo Seed] Linked ${demoCitizenRefs.size} sample complaints across multiple lifecycle stages to Demo Citizen (Aarav Sharma)`);
       }
     }
   } catch (err) {
     console.warn('[Demo Seed Warning] Complaints file update skipped:', err.message);
   }
 
-  // 3. Seed Clarifications in clarifications.json
-  const clarificationsPath = path.join(DATA_DIR, 'clarifications.json');
+  // 3. Seed Clarifications in clarifications.json (Non-destructive merge)
+  const clarificationsPath = path.join(targetDir, 'clarifications.json');
   const demoClarifications = [
     {
       id: 'CLR-2026-0001',
@@ -179,19 +189,32 @@ export async function runDemoSeed() {
     },
     {
       id: 'CLR-2026-0002',
-      complaintId: 'CPG-2026-00102',
-      referenceNumber: 'CS-2026-0002',
+      complaintId: 'CPG-2026-00121',
+      referenceNumber: 'CS-2026-0021',
       citizenId: 'USR-DEMO-CITIZEN-001',
       citizenName: 'Aarav Sharma',
-      departmentId: 'DEPT_ROADS',
+      departmentId: 'DEPT_WATER',
       threadType: 'LANDMARK_UPDATE',
       status: 'OPEN',
-      content: 'The pothole is directly opposite Metro Pillar 412, adjacent to the North Gate bus shelter.',
+      content: 'Water pressure drop is particularly acute at Building C and D, opposite Datta Mandir.',
       responses: [],
       createdAt: '2026-10-12T08:20:00.000Z',
       updatedAt: '2026-10-12T08:20:00.000Z'
     }
   ];
+
+  let existingClarifications = [];
+  try {
+    const raw = await fs.readFile(clarificationsPath, 'utf-8');
+    const parsed = JSON.parse(raw);
+    existingClarifications = Array.isArray(parsed.clarifications) ? parsed.clarifications : [];
+  } catch {}
+  const demoClarificationIds = new Set(demoClarifications.map(c => c.id));
+  const mergedClarifications = [
+    ...existingClarifications.filter(c => !demoClarificationIds.has(c.id)),
+    ...demoClarifications
+  ];
+
   await fs.writeFile(
     clarificationsPath,
     JSON.stringify(
@@ -200,26 +223,26 @@ export async function runDemoSeed() {
           version: '1.0.0',
           description: 'CivicSarthi Citizen-Initiated Clarification Threads'
         },
-        clarifications: demoClarifications
+        clarifications: mergedClarifications
       },
       null,
       2
     ),
     'utf-8'
   );
-  console.log(`[Demo Seed] Seeded ${demoClarifications.length} synthetic clarification threads`);
+  console.log(`[Demo Seed] Seeded ${demoClarifications.length} synthetic clarification threads (Total: ${mergedClarifications.length})`);
 
-  // 4. Seed Reminders in reminders.json
-  const remindersPath = path.join(DATA_DIR, 'reminders.json');
+  // 4. Seed Reminders in reminders.json (Non-destructive merge)
+  const remindersPath = path.join(targetDir, 'reminders.json');
   const demoReminders = [
     {
       id: 'REM-2026-0001',
-      complaintId: 'CPG-2026-00102',
-      referenceNumber: 'CS-2026-0002',
+      complaintId: 'CPG-2026-00101',
+      referenceNumber: 'CS-2026-0001',
       citizenId: 'USR-DEMO-CITIZEN-001',
       citizenName: 'Aarav Sharma',
-      departmentId: 'DEPT_ROADS',
-      reason: 'Road repair has been pending for 10 days; request expedited patching.',
+      departmentId: 'DEPT_PENSION',
+      reason: 'PPO generation delay is exceeding 4 months; request expedited verification.',
       status: 'ACCEPTED',
       deliveryChannel: 'IN_APP',
       deliveryStatus: 'LOGGED_IN_APP',
@@ -228,6 +251,19 @@ export async function runDemoSeed() {
       updatedAt: '2026-10-11T12:00:00.000Z'
     }
   ];
+
+  let existingReminders = [];
+  try {
+    const raw = await fs.readFile(remindersPath, 'utf-8');
+    const parsed = JSON.parse(raw);
+    existingReminders = Array.isArray(parsed.reminders) ? parsed.reminders : [];
+  } catch {}
+  const demoReminderIds = new Set(demoReminders.map(r => r.id));
+  const mergedReminders = [
+    ...existingReminders.filter(r => !demoReminderIds.has(r.id)),
+    ...demoReminders
+  ];
+
   await fs.writeFile(
     remindersPath,
     JSON.stringify(
@@ -236,17 +272,17 @@ export async function runDemoSeed() {
           version: '1.0.0',
           description: 'CivicSarthi Citizen Grievance Reminders and Follow-up Log'
         },
-        reminders: demoReminders
+        reminders: mergedReminders
       },
       null,
       2
     ),
     'utf-8'
   );
-  console.log(`[Demo Seed] Seeded ${demoReminders.length} synthetic reminder records`);
+  console.log(`[Demo Seed] Seeded ${demoReminders.length} synthetic reminder records (Total: ${mergedReminders.length})`);
 
-  // 5. Seed Appeals in appeals.json
-  const appealsPath = path.join(DATA_DIR, 'appeals.json');
+  // 5. Seed Appeals in appeals.json (Non-destructive merge)
+  const appealsPath = path.join(targetDir, 'appeals.json');
   const demoAppeals = [
     {
       id: 'APP-2026-0001',
@@ -320,6 +356,19 @@ export async function runDemoSeed() {
       updatedAt: '2026-10-11T14:00:00.000Z'
     }
   ];
+
+  let existingAppeals = [];
+  try {
+    const raw = await fs.readFile(appealsPath, 'utf-8');
+    const parsed = JSON.parse(raw);
+    existingAppeals = Array.isArray(parsed.appeals) ? parsed.appeals : [];
+  } catch {}
+  const demoAppealIds = new Set(demoAppeals.map(a => a.id));
+  const mergedAppeals = [
+    ...existingAppeals.filter(a => !demoAppealIds.has(a.id)),
+    ...demoAppeals
+  ];
+
   await fs.writeFile(
     appealsPath,
     JSON.stringify(
@@ -328,17 +377,17 @@ export async function runDemoSeed() {
           version: '1.0.0',
           description: 'CivicSarthi Formal Resolution Appeals'
         },
-        appeals: demoAppeals
+        appeals: mergedAppeals
       },
       null,
       2
     ),
     'utf-8'
   );
-  console.log(`[Demo Seed] Seeded ${demoAppeals.length} synthetic appeal records`);
+  console.log(`[Demo Seed] Seeded ${demoAppeals.length} synthetic appeal records (Total: ${mergedAppeals.length})`);
 
-  // 6. Seed Reopening Requests in reopening_requests.json
-  const reopeningsPath = path.join(DATA_DIR, 'reopening_requests.json');
+  // 6. Seed Reopening Requests in reopening_requests.json (Non-destructive merge)
+  const reopeningsPath = path.join(targetDir, 'reopening_requests.json');
   const demoReopenings = [
     {
       id: 'REOPEN-2026-0001',
@@ -364,6 +413,19 @@ export async function runDemoSeed() {
       updatedAt: '2026-10-12T09:00:00.000Z'
     }
   ];
+
+  let existingReopenings = [];
+  try {
+    const raw = await fs.readFile(reopeningsPath, 'utf-8');
+    const parsed = JSON.parse(raw);
+    existingReopenings = Array.isArray(parsed.reopeningRequests) ? parsed.reopeningRequests : [];
+  } catch {}
+  const demoReopeningIds = new Set(demoReopenings.map(r => r.id));
+  const mergedReopenings = [
+    ...existingReopenings.filter(r => !demoReopeningIds.has(r.id)),
+    ...demoReopenings
+  ];
+
   await fs.writeFile(
     reopeningsPath,
     JSON.stringify(
@@ -372,22 +434,22 @@ export async function runDemoSeed() {
           version: '1.0.0',
           description: 'CivicSarthi Controlled Reopening Requests'
         },
-        reopeningRequests: demoReopenings
+        reopeningRequests: mergedReopenings
       },
       null,
       2
     ),
     'utf-8'
   );
-  console.log(`[Demo Seed] Seeded ${demoReopenings.length} synthetic reopening requests`);
+  console.log(`[Demo Seed] Seeded ${demoReopenings.length} synthetic reopening requests (Total: ${mergedReopenings.length})`);
 
-  // 7. Seed Citizen Feedback in feedback.json
-  const feedbackPath = path.join(DATA_DIR, 'feedback.json');
+  // 7. Seed Citizen Feedback in feedback.json (Non-destructive merge)
+  const feedbackPath = path.join(targetDir, 'feedback.json');
   const demoFeedback = [
     {
       id: 'FB-2026-0001',
-      complaintId: 'CPG-2026-00103',
-      referenceNumber: 'CS-2026-0003',
+      complaintId: 'CPG-2026-00111',
+      referenceNumber: 'CS-2026-0011',
       citizenId: 'USR-DEMO-CITIZEN-001',
       rating: 4,
       comments: 'Water pipeline repaired reasonably quickly. Slight excavation debris left on shoulder.',
@@ -405,6 +467,19 @@ export async function runDemoSeed() {
       updatedAt: '2026-10-11T16:00:00.000Z'
     }
   ];
+
+  let existingFeedback = [];
+  try {
+    const raw = await fs.readFile(feedbackPath, 'utf-8');
+    const parsed = JSON.parse(raw);
+    existingFeedback = Array.isArray(parsed.feedback) ? parsed.feedback : [];
+  } catch {}
+  const demoFeedbackIds = new Set(demoFeedback.map(f => f.id));
+  const mergedFeedback = [
+    ...existingFeedback.filter(f => !demoFeedbackIds.has(f.id)),
+    ...demoFeedback
+  ];
+
   await fs.writeFile(
     feedbackPath,
     JSON.stringify(
@@ -413,17 +488,17 @@ export async function runDemoSeed() {
           version: '1.0.0',
           description: 'CivicSarthi Citizen Resolution Feedback Records'
         },
-        feedback: demoFeedback
+        feedback: mergedFeedback
       },
       null,
       2
     ),
     'utf-8'
   );
-  console.log(`[Demo Seed] Seeded ${demoFeedback.length} synthetic feedback records`);
+  console.log(`[Demo Seed] Seeded ${demoFeedback.length} synthetic feedback records (Total: ${mergedFeedback.length})`);
 
-  // 8. Seed Spam Reviews in spam_reviews.json
-  const spamReviewsPath = path.join(DATA_DIR, 'spam_reviews.json');
+  // 8. Seed Spam Reviews in spam_reviews.json (Non-destructive merge)
+  const spamReviewsPath = path.join(targetDir, 'spam_reviews.json');
   const demoSpamReviews = [
     {
       id: 'REV-2026-0001',
@@ -449,6 +524,19 @@ export async function runDemoSeed() {
       updatedAt: '2026-10-12T11:00:00.000Z'
     }
   ];
+
+  let existingSpamReviews = [];
+  try {
+    const raw = await fs.readFile(spamReviewsPath, 'utf-8');
+    const parsed = JSON.parse(raw);
+    existingSpamReviews = Array.isArray(parsed.spamReviews) ? parsed.spamReviews : [];
+  } catch {}
+  const demoSpamIds = new Set(demoSpamReviews.map(s => s.id));
+  const mergedSpamReviews = [
+    ...existingSpamReviews.filter(s => !demoSpamIds.has(s.id)),
+    ...demoSpamReviews
+  ];
+
   await fs.writeFile(
     spamReviewsPath,
     JSON.stringify(
@@ -457,18 +545,31 @@ export async function runDemoSeed() {
           version: '1.0.0',
           description: 'CivicSarthi Flagged Spam & Suspicious Complaint Review Queue'
         },
-        spamReviews: demoSpamReviews
+        spamReviews: mergedSpamReviews
       },
       null,
       2
     ),
     'utf-8'
   );
-  console.log(`[Demo Seed] Seeded ${demoSpamReviews.length} synthetic spam review records`);
+  console.log(`[Demo Seed] Seeded ${demoSpamReviews.length} synthetic spam review records (Total: ${mergedSpamReviews.length})`);
+
+  // If MongoDB is configured/connected, also synchronize demo accounts into MongoDB
+  try {
+    const { isConnected, connectDatabase } = await import('../config/database.js');
+    if (!isConnected() && process.env.MONGODB_URI) {
+      await connectDatabase();
+    }
+    if (isConnected()) {
+      const forceSync = process.env.FORCE_DEMO_PASSWORD_SYNC === 'true';
+      await initializeDemoAccounts({ force: true, forcePasswordSync: forceSync });
+    }
+  } catch (mongoErr) {
+    console.warn('[Demo Seed Warning] MongoDB demo sync skipped:', mongoErr.message);
+  }
 
   console.log('---------------------------------------------------------------');
-  console.log('DEMO ACCOUNTS READY FOR 5-7 MINUTE HACKATHON DEMO:');
-  console.log('Password for all demo accounts: ' + DEMO_PASSWORD_PLAINTEXT);
+  console.log('DEMO ACCOUNTS READY FOR EVALUATION:');
   console.log('  1. Citizen:      citizen.demo@civicsarthi.internal');
   console.log('  2. Roads Officer: officer.roads@civicsarthi.internal (DEPT_ROADS)');
   console.log('  3. Water Officer: officer.water@civicsarthi.internal (DEPT_WATER)');

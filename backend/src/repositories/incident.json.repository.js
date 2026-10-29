@@ -204,6 +204,7 @@ export class JsonIncidentRepository {
 
       const newIncident = {
         id,
+        referenceNumber: id,
         title: incidentData.title.trim(),
         description: (incidentData.description || '').trim(),
         category: incidentData.category.trim().toLowerCase(),

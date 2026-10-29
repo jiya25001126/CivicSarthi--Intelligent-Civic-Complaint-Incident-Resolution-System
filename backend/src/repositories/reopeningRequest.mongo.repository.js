@@ -5,22 +5,67 @@ import {
 } from '../constants/feedback.constants.js';
 
 export class MongoReopeningRequestRepository {
+  async generateRequestId() {
+    const year = new Date().getFullYear();
+    const count = await ReopeningRequestModel.countDocuments();
+    const seq = String(count + 1).padStart(4, '0');
+    let candidate = `REOPEN-${year}-${seq}`;
+    const exists = await ReopeningRequestModel.findOne({ id: candidate }).lean();
+    if (exists) {
+      const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+      candidate = `REOPEN-${year}-${Date.now().toString().slice(-4)}${rand}`;
+    }
+    return candidate;
+  }
+
+  async generateRequestReference() {
+    const year = new Date().getFullYear();
+    const count = await ReopeningRequestModel.countDocuments();
+    const seq = String(count + 1).padStart(4, '0');
+    let candidate = `REQ-${year}-${seq}`;
+    const exists = await ReopeningRequestModel.findOne({ referenceNumber: candidate }).lean();
+    if (exists) {
+      const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+      candidate = `REQ-${year}-${Date.now().toString().slice(-4)}${rand}`;
+    }
+    return candidate;
+  }
+
   async create(data) {
-    const doc = new ReopeningRequestModel(data);
+    const id = data.id || (await this.generateRequestId());
+    const referenceNumber = data.referenceNumber || (await this.generateRequestReference());
+    const requesterId = data.requesterId || data.citizenId;
+    const citizenId = data.citizenId || data.requesterId;
+    const complaintReference = data.complaintReference || data.complaintId;
+    const doc = new ReopeningRequestModel({
+      ...data,
+      id,
+      referenceNumber,
+      requesterId,
+      citizenId,
+      complaintReference
+    });
     const saved = await doc.save();
-    return saved.toObject();
+    return saved.toObject ? saved.toObject() : saved;
   }
 
   async findById(idOrRef) {
     const doc = await ReopeningRequestModel.findOne({
-      $or: [{ id: idOrRef }, { referenceNumber: idOrRef }]
+      $or: [
+        { id: { $regex: new RegExp(`^${idOrRef}$`, 'i') } },
+        { referenceNumber: { $regex: new RegExp(`^${idOrRef}$`, 'i') } }
+      ]
     }).lean();
     return doc;
   }
 
   async findPendingByComplaintId(complaintId) {
+    const esc = String(complaintId).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const doc = await ReopeningRequestModel.findOne({
-      $or: [{ complaintId }, { complaintReference: complaintId }],
+      $or: [
+        { complaintId: { $regex: new RegExp(`^${esc}$`, 'i') } },
+        { complaintReference: { $regex: new RegExp(`^${esc}$`, 'i') } }
+      ],
       status: REOPENING_STATUS.PENDING_REVIEW
     }).lean();
     return doc;
@@ -29,15 +74,25 @@ export class MongoReopeningRequestRepository {
   async findAll(filters = {}) {
     const query = {};
     if (filters.complaintId) {
-      query.$or = [{ complaintId: filters.complaintId }, { complaintReference: filters.complaintId }];
+      const esc = String(filters.complaintId).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      query.$or = [
+        { complaintId: { $regex: new RegExp(`^${esc}$`, 'i') } },
+        { complaintReference: { $regex: new RegExp(`^${esc}$`, 'i') } }
+      ];
     }
-    if (filters.requesterId) {
-      query.requesterId = filters.requesterId;
+    const requester = filters.requesterId || filters.citizenId;
+    if (requester) {
+      const esc = String(requester).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      query.$or = [
+        { requesterId: { $regex: new RegExp(`^${esc}$`, 'i') } },
+        { citizenId: { $regex: new RegExp(`^${esc}$`, 'i') } }
+      ];
     }
-    if (filters.departmentId) {
-      query.departmentId = filters.departmentId;
+    if (filters.departmentId && filters.departmentId !== 'ALL') {
+      const esc = String(filters.departmentId).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      query.departmentId = { $regex: new RegExp(`^${esc}$`, 'i') };
     }
-    if (filters.status) {
+    if (filters.status && filters.status !== 'ALL') {
       query.status = filters.status;
     }
 
