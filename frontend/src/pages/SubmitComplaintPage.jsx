@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { createComplaint, fetchDepartments, analyzeGrievancePreview } from '../api/client';
-import VoiceTranscription from '../components/VoiceTranscription';
 import {
   FilePlus,
   Send,
@@ -442,7 +441,6 @@ export default function SubmitComplaintPage() {
         </div>
 
         {/* Description */}
-        <VoiceTranscription onTranscript={setDescription} disabled={submitting} />
         <div className="space-y-1.5">
           <label htmlFor="complaint-description" className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
             Detailed Grievance Narrative <span className="text-rose-600">*</span>
