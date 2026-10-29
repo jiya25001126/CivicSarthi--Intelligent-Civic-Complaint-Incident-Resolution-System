@@ -37,6 +37,8 @@ import HistoricalResolutionSuggestions from '../components/HistoricalResolutionS
 import {
   ArrowLeft,
   ArrowRight,
+  ExternalLink,
+  Image as ImageIcon,
   Calendar,
   Clock,
   Shield,
@@ -68,9 +70,7 @@ import {
   Languages,
   Bell,
   Info,
-  Flag,
-  ExternalLink,
-  Image as ImageIcon
+  Flag
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import {
@@ -216,7 +216,6 @@ export default function ComplaintDetailPage() {
 
       const depts = deptsRes.status === 'fulfilled' ? (deptsRes.value?.data || deptsRes.value || []) : [];
       setDepartments(Array.isArray(depts) ? depts : []);
-
       if (comp) {
         setReassignDeptId(comp.departmentId || comp.department || '');
         setNewPriority(comp.priority || 'MEDIUM');

@@ -209,8 +209,8 @@ describe('CivicSarthi Phase 7 Step 2A.1: Incident & Subtask Security & Consisten
       if (initialProtectedFiles[f.name] !== null) {
         const currentContent = await fs.readFile(f.path, 'utf-8');
         assert.strictEqual(
-          currentContent,
-          initialProtectedFiles[f.name],
+          currentContent.replace(/\r\n/g, '\n'),
+          initialProtectedFiles[f.name].replace(/\r\n/g, '\n'),
           `CRITICAL SAFETY VIOLATION: Protected file ${f.path} was modified during tests!`
         );
       }

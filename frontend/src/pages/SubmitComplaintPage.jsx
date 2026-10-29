@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { createComplaint, fetchDepartments, analyzeGrievancePreview, uploadAttachment } from '../api/client';
+import VoiceInput, { mergeTranscript } from '../components/VoiceInput';
 import { useLanguage } from '../context/LanguageContext';
 import {
   FilePlus,
@@ -139,6 +140,11 @@ export default function SubmitComplaintPage() {
       setDepartmentId(recDeptId);
     }
     setAiApplied(true);
+  };
+
+  const handleVoiceTranscript = (transcriptText, mode = 'append') => {
+    if (!transcriptText || !transcriptText.trim()) return;
+    setDescription((prev) => mergeTranscript(prev, transcriptText, mode));
   };
 
   const handleFileChange = (e) => {
@@ -529,10 +535,21 @@ export default function SubmitComplaintPage() {
         </div>
 
         {/* Description */}
-        <div className="space-y-1.5">
-          <label htmlFor="complaint-description" className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
-            {t('submitComplaint.descriptionLabel')} <span className="text-rose-600">*</span>
-          </label>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label htmlFor="complaint-description" className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
+              {t('submitComplaint.descriptionLabel')} <span className="text-rose-600">*</span>
+            </label>
+            <span className="text-[11px] text-slate-400 font-medium">
+              {lang === 'hi' ? 'बोलें या लिखें' : 'Speak or Type'}
+            </span>
+          </div>
+
+          {/* Multilingual Voice Input Assistant */}
+          <VoiceInput
+            onTranscript={handleVoiceTranscript}
+            disabled={submitting}
+          />
           <textarea
             id="complaint-description"
             required
@@ -601,9 +618,9 @@ export default function SubmitComplaintPage() {
           <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
             <div className="flex items-center justify-between">
               <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
-                {t('submitComplaint.attachmentHeading')}
+                {t('submitComplaint.attachmentHeading') || 'Supporting Photo / Evidence (Optional)'}
               </label>
-              <span className="text-[11px] text-slate-500">{t('submitComplaint.attachmentDesc')}</span>
+              <span className="text-[11px] text-slate-500">{t('submitComplaint.attachmentDesc') || 'Max 5MB (JPEG, PNG, WebP)'}</span>
             </div>
 
             {/* File Upload / Preview Area */}
@@ -622,7 +639,7 @@ export default function SubmitComplaintPage() {
                       {selectedFile.name}
                     </span>
                     <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-semibold">
-                      {t('submitComplaint.ready')}
+                      {t('submitComplaint.ready') || 'Ready to Upload'}
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-500 mt-0.5">
@@ -634,7 +651,7 @@ export default function SubmitComplaintPage() {
                   onClick={handleRemoveFile}
                   disabled={submitting}
                   className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition"
-                  title={t('submitComplaint.removePhoto')}
+                  title={t('submitComplaint.removePhoto') || 'Remove photo'}
                 >
                   <Trash2 size={16} />
                 </button>
@@ -649,10 +666,10 @@ export default function SubmitComplaintPage() {
                     <UploadCloud size={20} />
                   </div>
                   <span className="text-xs font-semibold text-slate-700 group-hover:text-blue-700">
-                    {t('submitComplaint.dragDropPrompt')}
+                    {t('submitComplaint.dragDropPrompt') || 'Click to attach photo or drag and drop'}
                   </span>
                   <span className="text-[11px] text-slate-400 mt-1">
-                    {t('submitComplaint.attachmentDesc')}
+                    {t('submitComplaint.attachmentDesc') || 'JPG, PNG, or WebP up to 5MB'}
                   </span>
                   <input
                     id="complaint-photo-input"
@@ -679,7 +696,7 @@ export default function SubmitComplaintPage() {
               <input
                 id="complaint-evidence"
                 type="text"
-                placeholder={t('submitComplaint.evidenceIdPlaceholder')}
+                placeholder={t('submitComplaint.evidenceIdPlaceholder') || 'Or specify file citation (e.g. photo_leak.jpg)'}
                 value={evidenceName}
                 onChange={(e) => setEvidenceName(e.target.value)}
                 disabled={submitting || Boolean(selectedFile)}

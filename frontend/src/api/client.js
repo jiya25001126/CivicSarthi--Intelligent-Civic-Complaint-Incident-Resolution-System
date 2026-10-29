@@ -269,6 +269,7 @@ export async function uploadAttachment(payload) {
   return res.data;
 }
 
+
 export async function flagComplaintForReview(complaintId, payload) {
   let csrf = getCookie('civicsarthi_csrf');
   if (!csrf && typeof window !== 'undefined') {

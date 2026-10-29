@@ -1185,7 +1185,7 @@ export default function NeglectRadarPage() {
                               </span>
                             </div>
 
-                            <div className="text-slate-600 text-[11px] mt-1.5 leading-relaxed bg-white/60 p-2.5 rounded-lg border border-slate-100 space-y-1.5">
+<div className="text-slate-600 text-[11px] mt-1.5 leading-relaxed bg-white/60 p-2.5 rounded-lg border border-slate-100 space-y-1.5">
                               {signal.message && (
                                 <p className="text-slate-800 font-medium leading-snug">
                                   {signal.message}

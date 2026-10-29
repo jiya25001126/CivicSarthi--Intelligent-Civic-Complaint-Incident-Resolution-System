@@ -394,7 +394,7 @@ export class ReopeningService {
       const updatedComplaint = await this.complaintRepo.updateStatus(complaint.id, {
         status: COMPLAINT_STATUS.REOPENED,
         remarks: reopeningRemarks,
-        actorType: user.role === 'admin' ? 'ADMIN' : 'OFFICER'
+        actorType: 'OFFICER'
       });
 
       if (!updatedComplaint) {

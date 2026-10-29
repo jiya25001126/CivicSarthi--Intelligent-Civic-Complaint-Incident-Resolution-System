@@ -1,6 +1,7 @@
 import createApp from './app.js';
 import config from './config/app.config.js';
 import { connectDatabase } from './config/database.js';
+import { seedDemoUsers } from './services/demoSeed.service.js';
 import { initializeDemoAccounts } from './services/demoInit.service.js';
 
 const app = createApp();
@@ -14,6 +15,20 @@ try {
 } catch (err) {
   // eslint-disable-next-line no-console
   console.warn('[CivicSarthi Startup Warning] Demo initialization could not be completed:', err.message);
+}
+
+// Idempotently seed development demo users if in development mode
+if (config.env !== 'production') {
+  try {
+    const seedResult = await seedDemoUsers();
+    if (seedResult.created?.length > 0) {
+      // eslint-disable-next-line no-console
+      console.log(`[CivicSarthi Startup] Idempotently seeded ${seedResult.created.length} missing demo account(s) for local development.`);
+    }
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn('[CivicSarthi Startup Warning] Demo user auto-seeding encountered non-fatal error:', err.message);
+  }
 }
 
 const server = app.listen(config.port, () => {

@@ -53,6 +53,7 @@ export function projectSafeRadarItem(evaluatedItem) {
     riskLevel: evaluatedItem.riskLevel,
     dataCompleteness: evaluatedItem.dataCompleteness,
     evidenceSummary: evaluatedItem.evidenceSummary || null,
+    evidence: evaluatedItem.evidence || [],
     signals: evaluatedItem.signals || [],
     triggeredSignals: evaluatedItem.triggeredSignals || [],
     missingSignals: evaluatedItem.missingSignals || [],
