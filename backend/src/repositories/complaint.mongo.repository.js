@@ -53,17 +53,22 @@ export class MongoComplaintRepository {
    */
   async findAll(filters = {}) {
     const query = {};
+    const andClauses = [];
 
     // Filter by Category
     if (filters.category && filters.category !== 'ALL') {
       query.category = filters.category.toLowerCase();
     }
 
-    // Filter by Department
+    // Filter by Department (SEC-02: Scoped into andClauses to prevent overwrite by search)
     if (filters.departmentId && filters.departmentId !== 'ALL') {
-      query.$or = [{ departmentId: filters.departmentId }, { department: filters.departmentId }];
+      andClauses.push({
+        $or: [{ departmentId: filters.departmentId }, { department: filters.departmentId }]
+      });
     } else if (filters.department && filters.department !== 'ALL') {
-      query.$or = [{ departmentId: filters.department }, { department: filters.department }];
+      andClauses.push({
+        $or: [{ departmentId: filters.department }, { department: filters.department }]
+      });
     }
 
     // Filter by Status
@@ -86,19 +91,31 @@ export class MongoComplaintRepository {
       query.incidentId = filters.incidentId;
     }
 
-    // Free text search
+    // Free text search (SEC-02 & SEC-05: Escapes regex and appends as $and clause)
     if (filters.search && filters.search.trim() !== '') {
-      const q = filters.search.trim();
+      const q = filters.search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const searchRegex = new RegExp(q, 'i');
-      query.$or = [
-        { id: searchRegex },
-        { referenceNumber: searchRegex },
-        { title: searchRegex },
-        { description: searchRegex },
-        { category: searchRegex },
-        { district: searchRegex },
-        { locality: searchRegex }
-      ];
+      andClauses.push({
+        $or: [
+          { id: searchRegex },
+          { referenceNumber: searchRegex },
+          { title: searchRegex },
+          { description: searchRegex },
+          { category: searchRegex },
+          { district: searchRegex },
+          { locality: searchRegex }
+        ]
+      });
+    }
+
+    if (andClauses.length === 1) {
+      // Single condition: attach directly or merge
+      const single = andClauses[0];
+      if (single.$or) {
+        query.$or = single.$or;
+      }
+    } else if (andClauses.length > 1) {
+      query.$and = andClauses;
     }
 
     // Sorting

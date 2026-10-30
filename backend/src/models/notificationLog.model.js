@@ -44,6 +44,12 @@ const notificationLogSchema = new mongoose.Schema(
       trim: true,
       default: null
     },
+    departmentId: {
+      type: String,
+      index: true,
+      trim: true,
+      default: null
+    },
     citizenId: {
       type: String,
       index: true,

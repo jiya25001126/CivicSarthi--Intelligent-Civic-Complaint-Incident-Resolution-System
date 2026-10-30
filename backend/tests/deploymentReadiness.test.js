@@ -19,6 +19,8 @@ import { complaintRepository } from '../src/repositories/complaint.repository.js
 import { auditLogRepository } from '../src/repositories/auditLog.repository.js';
 import { resolveApiBaseUrl } from '../../frontend/src/api/client.js';
 import { mockCpgramsRouter, MockCpgramsClient } from '../../mock-cpgrams/index.js';
+import { isMockCpgramsAllowed } from '../src/routes/index.js';
+import { authService } from '../src/services/auth.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -414,13 +416,62 @@ describe('CivicSarthi — Public Hackathon Deployment Readiness & Regression Sui
       assert.equal(typeof client.updateComplaintStatus, 'function');
     });
 
-    it('6.3 serves mock-cpgrams router via backend application routes without module resolution errors', async () => {
-      const res = await request(app).get('/api/v1/mock-cpgrams/complaints');
-      assert.equal(res.status, 200);
-      assert.equal(res.body.success, true);
-      assert.equal(res.body.source, 'MOCK_CPGRAMS_SERVICE');
-      assert.equal(res.body.synthetic, true);
-      assert.ok(Array.isArray(res.body.data));
+    it('6.3 enforces SEC-01 security policy: disabled mock router returns 404, never mounted in production, requires opt-in & auth in dev', async () => {
+      // 1. Verification: When disabled in environment (default state), routes return 404
+      const resDisabled = await request(app).get('/api/v1/mock-cpgrams/complaints');
+      assert.equal(resDisabled.status, 404);
+      assert.equal(resDisabled.body.success, false);
+      assert.match(resDisabled.body.error, /disabled/i);
+
+      // 2. Verification: Production NEVER mounts Mock CPGRAMS, even with ENABLE_MOCK_CPGRAMS=true
+      assert.equal(isMockCpgramsAllowed('production', {}), false, 'Production with flag unset must be false');
+      assert.equal(isMockCpgramsAllowed('production', { ENABLE_MOCK_CPGRAMS: 'true' }), false, 'Production with flag=true must still be false');
+
+      // 3. Verification: Development requires explicit opt-in
+      assert.equal(isMockCpgramsAllowed('development', {}), false, 'Development with flag unset must be false');
+      assert.equal(isMockCpgramsAllowed('development', { ENABLE_MOCK_CPGRAMS: 'true' }), true, 'Development with flag=true must be true');
+
+      // 4. Verification: When explicitly opted-in in development, router serves valid response when authenticated as officer/admin
+      const enabledDevRouter = (await import('express')).default.Router();
+      const { authenticate, requireRole } = await import('../src/middleware/auth.middleware.js');
+      enabledDevRouter.use(authenticate, requireRole('officer', 'admin'), mockCpgramsRouter);
+
+      const testApp = (await import('express')).default();
+      testApp.use('/api/v1/mock-cpgrams', enabledDevRouter);
+
+      // Unauthenticated request to opted-in router is rejected with 401
+      const unauthRes = await request(testApp).get('/api/v1/mock-cpgrams/complaints');
+      assert.equal(unauthRes.status, 401);
+
+      // Seed officer into test user repo
+      await userRepository.create({
+        id: 'USR-DEPLOY-OFFICER-01',
+        email: 'officer.deploy@test.internal',
+        name: 'Deploy Officer',
+        passwordHash: '$2b$10$wK58d6qYF1cK5qU8pM8lQ.8eR3jYqT.6b1Q0x2.0W9V7M6Z4L3X2m',
+        role: 'officer',
+        departmentId: 'DEPT_ROADS',
+        isActive: true
+      });
+
+      // Citizen request to opted-in router is rejected with 403
+      const citizenUser = await userRepository.findById('USR-DEPLOY-CITIZEN-01');
+      const citizenToken = authService.generateToken(citizenUser);
+      const citizenRes = await request(testApp)
+        .get('/api/v1/mock-cpgrams/complaints')
+        .set('Authorization', `Bearer ${citizenToken}`);
+      assert.equal(citizenRes.status, 403);
+
+      // Authorized officer request succeeds with 200
+      const officerUser = await userRepository.findById('USR-DEPLOY-OFFICER-01');
+      const officerToken = authService.generateToken(officerUser);
+      const authRes = await request(testApp)
+        .get('/api/v1/mock-cpgrams/complaints')
+        .set('Authorization', `Bearer ${officerToken}`);
+      assert.equal(authRes.status, 200);
+      assert.equal(authRes.body.success, true);
+      assert.equal(authRes.body.source, 'MOCK_CPGRAMS_SERVICE');
+      assert.ok(Array.isArray(authRes.body.data));
     });
   });
 });

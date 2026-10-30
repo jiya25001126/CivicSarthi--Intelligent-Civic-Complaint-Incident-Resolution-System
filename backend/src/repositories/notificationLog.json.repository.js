@@ -82,6 +82,7 @@ export class JsonNotificationLogRepository {
         eventType: data.eventType,
         complaintId: data.complaintId || null,
         complaintReference: data.complaintReference || null,
+        departmentId: data.departmentId || null,
         citizenId: data.citizenId || null,
         status: data.status || NOTIFICATION_STATUS.SENT,
         provider: data.provider || 'mock',
@@ -123,6 +124,9 @@ export class JsonNotificationLogRepository {
 
     if (filters.complaintId) {
       items = items.filter((n) => n.complaintId === filters.complaintId);
+    }
+    if (filters.departmentId) {
+      items = items.filter((n) => n.departmentId === filters.departmentId);
     }
     if (filters.citizenId) {
       items = items.filter((n) => n.citizenId === filters.citizenId);

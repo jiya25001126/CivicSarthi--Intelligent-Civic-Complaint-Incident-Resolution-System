@@ -26,6 +26,7 @@ export class MongoNotificationLogRepository {
   async findAll(filters = {}) {
     const query = {};
     if (filters.complaintId) query.complaintId = filters.complaintId;
+    if (filters.departmentId) query.departmentId = filters.departmentId;
     if (filters.citizenId) query.citizenId = filters.citizenId;
     if (filters.channel) query.channel = filters.channel;
     if (filters.eventType) query.eventType = filters.eventType;

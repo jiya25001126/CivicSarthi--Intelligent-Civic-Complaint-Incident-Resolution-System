@@ -93,6 +93,19 @@ export class NotificationService {
   }
 
   /**
+   * Helper to mask sensitive phone numbers in non-privileged responses
+   * (e.g. +919876543210 -> +91******3210)
+   */
+  maskPhoneNumber(phone) {
+    if (!phone || typeof phone !== 'string') return phone;
+    const clean = phone.trim();
+    if (clean.length < 7) return '******';
+    const prefix = clean.startsWith('+91') ? '+91' : clean.slice(0, 2);
+    const suffix = clean.slice(-4);
+    return `${prefix}******${suffix}`;
+  }
+
+  /**
    * Core dispatcher for a notification on a specific channel
    */
   async dispatchNotification({
@@ -102,6 +115,7 @@ export class NotificationService {
     citizenId = null,
     complaintId = null,
     complaintReference = null,
+    departmentId = null,
     templateParams = {},
     stateIdentifier = ''
   }) {
@@ -121,6 +135,7 @@ export class NotificationService {
         eventType,
         complaintId,
         complaintReference,
+        departmentId,
         citizenId,
         status: NOTIFICATION_STATUS.SKIPPED_INVALID_RECIPIENT,
         error: 'Phone number missing or invalid format',
@@ -137,6 +152,7 @@ export class NotificationService {
         eventType,
         complaintId,
         complaintReference,
+        departmentId,
         citizenId,
         status: NOTIFICATION_STATUS.SKIPPED_OPT_OUT,
         error: consent.reason,
@@ -158,6 +174,7 @@ export class NotificationService {
           eventType,
           complaintId,
           complaintReference,
+          departmentId,
           citizenId,
           status: NOTIFICATION_STATUS.DUPLICATE_SUPPRESSED,
           error: `Suppressed duplicate dispatch within ${NOTIFICATION_CONFIG.DEDUPLICATION_WINDOW_MS / 60000}m window`,
@@ -194,6 +211,7 @@ export class NotificationService {
       eventType,
       complaintId,
       complaintReference,
+      departmentId,
       citizenId,
       status: NOTIFICATION_STATUS.PENDING,
       messageBody,
@@ -242,6 +260,7 @@ export class NotificationService {
     const phone = recipientPhone || complaint?.citizenPhone || complaint?.contactPhone || null;
     const cid = citizenId || complaint?.citizenId || null;
     const ref = complaint?.referenceNumber || complaint?.id || null;
+    const deptId = complaint?.departmentId || complaint?.department || null;
 
     const channels = [NOTIFICATION_CHANNEL.SMS, NOTIFICATION_CHANNEL.WHATSAPP];
     const results = [];
@@ -255,6 +274,7 @@ export class NotificationService {
           citizenId: cid,
           complaintId: complaint?.id || null,
           complaintReference: ref,
+          departmentId: deptId,
           templateParams: {
             ...templateParams,
             referenceNumber: ref,
@@ -375,13 +395,34 @@ export class NotificationService {
   }
 
   /**
-   * Queries delivery logs with role authorization enforcement
+   * Queries delivery logs with role authorization enforcement and PII masking
    */
   async getDeliveryLogs(filters = {}, user = null) {
+    const queryFilters = { ...filters };
+
+    // SEC-03: Scoping by role
     if (user && user.role === 'citizen') {
-      filters.citizenId = user.id;
+      // Citizen can only access their own notification logs
+      queryFilters.citizenId = user.id;
+    } else if (user && user.role === 'officer') {
+      // Officer is strictly restricted to notifications from their assigned department
+      queryFilters.departmentId = user.departmentId;
     }
-    return this.logRepo.findAll(filters);
+    // Admin has access to global logs across all departments
+
+    const logs = await this.logRepo.findAll(queryFilters);
+
+    // SEC-03: Data Protection / PII Minimization
+    // Mask phone numbers for citizens and non-admin officers to prevent unauthorized exposure
+    return logs.map((log) => {
+      if (user && user.role !== 'admin') {
+        return {
+          ...log,
+          recipientPhone: this.maskPhoneNumber(log.recipientPhone)
+        };
+      }
+      return log;
+    });
   }
 }
 

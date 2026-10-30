@@ -915,10 +915,44 @@ export const uploadComplaintAttachment = async (req, res, next) => {
 
 /**
  * Securely streams an uploaded complaint attachment to authorized users.
+ * Enforces SEC-04 Object-Level Authorization (IDOR defense) and path traversal prevention.
  */
 export const getComplaintAttachment = async (req, res, next) => {
   try {
-    const file = await storageService.getAttachmentFile(req.params.filename);
+    const { filename } = req.params;
+
+    // 1. Storage-level path traversal defense & existence check
+    const file = await storageService.getAttachmentFile(filename);
+
+    // 2. Resolve associated complaint to enforce Object-Level Authorization (BOLA/IDOR protection)
+    const allComplaints = await complaintRepository.findAll();
+    const associatedComplaint = (Array.isArray(allComplaints) ? allComplaints : allComplaints.items || [])
+      .find(c => Array.isArray(c.evidence) && c.evidence.includes(filename));
+
+    // If attachment is linked to a complaint, enforce RBAC & Tenant/Citizen ownership
+    if (associatedComplaint) {
+      if (req.user.role === 'citizen') {
+        const isOwner = associatedComplaint.citizenId === req.user.id;
+        if (!isOwner) {
+          const err = new Error('Access denied: You do not have permission to view evidence for this complaint');
+          err.status = 403;
+          err.code = 'FORBIDDEN_ATTACHMENT_ACCESS';
+          throw err;
+        }
+      } else if (req.user.role === 'officer') {
+        const deptMatches =
+          associatedComplaint.departmentId === req.user.departmentId ||
+          associatedComplaint.department === req.user.departmentId;
+        if (!deptMatches) {
+          const err = new Error('Access denied: Officers may only access evidence within their assigned department');
+          err.status = 403;
+          err.code = 'FORBIDDEN_DEPARTMENT_ATTACHMENT';
+          throw err;
+        }
+      }
+      // Admin role is permitted global access
+    }
+
     res.setHeader('Content-Type', file.mimeType);
     res.setHeader('Content-Length', file.size);
     res.setHeader('Cache-Control', 'private, max-age=86400');
